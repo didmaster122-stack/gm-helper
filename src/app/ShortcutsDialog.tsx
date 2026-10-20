@@ -32,6 +32,16 @@ const sections: { title: string; rows: [string[], string][] }[] = [
       [["R"], k.rotate],
     ],
   },
+  {
+    title: ru.shortcuts.musicEditor,
+    rows: [
+      [["Space"], k.editorPlay],
+      [["S"], k.split],
+      [["Ctrl+D"], k.duplicate],
+      [["Ctrl+C", "Ctrl+V"], k.copyPaste],
+      [["Home", "End"], k.home],
+    ],
+  },
 ];
 
 export function ShortcutsDialog({ onClose }: { onClose: () => void }) {

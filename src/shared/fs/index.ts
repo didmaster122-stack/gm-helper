@@ -153,6 +153,12 @@ export async function writeChosenFile(path: string, data: Uint8Array): Promise<v
   await writeViaStaging(path, data);
 }
 
+/** Creates a new file in a user folder (a mixdown in the music folder); never replaces one. */
+export async function writeNewFile(path: string, data: Uint8Array): Promise<void> {
+  if (await exists(path)) throw new Error(`Target already exists: ${path}`);
+  await writeViaStaging(path, data);
+}
+
 async function stagingPath(): Promise<string> {
   return join(await cacheDir("staging"), `${crypto.randomUUID()}.tmp`);
 }

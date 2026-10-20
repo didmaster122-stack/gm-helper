@@ -1,9 +1,11 @@
 import { useEffect, useMemo } from "react";
 import {
+  AudioWaveform,
   CircleAlert,
   Download,
   FolderOpen,
   FolderX,
+  Headphones,
   Info,
   ListMusic,
   Music,
@@ -16,14 +18,16 @@ import { ImportDialog } from "../../shared/catalog/ImportDialog";
 import { toAbsolute } from "../../shared/catalog/paths";
 import { fileUrl, pickDirectory } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { Button, EmptyState, IconButton, SearchInput } from "../../shared/ui";
+import { Button, EmptyState, IconButton, SearchInput, Segmented } from "../../shared/ui";
 import { searchTracks } from "./domain/search";
 import { trackName } from "./domain/tracks";
 import type { Track } from "./domain/types";
 import { MusicTree } from "./MusicTree";
 import { usePlayerStore, type QueueItem } from "./player";
 import { PlayerBar } from "./PlayerControls";
-import { useMusicStore, useSelectedTrack } from "./store";
+import { EditorScreen } from "./editor/EditorScreen";
+import { addTrackToEditor } from "./editor/store";
+import { useMusicStore, useSelectedTrack, type MusicTab } from "./store";
 import { TrackList } from "./TrackList";
 import { TrackPanel } from "./TrackPanel";
 import { useMusicDrop } from "./useMusicDrop";
@@ -67,7 +71,38 @@ export function MusicScreen({ musicRoot, rootMissing, onMusicRootChange }: Music
       />
     );
   }
-  return <MusicCatalog root={musicRoot} />;
+  return <MusicSection root={musicRoot} />;
+}
+
+/** "Слушать" (catalog and player) and "Редактировать" (the editor) share the music folder. */
+function MusicSection({ root }: { root: string }) {
+  const open = useMusicStore((s) => s.open);
+  const storeRoot = useMusicStore((s) => s.root);
+  const tab = useMusicStore((s) => s.tab);
+  const setTab = useMusicStore((s) => s.setTab);
+
+  useEffect(() => {
+    void open(root);
+  }, [open, root]);
+
+  if (storeRoot !== root) return null;
+  return (
+    <div className="music">
+      <div className="music-tabs">
+        <Segmented<MusicTab>
+          label={ru.music.title}
+          size="sm"
+          value={tab}
+          onChange={setTab}
+          options={[
+            { value: "listen", label: ru.music.tabs.listen, icon: Headphones },
+            { value: "edit", label: ru.music.tabs.edit, icon: AudioWaveform },
+          ]}
+        />
+      </div>
+      {tab === "listen" ? <MusicCatalog root={root} /> : <EditorScreen root={root} />}
+    </div>
+  );
 }
 
 function toQueue(root: string, tracks: readonly Track[]): QueueItem[] {
@@ -79,8 +114,6 @@ function toQueue(root: string, tracks: readonly Track[]): QueueItem[] {
 }
 
 function MusicCatalog({ root }: { root: string }) {
-  const open = useMusicStore((s) => s.open);
-  const storeRoot = useMusicStore((s) => s.root);
   const entries = useMusicStore((s) => s.entries);
   const selection = useMusicStore((s) => s.selection);
   const query = useMusicStore((s) => s.query);
@@ -96,10 +129,6 @@ function MusicCatalog({ root }: { root: string }) {
   const playing = usePlayerStore((s) => s.playing);
   const playList = usePlayerStore((s) => s.playList);
   const drop = useMusicDrop();
-
-  useEffect(() => {
-    void open(root);
-  }, [open, root]);
 
   // Space toggles playback here, unless the user is typing or a dialog is open.
   useEffect(() => {
@@ -118,8 +147,6 @@ function MusicCatalog({ root }: { root: string }) {
     [entries, query, selection],
   );
 
-  if (storeRoot !== root) return null;
-
   /** Queues the visible list (without missing files), starting from `index`. */
   function play(index: number) {
     const picked = results[index];
@@ -134,7 +161,7 @@ function MusicCatalog({ root }: { root: string }) {
   const dropTarget = selection.kind === "collection" ? selection.collection : null;
 
   return (
-    <div className="music">
+    <>
       <div className="music-body">
         <MusicTree />
 
@@ -226,6 +253,7 @@ function MusicCatalog({ root }: { root: string }) {
         {selected && (
           <TrackPanel
             track={selected}
+            onAddToEditor={() => addTrackToEditor(root, selected)}
             onPlay={() => {
               const index = results.findIndex((t) => t.id === selected.id);
               if (index >= 0) play(index);
@@ -244,6 +272,6 @@ function MusicCatalog({ root }: { root: string }) {
           onClose={drop.cancelPending}
         />
       )}
-    </div>
+    </>
   );
 }

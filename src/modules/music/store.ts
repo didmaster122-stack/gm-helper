@@ -7,7 +7,11 @@ import type { MusicSelection, Track } from "./domain/types";
 import { readMissingDurations } from "./durations";
 import { saveDurations, syncMusic } from "./service";
 
+export type MusicTab = "listen" | "edit";
+
 interface MusicState {
+  /** "Слушать" or "Редактировать"; kept while the app is open. */
+  tab: MusicTab;
   root: string | null;
   tracks: Track[];
   entries: TrackEntry[];
@@ -22,6 +26,7 @@ interface MusicState {
   selectedTrackId: string | null;
 
   /** Opens the music folder (no-op if already open) and keeps it in sync with the disk. */
+  setTab: (tab: MusicTab) => void;
   open: (root: string) => Promise<void>;
   sync: () => Promise<void>;
   setSelection: (selection: MusicSelection) => void;
@@ -89,6 +94,7 @@ export const useMusicStore = create<MusicState>((set, get) => {
   }
 
   return {
+    tab: "listen",
     root: null,
     tracks: [],
     entries: [],
@@ -101,6 +107,10 @@ export const useMusicStore = create<MusicState>((set, get) => {
     selection: { kind: "all" },
     query: "",
     selectedTrackId: null,
+
+    setTab(tab) {
+      set({ tab });
+    },
 
     async open(root) {
       if (get().root === root) return;

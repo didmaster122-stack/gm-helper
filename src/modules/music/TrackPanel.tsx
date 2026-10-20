@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { FileX, FolderInput, FolderOpen, Pencil, Play, Trash, X } from "lucide-react";
+import {
+  AudioWaveform,
+  Check,
+  FileX,
+  FolderInput,
+  FolderOpen,
+  Pencil,
+  Play,
+  Trash,
+  X,
+} from "lucide-react";
 import { nameError } from "../../shared/catalog/nameError";
 import { joinRel, parentRel, splitExtension, toAbsolute } from "../../shared/catalog/paths";
 import { revealInExplorer } from "../../shared/fs";
@@ -7,6 +17,8 @@ import { ru } from "../../shared/i18n/ru";
 import { Button, ConfirmDialog, IconButton, Modal, PromptDialog, TagEditor } from "../../shared/ui";
 import { formatDuration, trackName } from "./domain/tracks";
 import type { Track } from "./domain/types";
+import { MAX_SOURCES } from "./editor/domain/project";
+import { useEditorStore } from "./editor/store";
 import { createMusicFolder, deleteTrack, moveTrack, renameTrack, saveTrackMeta } from "./service";
 import { useMusicStore } from "./store";
 
@@ -17,12 +29,23 @@ function formatSize(bytes: number): string {
 
 type Dialog = "rename" | "move" | "delete" | null;
 
-export function TrackPanel({ track, onPlay }: { track: Track; onPlay: () => void }) {
+interface TrackPanelProps {
+  track: Track;
+  onPlay: () => void;
+  onAddToEditor: () => void;
+}
+
+export function TrackPanel({ track, onPlay, onAddToEditor }: TrackPanelProps) {
   const root = useMusicStore((s) => s.root);
   const tracks = useMusicStore((s) => s.tracks);
   const putTrack = useMusicStore((s) => s.putTrack);
   const selectTrack = useMusicStore((s) => s.selectTrack);
   const sync = useMusicStore((s) => s.sync);
+  const editorState = useEditorStore((s) => {
+    const ids = [...s.history.present.sources.map((x) => x.trackId), ...s.loading];
+    if (ids.includes(track.id)) return "added";
+    return ids.length >= MAX_SOURCES ? "full" : "free";
+  });
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<string | null>(null);
   const t = ru.music.track;
@@ -66,9 +89,25 @@ export function TrackPanel({ track, onPlay }: { track: Track; onPlay: () => void
           {t.missing}
         </div>
       ) : (
-        <Button variant="primary" icon={Play} onClick={onPlay}>
-          {t.play}
-        </Button>
+        <div className="track-main-actions">
+          <Button variant="primary" icon={Play} onClick={onPlay}>
+            {t.play}
+          </Button>
+          <Button
+            icon={editorState === "added" ? Check : AudioWaveform}
+            onClick={onAddToEditor}
+            disabled={editorState !== "free"}
+            title={
+              editorState === "added"
+                ? ru.music.editor.inEditor
+                : editorState === "full"
+                  ? ru.music.editor.editorFull
+                  : ru.music.editor.addToEditorHint
+            }
+          >
+            {ru.music.editor.addToEditor}
+          </Button>
+        </div>
       )}
 
       <label className="field">

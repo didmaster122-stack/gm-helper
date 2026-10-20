@@ -17,6 +17,8 @@
   position: relative;
   flex: 1;
   min-width: 0;
+  /* Positioned, so anything sticking out would paint over the track card. */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   background: var(--bg);
@@ -34,7 +36,7 @@
 /* ---- Track list ---- */
 
 .track-table {
-  --track-columns: 36px minmax(160px, 2fr) minmax(100px, 1fr) 64px;
+  --track-columns: 36px minmax(120px, 2fr) minmax(0, 1fr) 56px;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -42,7 +44,7 @@
 }
 
 .track-table.with-place {
-  --track-columns: 36px minmax(160px, 2fr) minmax(120px, 1fr) minmax(100px, 1fr) 64px;
+  --track-columns: 36px minmax(120px, 2fr) minmax(0, 1fr) minmax(0, 1fr) 56px;
 }
 
 .track-head,
@@ -424,4 +426,246 @@ button.play-button {
 
 .volume.compact .volume-bar {
   width: 56px;
+}
+
+/* ---- Tabs: listen / edit ---- */
+
+.music-tabs {
+  display: flex;
+  align-items: center;
+  flex: none;
+  padding: 8px 12px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.track-main-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ---- Editor ---- */
+
+.music-editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--bg);
+}
+
+.editor-toolbar {
+  flex: none;
+}
+
+/* Stays at the right edge, also when the toolbar wraps in a narrow window. */
+.editor-save {
+  margin-left: auto;
+}
+
+.editor-time {
+  min-width: 96px;
+  padding: 0 4px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.editor-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.editor-sources {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.editor-sources-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-sources-head .subheading {
+  margin: 0;
+}
+
+.source-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.source-row.loading {
+  flex-direction: row;
+  align-items: center;
+  color: var(--text-muted);
+}
+
+.source-row.loading > svg {
+  width: 16px;
+  height: 16px;
+}
+
+.source-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--control-h-sm);
+  font-size: var(--text-md);
+}
+
+/* The title gives way first, so the controls stay on its line. */
+.source-head > strong {
+  flex: 1 1 0;
+  min-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.source-lanes {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.source-lanes > button {
+  min-width: var(--control-h-sm);
+  justify-content: center;
+}
+
+.source-fragment {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.source-wave {
+  min-width: 0;
+}
+
+.source-wave > canvas {
+  display: block;
+  border-radius: var(--radius-sm);
+  cursor: text;
+}
+
+.editor-timeline {
+  display: flex;
+  flex: none;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.lane-heads {
+  flex: none;
+  width: 168px;
+  border-right: 1px solid var(--border);
+}
+
+.lane-heads-ruler {
+  border-bottom: 1px solid var(--border);
+}
+
+.lane-head {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.lane-head:last-child {
+  border-bottom: none;
+}
+
+.lane-head.active {
+  background: var(--accent-softer);
+}
+
+.lane-name {
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.lane-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.lane-controls .volume-bar {
+  flex: 1;
+  min-width: 0;
+}
+
+.timeline-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.timeline-canvas {
+  position: sticky;
+  left: 0;
+  display: block;
+  touch-action: none;
+}
+
+.source-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.source-picker-list {
+  max-height: 50vh;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.source-picker-list button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) auto;
+  gap: 12px;
+  width: 100%;
+  height: auto;
+  padding: 6px 8px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+}
+
+.source-picker-list button:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.source-picker-list button:disabled {
+  opacity: 0.5;
+}
+
+.source-picker-title,
+.source-picker-list .muted {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
