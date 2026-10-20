@@ -38,6 +38,8 @@ function schedule<T>(task: () => Promise<T>): Promise<T> {
 
 async function render(sourcePath: string): Promise<Uint8Array> {
   const img = new Image();
+  // Without CORS the canvas is tainted and cannot be exported (the asset protocol sends the headers).
+  img.crossOrigin = "anonymous";
   img.src = fileUrl(sourcePath);
   await img.decode();
   const scale = Math.min(1, SIZE / Math.max(img.naturalWidth, img.naturalHeight));
