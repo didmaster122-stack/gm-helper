@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 interface ModalProps {
   title: string;
@@ -10,16 +10,23 @@ interface ModalProps {
 }
 
 export function Modal({ title, onClose, children, footer, wide }: ModalProps) {
+  const backdropRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      // A dialog opened over another one (e.g. a picker over a form) comes later in the
+      // document: only that topmost dialog closes.
+      const backdrops = document.querySelectorAll(".modal-backdrop");
+      if (backdrops[backdrops.length - 1] !== backdropRef.current) return;
+      onClose();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
   return (
-    <div className="modal-backdrop" onMouseDown={onClose}>
+    <div ref={backdropRef} className="modal-backdrop" onMouseDown={onClose}>
       <div
         className={wide ? "modal wide" : "modal"}
         role="dialog"

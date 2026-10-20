@@ -1,9 +1,12 @@
 // Canvas drawing for the editor. Cell colours go into a 1 px-per-cell bitmap that is
 // scaled up in one drawImage call; patterns, icons and overlays are drawn only for the
 // visible cells, so a 200×200 map stays fast.
-import { contrastColor, type CellIcon, type CellType } from "./domain/cellTypes";
+import { contrastColor, type CellIcon, type CellSymbol, type CellType } from "./domain/cellTypes";
 import { effectiveTypeAt, type BattlemapModel, type Segment } from "./domain/grid";
-import { cellSize, visibleCells, type View } from "./domain/view";
+import { containRect } from "./domain/images";
+import { footprint, type MapObject, type ObjectDef } from "./domain/objects";
+import { CELL_PX, cellSize, visibleCells, type View } from "./domain/view";
+import { getImage } from "./imageCache";
 
 export const COLORS = {
   background: "#16171c",
@@ -16,6 +19,9 @@ export const COLORS = {
   hover: "rgba(255, 255, 255, 0.8)",
   labelBg: "rgba(22, 23, 28, 0.82)",
   labelText: "#f0e6cc",
+  objectBorder: "rgba(0, 0, 0, 0.55)",
+  objectSelected: "#4d9cff",
+  missingObject: "#8a8a90",
 };
 
 type TypeOf = (id: string) => CellType;
@@ -171,15 +177,48 @@ export function drawCellDecor(
       break;
   }
   ctx.globalAlpha = 0.85;
-  if (type.symbol?.kind === "icon") {
-    drawIcon(ctx, type.symbol.value, x, y, s);
-  } else if (type.symbol?.kind === "letter") {
-    ctx.font = `600 ${Math.round(s * 0.6)}px "Segoe UI", sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(type.symbol.value, x + s / 2, y + s / 2 + s * 0.03);
-  }
+  if (type.symbol) drawSymbol(ctx, type.symbol, x, y, s);
   ctx.restore();
+}
+
+/** Picture fitted into a box. Nothing is drawn until it is decoded. */
+function drawPicture(
+  ctx: CanvasRenderingContext2D,
+  url: string,
+  box: { x: number; y: number; width: number; height: number },
+) {
+  const img = getImage(url);
+  if (!img) return;
+  const pad = Math.min(box.width, box.height) * 0.06;
+  const r = containRect(
+    { width: img.naturalWidth, height: img.naturalHeight },
+    { x: box.x + pad, y: box.y + pad, width: box.width - pad * 2, height: box.height - pad * 2 },
+  );
+  ctx.drawImage(img, r.x, r.y, r.width, r.height);
+}
+
+/** A letter, icon (in the current fill and stroke style) or picture in the square (x, y, s). */
+function drawSymbol(
+  ctx: CanvasRenderingContext2D,
+  symbol: CellSymbol,
+  x: number,
+  y: number,
+  s: number,
+) {
+  switch (symbol.kind) {
+    case "icon":
+      drawIcon(ctx, symbol.value, x, y, s);
+      return;
+    case "letter":
+      ctx.font = `600 ${Math.round(s * 0.6)}px "Segoe UI", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(symbol.value, x + s / 2, y + s / 2 + s * 0.03);
+      return;
+    case "image":
+      drawPicture(ctx, symbol.value, { x, y, width: s, height: s });
+      return;
+  }
 }
 
 /** A whole cell (colour and decor); used for palette swatches. */
@@ -200,7 +239,11 @@ const decorTiles = new Map<string, HTMLCanvasElement>();
 const MAX_TILES = 256;
 
 function decorTile(type: CellType, px: number): HTMLCanvasElement {
-  const key = `${type.id}|${type.color}|${type.pattern}|${type.symbol?.value ?? ""}|${px}`;
+  // Pictures are long data URLs: their length and tail are enough to tell them apart.
+  const symbol = type.symbol?.value ?? "";
+  const symbolKey =
+    type.symbol?.kind === "image" ? `${symbol.length}:${symbol.slice(-32)}` : symbol;
+  const key = `${type.id}|${type.color}|${type.pattern}|${symbolKey}|${px}`;
   let tile = decorTiles.get(key);
   if (!tile) {
     if (decorTiles.size >= MAX_TILES) decorTiles.clear();
@@ -222,6 +265,82 @@ export interface RegionOverlay {
   labelCell: number | null;
 }
 
+// ---- Objects ----
+
+export type ObjectDefOf = (defId: string) => ObjectDef | undefined;
+
+const MISSING_SYMBOL: CellSymbol = { kind: "letter", value: "?" };
+
+/**
+ * One object: its footprint filled with the background colour and the symbol in the
+ * middle, turned with the object. Deleted catalog objects show a grey "?".
+ */
+export function drawObject(
+  ctx: CanvasRenderingContext2D,
+  object: MapObject,
+  def: ObjectDef | undefined,
+  view: View,
+) {
+  const s = cellSize(view);
+  const { w, h } = footprint(def ?? null, object.rotation);
+  const x = view.x + object.x * s;
+  const y = view.y + object.y * s;
+  const inset = Math.min(2, s * 0.06);
+  const color = def?.color ?? COLORS.missingObject;
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.fillRect(x + inset, y + inset, w * s - inset * 2, h * s - inset * 2);
+  ctx.strokeStyle = COLORS.objectBorder;
+  ctx.lineWidth = Math.max(1, s / 16);
+  ctx.strokeRect(x + inset, y + inset, w * s - inset * 2, h * s - inset * 2);
+
+  // The symbol is drawn in the object's own (unrotated) frame around its centre.
+  ctx.translate(x + (w * s) / 2, y + (h * s) / 2);
+  ctx.rotate((object.rotation * Math.PI) / 180);
+  const ow = (def?.width ?? 1) * s;
+  const oh = (def?.height ?? 1) * s;
+  const symbol = def ? def.symbol : MISSING_SYMBOL;
+  if (symbol?.kind === "image") {
+    drawPicture(ctx, symbol.value, { x: -ow / 2, y: -oh / 2, width: ow, height: oh });
+  } else if (symbol) {
+    const ink = contrastColor(color);
+    const side = Math.min(ow, oh);
+    ctx.fillStyle = ink;
+    ctx.strokeStyle = ink;
+    ctx.lineWidth = Math.max(1, side / 16);
+    ctx.globalAlpha *= 0.85;
+    drawSymbol(ctx, symbol, -side / 2, -side / 2, side);
+  }
+  ctx.restore();
+}
+
+export function drawObjects(
+  ctx: CanvasRenderingContext2D,
+  objects: readonly MapObject[],
+  defOf: ObjectDefOf,
+  view: View,
+) {
+  for (const o of objects) drawObject(ctx, o, defOf(o.defId), view);
+}
+
+/** A catalog object scaled into a square swatch (palette, legend). */
+export function drawObjectSwatch(
+  ctx: CanvasRenderingContext2D,
+  def: ObjectDef,
+  x: number,
+  y: number,
+  size: number,
+) {
+  const cells = Math.max(def.width, def.height);
+  const s = size / cells;
+  const view: View = {
+    x: x + ((cells - def.width) * s) / 2,
+    y: y + ((cells - def.height) * s) / 2,
+    zoom: s / CELL_PX,
+  };
+  drawObject(ctx, { id: "", defId: def.id, x: 0, y: 0, rotation: 0 }, def, view);
+}
+
 export interface Scene {
   model: BattlemapModel;
   lookup: Int32Array;
@@ -240,6 +359,10 @@ export interface Scene {
   /** Selection frame in cells (inclusive). */
   frame: { x0: number; y0: number; x1: number; y1: number } | null;
   hover: { x: number; y: number } | null;
+  objectDefOf: ObjectDefOf;
+  selectedObjects: ReadonlySet<string>;
+  /** Objects being placed or dragged, drawn translucent. */
+  ghost: readonly MapObject[] | null;
 }
 
 function strokeSegments(
@@ -401,6 +524,8 @@ export function drawScene(ctx: CanvasRenderingContext2D, sc: Scene) {
     fillCells(ctx, sc.activeRegion.cells, model.width, view, s);
   }
 
+  drawObjects(ctx, model.objects, sc.objectDefOf, view);
+
   if (sc.selection.size > 0) {
     ctx.fillStyle = COLORS.selection;
     fillCells(ctx, sc.selection, model.width, view, s);
@@ -410,6 +535,22 @@ export function drawScene(ctx: CanvasRenderingContext2D, sc: Scene) {
   }
 
   drawRegionOutlines(ctx, sc.regions, view, 2, sc.activeRegion?.id ?? null);
+
+  if (sc.selectedObjects.size > 0) {
+    ctx.strokeStyle = COLORS.objectSelected;
+    ctx.lineWidth = 2.5;
+    for (const o of model.objects) {
+      if (!sc.selectedObjects.has(o.id)) continue;
+      const { w, h } = footprint(sc.objectDefOf(o.defId) ?? null, o.rotation);
+      ctx.strokeRect(view.x + o.x * s + 1, view.y + o.y * s + 1, w * s - 2, h * s - 2);
+    }
+  }
+
+  if (sc.ghost) {
+    ctx.globalAlpha = 0.6;
+    drawObjects(ctx, sc.ghost, sc.objectDefOf, view);
+    ctx.globalAlpha = 1;
+  }
 
   if (sc.frame) {
     const f = sc.frame;

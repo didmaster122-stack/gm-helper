@@ -1,23 +1,34 @@
 import { useState, type FormEvent } from "react";
 import { ru } from "../../shared/i18n/ru";
-import { Modal } from "../../shared/ui";
+import { Modal, TagEditor } from "../../shared/ui";
 import { createModel, isValidSize, MAX_SIZE, MIN_SIZE } from "./domain/grid";
 import type { BattlemapSummary } from "./repo";
 import { useMapListStore } from "./store";
 
+type MapFormMode =
+  /** A new empty map (or one with a perimeter wall). */
+  | { kind: "new" }
+  /** Name, description and tags of an existing map or template. */
+  | { kind: "edit"; map: BattlemapSummary }
+  /** A new campaign map copied from a template. */
+  | { kind: "fromTemplate"; template: BattlemapSummary };
+
 interface MapFormProps {
   campaignId: string;
-  /** Edit name and description of this map; create a new one when omitted. */
-  map?: BattlemapSummary;
+  mode: MapFormMode;
   onCreated?: (map: BattlemapSummary) => void;
   onClose: () => void;
 }
 
-export function MapForm({ campaignId, map, onCreated, onClose }: MapFormProps) {
+export function MapForm({ campaignId, mode, onCreated, onClose }: MapFormProps) {
   const create = useMapListStore((s) => s.create);
+  const createFromTemplate = useMapListStore((s) => s.createFromTemplate);
   const updateInfo = useMapListStore((s) => s.updateInfo);
-  const [name, setName] = useState(map?.name ?? "");
-  const [description, setDescription] = useState(map?.description ?? "");
+  const source =
+    mode.kind === "edit" ? mode.map : mode.kind === "fromTemplate" ? mode.template : null;
+  const [name, setName] = useState(source?.name ?? "");
+  const [description, setDescription] = useState(source?.description ?? "");
+  const [tags, setTags] = useState<string[]>(source?.tags ?? []);
   const [width, setWidth] = useState("30");
   const [height, setHeight] = useState("20");
   const [perimeter, setPerimeter] = useState(true);
@@ -28,7 +39,15 @@ export function MapForm({ campaignId, map, onCreated, onClose }: MapFormProps) {
   const w = Number(width);
   const h = Number(height);
   const nameError = name.trim() === "";
-  const sizeError = !map && (!isValidSize(w) || !isValidSize(h));
+  const sizeError = mode.kind === "new" && (!isValidSize(w) || !isValidSize(h));
+  const title =
+    mode.kind === "new"
+      ? ru.battlemap.newMap
+      : mode.kind === "fromTemplate"
+        ? ru.battlemap.templates.createTitle
+        : mode.map.isTemplate
+          ? ru.battlemap.templates.editInfo
+          : ru.battlemap.editInfo;
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -37,12 +56,13 @@ export function MapForm({ campaignId, map, onCreated, onClose }: MapFormProps) {
     setBusy(true);
     setFailure(null);
     try {
-      const info = { name, description };
-      if (map) {
-        await updateInfo(map.id, info);
+      const info = { name, description, tags };
+      if (mode.kind === "edit") {
+        await updateInfo(mode.map.id, info);
+      } else if (mode.kind === "fromTemplate") {
+        onCreated?.(await createFromTemplate(mode.template.id, campaignId, info));
       } else {
-        const created = await create(campaignId, info, createModel(w, h, { perimeter }));
-        onCreated?.(created);
+        onCreated?.(await create(campaignId, info, createModel(w, h, { perimeter })));
       }
       onClose();
     } catch (error) {
@@ -53,7 +73,7 @@ export function MapForm({ campaignId, map, onCreated, onClose }: MapFormProps) {
 
   return (
     <Modal
-      title={map ? ru.battlemap.editInfo : ru.battlemap.newMap}
+      title={title}
       onClose={onClose}
       footer={
         <>
@@ -61,7 +81,7 @@ export function MapForm({ campaignId, map, onCreated, onClose }: MapFormProps) {
             {ru.common.cancel}
           </button>
           <button type="submit" form="map-form" className="primary" disabled={busy}>
-            {map ? ru.common.save : ru.common.create}
+            {mode.kind === "edit" ? ru.common.save : ru.common.create}
           </button>
         </>
       }
@@ -72,7 +92,14 @@ export function MapForm({ campaignId, map, onCreated, onClose }: MapFormProps) {
           <input value={name} onChange={(e) => setName(e.target.value)} autoFocus maxLength={200} />
           {showErrors && nameError && <small className="error">{ru.battlemap.nameRequired}</small>}
         </label>
-        {!map && (
+        {mode.kind === "fromTemplate" && (
+          <p className="hint">
+            {ru.battlemap.templates.createHint(
+              ru.battlemap.sizeCells(mode.template.width, mode.template.height),
+            )}
+          </p>
+        )}
+        {mode.kind === "new" && (
           <>
             <div className="field-row">
               <label className="field">
@@ -112,6 +139,7 @@ export function MapForm({ campaignId, map, onCreated, onClose }: MapFormProps) {
             </fieldset>
           </>
         )}
+        <TagEditor label={ru.battlemap.tags} tags={tags} onChange={setTags} />
         <label className="field">
           <span>{ru.battlemap.description}</span>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} />

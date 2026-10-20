@@ -11,6 +11,20 @@ import {
 } from "./exportLayout";
 import { parseGmmapFile, toGmmapFile } from "./gmmapFile";
 import { addRegion, cellTypeAt, createModel, paintCells } from "./grid";
+import type { ObjectDef } from "./objects";
+
+const PIXEL = "data:image/png;base64,iVBORw0KGgo=";
+const table: ObjectDef = {
+  id: "table-id",
+  name: "Стол",
+  width: 2,
+  height: 1,
+  color: "#8a5a2b",
+  symbol: { kind: "image", value: PIXEL },
+  blocksMove: true,
+  blocksSight: false,
+};
+const stool: ObjectDef = { ...table, id: "stool-id", name: "Табурет", width: 1, symbol: null };
 
 const lava: CellType = {
   id: "lava-id",
@@ -52,9 +66,19 @@ describe("legend", () => {
     let m = paintCells(createModel(10, 10, { perimeter: true }), [11], "lava-id");
     m = addRegion(m, "r", { name: "Пруд", typeId: "water", note: "", labelVisible: true }, [22]);
     m = addRegion(m, "r2", { name: " ", typeId: "floor", note: "", labelVisible: true }, [33]);
-    const legend = legendEntries(m, types, typeOf);
+    m = {
+      ...m,
+      objects: [
+        { id: "a", defId: "stool-id", x: 1, y: 1, rotation: 0 },
+        { id: "b", defId: "table-id", x: 2, y: 1, rotation: 0 },
+        { id: "c", defId: "deleted", x: 3, y: 1, rotation: 0 },
+        { id: "d", defId: "stool-id", x: 4, y: 1, rotation: 0 },
+      ],
+    };
+    const legend = legendEntries(m, types, typeOf, [table, stool]);
     expect(legend.types.map((t) => t.id)).toEqual(["floor", "wall", "water", "lava-id"]);
-    expect(legend.regions.map((r) => [r.name, r.type.id])).toEqual([["Пруд", "water"]]);
+    expect(legend.regions.map((r) => [r.name, r.type?.id])).toEqual([["Пруд", "water"]]);
+    expect(legend.objects.map((d) => d.id)).toEqual(["stool-id", "table-id"]);
   });
 
   it("keeps the strip aligned to the cell grid", () => {
@@ -66,8 +90,9 @@ describe("legend", () => {
 describe(".gmmap.json", () => {
   it("round-trips the map and the custom types it uses", () => {
     let m = paintCells(createModel(8, 6), [3, 4], "lava-id");
+    m = { ...m, objects: [{ id: "o", defId: "table-id", x: 1, y: 1, rotation: 90 }] };
     m = addRegion(m, "r", { name: "Алтарь", typeId: "lava-id", note: "", labelVisible: true }, [9]);
-    const file = toGmmapFile({ name: "Склеп", description: "сыро" }, m, types);
+    const file = toGmmapFile({ name: "Склеп", description: "сыро" }, m, types, [table, stool]);
     expect(file.customTypes.map((t) => t.id)).toEqual(["lava-id"]);
 
     const back = parseGmmapFile(JSON.stringify(file));
@@ -80,19 +105,45 @@ describe(".gmmap.json", () => {
       symbol: "Л",
       blocksMove: true,
       comment: "2d6 огнём за ход",
+      image: "",
     });
+    expect(back.model.objects).toEqual(m.objects);
+    expect(back.objects).toEqual([
+      {
+        id: "table-id",
+        name: "Стол",
+        width: 2,
+        height: 1,
+        color: "#8a5a2b",
+        symbol: "",
+        image: PIXEL,
+        blocksMove: true,
+        blocksSight: false,
+      },
+    ]);
+  });
+
+  it("reads version 1 files", () => {
+    const v2 = toGmmapFile({ name: "Старая", description: "" }, createModel(5, 5), types, []);
+    const { objects, ...mapV2 } = v2.map;
+    expect(objects).toEqual([]);
+    const v1 = { ...v2, version: 1, objects: undefined, map: { ...mapV2, version: 1 } };
+    const back = parseGmmapFile(JSON.stringify(v1));
+    expect(back.name).toBe("Старая");
+    expect(back.objects).toEqual([]);
+    expect(back.model.objects).toEqual([]);
   });
 
   it("rejects other files", () => {
     expect(() => parseGmmapFile("not json")).toThrow();
     expect(() => parseGmmapFile(JSON.stringify({ format: "other" }))).toThrow();
-    const file = toGmmapFile({ name: "x", description: "" }, createModel(5, 5), types);
+    const file = toGmmapFile({ name: "x", description: "" }, createModel(5, 5), types, []);
     expect(() => parseGmmapFile(JSON.stringify({ ...file, version: 9 }))).toThrow(/version/);
   });
 
   it("drops invalid custom types and never overrides built-ins", () => {
     const file = {
-      ...toGmmapFile({ name: "x", description: "" }, createModel(5, 5), types),
+      ...toGmmapFile({ name: "x", description: "" }, createModel(5, 5), types, []),
       customTypes: [
         { id: "wall", name: "Не стена", color: "#000000" },
         { id: "a", name: "", color: "#000000" },
@@ -109,6 +160,7 @@ describe(".gmmap.json", () => {
         blocksMove: false,
         blocksSight: false,
         comment: "",
+        image: "",
       },
     ]);
   });

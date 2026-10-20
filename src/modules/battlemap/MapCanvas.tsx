@@ -1,4 +1,12 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent,
+} from "react";
 import { FLOOR, makeTypeLookup, type CellType } from "./domain/cellTypes";
 import {
   cellIndex,
@@ -13,6 +21,16 @@ import {
   type BattlemapModel,
   type Point,
 } from "./domain/grid";
+import {
+  addObject,
+  clampPosition,
+  footprint,
+  moveObjects,
+  objectAt,
+  type MapObject,
+  type ObjectDef,
+  type ObjectSizeOf,
+} from "./domain/objects";
 import { applySelection, selectModeFor, type SelectMode } from "./domain/selection";
 import { screenToCell, zoomAt, type View } from "./domain/view";
 import { buildBaseLayer, drawScene, type RegionOverlay, type Scene } from "./render";
@@ -25,11 +43,21 @@ type Drag =
   /** `committed`: the stroke already has its own undo step. */
   | { kind: "paint"; last: Point; typeId: string; committed: boolean }
   | { kind: "rect"; start: Point; end: Point }
-  | { kind: "select"; start: Point; end: Point; mode: SelectMode };
+  | { kind: "select"; start: Point; end: Point; mode: SelectMode }
+  /** Dragging selected objects; `base` is the model before the drag. */
+  | {
+      kind: "objects";
+      start: Point;
+      last: Point;
+      base: BattlemapModel;
+      ids: ReadonlySet<string>;
+      committed: boolean;
+    };
 
 interface MapCanvasProps {
   model: BattlemapModel;
   types: CellType[];
+  objectDefs: ObjectDef[];
   view: View;
   onViewChange: (view: View) => void;
   onViewportResize: (size: { width: number; height: number }) => void;
@@ -40,6 +68,7 @@ interface MapCanvasProps {
 export function MapCanvas({
   model,
   types,
+  objectDefs,
   view,
   onViewChange,
   onViewportResize,
@@ -49,9 +78,13 @@ export function MapCanvas({
   const typeId = useEditorStore((s) => s.typeId);
   const selection = useEditorStore((s) => s.selection);
   const regionId = useEditorStore((s) => s.regionId);
+  const selectedObjects = useEditorStore((s) => s.selectedObjects);
+  const objectDefId = useEditorStore((s) => s.objectDefId);
+  const placeRotation = useEditorStore((s) => s.placeRotation);
   const commit = useEditorStore((s) => s.commit);
   const replace = useEditorStore((s) => s.replace);
   const setSelection = useEditorStore((s) => s.setSelection);
+  const setSelectedObjects = useEditorStore((s) => s.setSelectedObjects);
 
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -76,6 +109,9 @@ export function MapCanvas({
   }
 
   const typeOf = useMemo(() => makeTypeLookup(types), [types]);
+  const defById = useMemo(() => new Map(objectDefs.map((d) => [d.id, d])), [objectDefs]);
+  const defOf = useCallback((id: string) => defById.get(id), [defById]);
+  const sizeOf = useCallback<ObjectSizeOf>((id) => defById.get(id) ?? null, [defById]);
   const lookup = useMemo(() => regionLookup(model), [model]);
   const base = useMemo(() => buildBaseLayer(model, lookup, typeOf), [model, lookup, typeOf]);
   const overlays = useMemo<RegionOverlay[]>(
@@ -119,6 +155,15 @@ export function MapCanvas({
     return { cells, color: typeOf(typeId).color };
   }, [drag, model, typeOf, typeId]);
 
+  // The object the "Object" tool would place under the cursor.
+  const ghost = useMemo<MapObject[] | null>(() => {
+    if (tool !== "object" || drag || panMode || !hover || !objectDefId) return null;
+    const def = defById.get(objectDefId);
+    if (!def || !inBounds(model, hover.x, hover.y)) return null;
+    const pos = clampPosition(model, hover.x, hover.y, footprint(def, placeRotation));
+    return [{ id: "", defId: def.id, ...pos, rotation: placeRotation }];
+  }, [tool, drag, panMode, hover, objectDefId, defById, model, placeRotation]);
+
   const frame = useMemo(() => {
     if (drag?.kind !== "select") return null;
     return {
@@ -157,7 +202,10 @@ export function MapCanvas({
         selectionOutline,
         preview,
         frame,
-        hover: hover && inBounds(model, hover.x, hover.y) ? hover : null,
+        hover: hover && !ghost && inBounds(model, hover.x, hover.y) ? hover : null,
+        objectDefOf: defOf,
+        selectedObjects,
+        ghost,
       };
       drawScene(ctx, scene);
     });
@@ -176,6 +224,9 @@ export function MapCanvas({
     preview,
     frame,
     hover,
+    defOf,
+    selectedObjects,
+    ghost,
   ]);
 
   // React registers wheel listeners as passive, so preventDefault needs a native one.
@@ -245,12 +296,66 @@ export function MapCanvas({
       case "fill":
         if (inside) commit(paintCells(m, floodCells(m, cellIndex(m, p.x, p.y)), typeId));
         return;
+      case "object": {
+        const { objectDefId, placeRotation } = useEditorStore.getState();
+        if (!inside || !objectDefId) return;
+        const placed = {
+          id: crypto.randomUUID(),
+          defId: objectDefId,
+          x: p.x,
+          y: p.y,
+          rotation: placeRotation,
+        };
+        commit(addObject(m, sizeOf, placed));
+        return;
+      }
       case "select": {
+        const mode = selectModeFor(e);
+        const hit = inside ? objectAt(m, sizeOf, p.x, p.y) : null;
+        if (hit) {
+          selectObject(hit.id, mode, p, m);
+          return;
+        }
+        if (mode === "replace") setSelectedObjects(new Set());
         const start = clampPoint(p);
-        setDrag({ kind: "select", start, end: start, mode: selectModeFor(e) });
+        setDrag({ kind: "select", start, end: start, mode });
+        return;
+      }
+      case "pointer": {
+        // Objects only: a click selects (Shift/Ctrl as usual), empty space drags the view.
+        const mode = selectModeFor(e);
+        const hit = inside ? objectAt(m, sizeOf, p.x, p.y) : null;
+        if (hit) {
+          selectObject(hit.id, mode, p, m);
+          return;
+        }
+        if (mode === "replace") setSelectedObjects(new Set());
+        const { sx, sy } = local(e);
+        setDrag({ kind: "pan", sx, sy, view: viewRef.current });
         return;
       }
     }
+  }
+
+  /** Click on a placed object with the selection or pointer tool; a plain click also starts dragging. */
+  function selectObject(id: string, mode: SelectMode, p: Point, m: BattlemapModel) {
+    const current = useEditorStore.getState().selectedObjects;
+    if (mode === "toggle") {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      setSelectedObjects(next);
+      return;
+    }
+    let ids = current;
+    if (mode === "add") ids = new Set([...current, id]);
+    else if (!current.has(id)) {
+      // A plain click on another object selects only it (and drops the cell selection).
+      ids = new Set([id]);
+      setSelection(new Set());
+    }
+    setSelectedObjects(ids);
+    setDrag({ kind: "objects", start: p, last: p, base: m, ids, committed: false });
   }
 
   function onPointerMove(e: PointerEvent<HTMLCanvasElement>) {
@@ -283,6 +388,17 @@ export function MapCanvas({
         if (end.x !== drag.end.x || end.y !== drag.end.y) setDrag({ ...drag, end });
         return;
       }
+      case "objects": {
+        if (p.x === drag.last.x && p.y === drag.last.y) return;
+        const dx = p.x - drag.start.x;
+        const dy = p.y - drag.start.y;
+        const next = moveObjects(drag.base, sizeOf, drag.ids, dx, dy);
+        // The whole drag is one undo step, created by the first real move.
+        if (drag.committed) replace(next);
+        else if (next !== drag.base) commit(next);
+        setDrag({ ...drag, last: p, committed: drag.committed || next !== drag.base });
+        return;
+      }
     }
   }
 
@@ -305,9 +421,11 @@ export function MapCanvas({
       ? "grabbing"
       : panMode
         ? "grab"
-        : tool === "select"
-          ? "default"
-          : "crosshair";
+        : drag?.kind === "objects"
+          ? "move"
+          : tool === "select" || tool === "pointer"
+            ? "default"
+            : "crosshair";
 
   return (
     <div ref={wrapRef} className="map-canvas-wrap">

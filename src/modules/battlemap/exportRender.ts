@@ -8,14 +8,19 @@ import {
   type LegendMode,
 } from "./domain/exportLayout";
 import { labelCell, outlineSegments, regionLookup, type BattlemapModel } from "./domain/grid";
+import type { ObjectDef } from "./domain/objects";
 import { CELL_PX, type View } from "./domain/view";
 import {
   buildBaseLayer,
+  COLORS,
   drawCell,
   drawCells,
   drawGrid,
+  drawObjects,
+  drawObjectSwatch,
   drawRegionLabels,
   drawRegionOutlines,
+  type ObjectDefOf,
   type RegionOverlay,
 } from "./render";
 
@@ -40,20 +45,33 @@ function context(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
   return ctx;
 }
 
-function flagsText(t: CellType): string {
+function flagsText(blocksMove: boolean, sight: CellType["blocksSight"]): string {
   const f = ru.battlemap.export.flags;
   const parts: string[] = [];
-  if (t.blocksMove) parts.push(f.blocksMove);
-  if (t.blocksSight === "yes") parts.push(f.blocksSight);
-  if (t.blocksSight === "partial") parts.push(f.partialSight);
+  if (blocksMove) parts.push(f.blocksMove);
+  if (sight === "yes") parts.push(f.blocksSight);
+  if (sight === "partial") parts.push(f.partialSight);
   return parts.join(", ");
 }
 
 interface LegendRow {
-  type: CellType;
+  swatch: (ctx: CanvasRenderingContext2D, x: number, y: number, size: number) => void;
   name: string;
   note: string;
 }
+
+const cellSwatch =
+  (type: CellType): LegendRow["swatch"] =>
+  (ctx, x, y, size) =>
+    drawCell(ctx, type, x, y, size);
+
+/** Swatch of a region without its own type: just the outline colour used on the map. */
+const areaSwatch: LegendRow["swatch"] = (ctx, x, y, size) => {
+  ctx.strokeStyle = COLORS.region;
+  ctx.lineWidth = Math.max(2, size / 10);
+  const inset = ctx.lineWidth / 2;
+  ctx.strokeRect(x + inset, y + inset, size - inset * 2, size - inset * 2);
+};
 
 /** Measures the legend and returns its size together with a function that draws it. */
 export function layoutLegend(entries: LegendEntries, title: string, cellPx: number) {
@@ -69,16 +87,32 @@ export function layoutLegend(entries: LegendEntries, title: string, cellPx: numb
     {
       heading: ru.battlemap.export.legendTypes,
       rows: entries.types.map((t) => ({
-        type: t,
+        swatch: cellSwatch(t),
         name: t.name,
-        note: [flagsText(t), t.comment].filter((x) => x !== "").join(" · "),
+        note: [flagsText(t.blocksMove, t.blocksSight), t.comment]
+          .filter((x) => x !== "")
+          .join(" · "),
       })),
     },
   ];
+  if (entries.objects.length > 0) {
+    sections.push({
+      heading: ru.battlemap.export.legendObjects,
+      rows: entries.objects.map((d) => ({
+        swatch: (ctx, x, y, size) => drawObjectSwatch(ctx, d, x, y, size),
+        name: `${d.name} (${ru.objects.size(d.width, d.height)})`,
+        note: flagsText(d.blocksMove, d.blocksSight ? "yes" : "no"),
+      })),
+    });
+  }
   if (entries.regions.length > 0) {
     sections.push({
       heading: ru.battlemap.export.legendRegions,
-      rows: entries.regions.map((r) => ({ type: r.type, name: r.name, note: r.type.name })),
+      rows: entries.regions.map((r) => ({
+        swatch: r.type ? cellSwatch(r.type) : areaSwatch,
+        name: r.name,
+        note: r.type?.name ?? "",
+      })),
     });
   }
 
@@ -119,7 +153,7 @@ export function layoutLegend(entries: LegendEntries, title: string, cellPx: numb
       cy += row * 0.8;
       for (const r of section.rows) {
         const sy = cy + (row - swatch) / 2;
-        drawCell(ctx, r.type, x + pad, sy, swatch);
+        r.swatch(ctx, x + pad, sy, swatch);
         ctx.strokeStyle = "rgba(0, 0, 0, 0.35)";
         ctx.lineWidth = 1;
         ctx.strokeRect(x + pad + 0.5, sy + 0.5, swatch - 1, swatch - 1);
@@ -149,6 +183,7 @@ function drawMap(
   ctx: CanvasRenderingContext2D,
   model: BattlemapModel,
   typeOf: (id: string) => CellType,
+  defOf: ObjectDefOf,
   options: ExportOptions,
 ) {
   const px = options.cellPx;
@@ -157,6 +192,7 @@ function drawMap(
   const lookup = regionLookup(model);
   drawCells(ctx, model, lookup, buildBaseLayer(model, lookup, typeOf), typeOf, view, range);
   if (options.grid) drawGrid(ctx, view, range, px >= 100 ? 2 : 1);
+  drawObjects(ctx, model.objects, defOf, view);
   const overlays: RegionOverlay[] = model.regions.map((r) => ({
     id: r.id,
     name: r.name,
@@ -186,6 +222,7 @@ export function mapImageSize(
 export function renderMapImage(
   model: BattlemapModel,
   typeOf: (id: string) => CellType,
+  objectDefs: readonly ObjectDef[],
   options: ExportOptions,
   legend: ReturnType<typeof layoutLegend> | null,
 ): HTMLCanvasElement {
@@ -201,7 +238,8 @@ export function renderMapImage(
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     legend.draw(ctx, size.layout.stripX, 0, canvas.height);
   }
-  drawMap(ctx, model, typeOf, options);
+  const defs = new Map(objectDefs.map((d) => [d.id, d]));
+  drawMap(ctx, model, typeOf, (id) => defs.get(id), options);
   return canvas;
 }
 

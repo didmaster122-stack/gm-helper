@@ -109,4 +109,32 @@ export const migrations: Migration[] = [
     name: "cell type comments",
     sql: `ALTER TABLE cell_types ADD COLUMN comment TEXT NOT NULL DEFAULT '';`,
   },
+  {
+    version: 6,
+    name: "map objects, pictures, tags and templates",
+    sql: `
+      -- Custom picture of a cell type: a downscaled copy as a data URL ('' = none).
+      ALTER TABLE cell_types ADD COLUMN image TEXT NOT NULL DEFAULT '';
+
+      CREATE TABLE map_objects (
+        id           TEXT PRIMARY KEY,
+        name         TEXT NOT NULL,
+        width        INTEGER NOT NULL,
+        height       INTEGER NOT NULL,
+        color        TEXT NOT NULL,
+        symbol       TEXT NOT NULL DEFAULT '',
+        image        TEXT NOT NULL DEFAULT '',
+        blocks_move  INTEGER NOT NULL DEFAULT 0,
+        blocks_sight INTEGER NOT NULL DEFAULT 0,
+        created_at   TEXT NOT NULL,
+        updated_at   TEXT NOT NULL
+      );
+
+      ALTER TABLE battlemaps ADD COLUMN tags TEXT NOT NULL DEFAULT '[]';
+      -- Small picture for the gallery as a data URL ('' until the map is saved once).
+      ALTER TABLE battlemaps ADD COLUMN preview TEXT NOT NULL DEFAULT '';
+      -- Templates are shared by all campaigns and have campaign_id = ''.
+      ALTER TABLE battlemaps ADD COLUMN is_template INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ];

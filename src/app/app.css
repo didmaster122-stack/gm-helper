@@ -903,40 +903,88 @@ button.link {
   margin: 0;
 }
 
-.map-list {
+.map-list-screen .screen-heading {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.gallery-search {
+  width: 260px;
+}
+
+.map-gallery {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-width: 760px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
 }
 
-.map-list li {
+.map-card {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px;
+  flex-direction: column;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  overflow: hidden;
 }
 
-.map-list-open {
-  flex: 1;
+.map-card-open {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: var(--bg);
+}
+
+.map-card-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 160px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.map-card-preview.empty {
+  color: var(--text-muted);
+}
+
+.map-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px 10px;
+}
+
+.map-card-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.map-card-tags {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 12px;
-  border: none;
-  background: none;
-  text-align: left;
+  gap: 4px;
 }
 
-.map-list-desc {
-  flex-basis: 100%;
+.map-card-tags .tag {
+  padding: 0 8px;
+  border: none;
+  color: var(--text);
+}
+
+.map-card-desc {
+  margin: 0;
   font-size: 13px;
+}
+
+.map-card .row-actions {
+  flex-wrap: wrap;
 }
 
 .field-row {
@@ -1230,4 +1278,101 @@ button.link {
   margin-top: 2px;
   font-size: 12px;
   white-space: pre-line;
+}
+
+/* Palette sections and custom pictures */
+
+.palette-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.palette-heading:first-child {
+  margin-top: 0;
+}
+
+.palette-heading h3 {
+  margin: 0;
+}
+
+.icon-button {
+  padding: 0 8px;
+  line-height: 20px;
+}
+
+.palette-row {
+  display: flex;
+  align-items: center;
+}
+
+.palette-row .palette-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.palette-row .palette-item span:not(.muted) {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.palette-edit {
+  flex: none;
+  padding: 0 6px;
+  border-color: transparent;
+  background: none;
+  color: var(--text-muted);
+  visibility: hidden;
+}
+
+.palette-row:hover .palette-edit {
+  visibility: visible;
+}
+
+.picture-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin-left: 24px;
+}
+
+.picture-preview {
+  flex: none;
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.picture-preview.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.picture-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.map-title .badge {
+  margin: 0 6px 0 0;
+}
+
+.area-swatch {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--accent);
+  border-radius: 3px;
 }

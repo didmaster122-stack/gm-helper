@@ -14,8 +14,14 @@ export const CELL_ICONS = [
 ] as const;
 export type CellIcon = (typeof CELL_ICONS)[number];
 
-/** A letter (one character) or an icon from {@link CELL_ICONS}. */
-export type CellSymbol = { kind: "letter"; value: string } | { kind: "icon"; value: CellIcon };
+/**
+ * A letter (one character), an icon from {@link CELL_ICONS} or a custom picture
+ * (a downscaled copy as a data URL, so it survives moving the source file).
+ */
+export type CellSymbol =
+  | { kind: "letter"; value: string }
+  | { kind: "icon"; value: CellIcon }
+  | { kind: "image"; value: string };
 
 export type SightBlock = "no" | "partial" | "yes";
 
@@ -162,12 +168,22 @@ export function isCellIcon(value: string): value is CellIcon {
   return (CELL_ICONS as readonly string[]).includes(value);
 }
 
-/** Stored form: one character is a letter, otherwise an icon id; empty means none. */
+/**
+ * Stored form of a letter or icon: one character is a letter, otherwise an icon id;
+ * empty means none. Pictures are stored separately, see {@link symbolImage}.
+ */
 export function encodeSymbol(symbol: CellSymbol | null): string {
-  return symbol ? symbol.value : "";
+  return symbol && symbol.kind !== "image" ? symbol.value : "";
 }
 
-export function decodeSymbol(text: string): CellSymbol | null {
+/** Data URL of a picture symbol, empty otherwise. */
+export function symbolImage(symbol: CellSymbol | null): string {
+  return symbol?.kind === "image" ? symbol.value : "";
+}
+
+/** Inverse of {@link encodeSymbol} + {@link symbolImage}; a picture wins over text. */
+export function decodeSymbol(text: string, image = ""): CellSymbol | null {
+  if (image !== "") return { kind: "image", value: image };
   if (text === "") return null;
   if (isCellIcon(text)) return { kind: "icon", value: text };
   const letter = [...text][0];

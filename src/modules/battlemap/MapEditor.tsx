@@ -1,21 +1,24 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ru } from "../../shared/i18n/ru";
 import { FLOOR, type CellType } from "./domain/cellTypes";
 import { paintCells } from "./domain/grid";
+import { removeObjects, rotateObjects, type ObjectDef, type ObjectSizeOf } from "./domain/objects";
 import { fitView, zoomAt, type View } from "./domain/view";
 import { ExportDialog } from "./ExportDialog";
 import { MapCanvas } from "./MapCanvas";
+import { Palette } from "./Palette";
 import { ResizeDialog } from "./ResizeDialog";
 import { SidePanel } from "./SidePanel";
-import { useEditorStore, type SaveState, type Tool } from "./store";
-import { TypeSwatch } from "./TypeSwatch";
+import { useEditorStore, useMapListStore, type SaveState, type Tool } from "./store";
 
 const TOOLS: { id: Tool; icon: string; code: string }[] = [
+  { id: "pointer", icon: "↖", code: "KeyP" },
   { id: "brush", icon: "✎", code: "KeyB" },
   { id: "rect", icon: "▭", code: "KeyR" },
   { id: "fill", icon: "◩", code: "KeyG" },
   { id: "eraser", icon: "⌫", code: "KeyE" },
   { id: "select", icon: "⬚", code: "KeyV" },
+  { id: "object", icon: "▣", code: "KeyO" },
 ];
 
 const SAVE_LABEL: Record<SaveState, string> = {
@@ -33,16 +36,19 @@ function isTyping(target: EventTarget | null): boolean {
   );
 }
 
-export function MapEditor({ types }: { types: CellType[] }) {
+interface MapEditorProps {
+  types: CellType[];
+  objectDefs: ObjectDef[];
+}
+
+export function MapEditor({ types, objectDefs }: MapEditorProps) {
   const map = useEditorStore((s) => s.map);
   const history = useEditorStore((s) => s.history);
   const tool = useEditorStore((s) => s.tool);
-  const typeId = useEditorStore((s) => s.typeId);
   const saveState = useEditorStore((s) => s.saveState);
   const close = useEditorStore((s) => s.close);
   const commit = useEditorStore((s) => s.commit);
   const setTool = useEditorStore((s) => s.setTool);
-  const setType = useEditorStore((s) => s.setType);
   const undo = useEditorStore((s) => s.undo);
   const redo = useEditorStore((s) => s.redo);
 
@@ -51,12 +57,27 @@ export function MapEditor({ types }: { types: CellType[] }) {
   const [panMode, setPanMode] = useState(false);
   const [resizing, setResizing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+  const saveAsTemplate = useMapListStore((s) => s.saveAsTemplate);
 
   const model = history?.present ?? null;
 
   const onViewportResize = useCallback((size: { width: number; height: number }) => {
     setViewport(size);
   }, []);
+
+  // Keyboard handlers read the catalog through a ref, so they are bound only once.
+  const sizeOfRef = useRef<ObjectSizeOf>(() => null);
+  useEffect(() => {
+    const byId = new Map(objectDefs.map((d) => [d.id, d]));
+    sizeOfRef.current = (id) => byId.get(id) ?? null;
+  }, [objectDefs]);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -76,9 +97,18 @@ export function MapEditor({ types }: { types: CellType[] }) {
         setPanMode(true);
       } else if (e.key === "Escape") {
         s.setSelection(new Set());
+        s.setSelectedObjects(new Set());
       } else if (e.key === "Delete" || e.key === "Backspace") {
         const present = s.history?.present;
-        if (present && s.selection.size > 0) s.commit(paintCells(present, s.selection, FLOOR));
+        if (!present) return;
+        // Selected objects go first; cells are cleared only when no object is selected.
+        if (s.selectedObjects.size > 0) s.commit(removeObjects(present, s.selectedObjects));
+        else if (s.selection.size > 0) s.commit(paintCells(present, s.selection, FLOOR));
+      } else if (e.code === "KeyR" && !ctrl && !e.altKey && s.tool === "object") {
+        s.rotatePlacement();
+      } else if (e.code === "KeyR" && !ctrl && !e.altKey && s.selectedObjects.size > 0) {
+        const present = s.history?.present;
+        if (present) s.commit(rotateObjects(present, sizeOfRef.current, s.selectedObjects));
       } else if (!ctrl && !e.altKey) {
         const t = TOOLS.find((x) => x.code === e.code);
         if (t) s.setTool(t.id);
@@ -112,6 +142,7 @@ export function MapEditor({ types }: { types: CellType[] }) {
           ←
         </button>
         <div className="map-title">
+          {map.isTemplate && <span className="badge">{ru.battlemap.templates.badge}</span>}
           <strong>{map.name}</strong>
           <span className="muted">{ru.battlemap.sizeCells(model.width, model.height)}</span>
         </div>
@@ -171,44 +202,41 @@ export function MapEditor({ types }: { types: CellType[] }) {
         <button type="button" onClick={() => setExporting(true)}>
           {ru.battlemap.export.button}
         </button>
+        {!map.isTemplate && (
+          <button
+            type="button"
+            onClick={() =>
+              void saveAsTemplate(map.id).then(
+                () => setNotice(ru.battlemap.templates.saved),
+                (error: unknown) => {
+                  console.error(error);
+                  setNotice(ru.battlemap.templates.saveFailed);
+                },
+              )
+            }
+          >
+            {ru.battlemap.templates.saveAs}
+          </button>
+        )}
         <span className="spacer" />
+        {notice && <span className="notice-text">{notice}</span>}
         <span className={saveState === "error" ? "error" : "muted"}>{SAVE_LABEL[saveState]}</span>
       </div>
 
       <div className="map-body">
-        <aside className="map-palette">
-          <h3>{ru.battlemap.types}</h3>
-          <ul>
-            {types.map((t) => (
-              <li key={t.id}>
-                <button
-                  type="button"
-                  className={t.id === typeId ? "palette-item active" : "palette-item"}
-                  title={t.comment || undefined}
-                  onClick={() => {
-                    setType(t.id);
-                    if (tool === "eraser" || tool === "select") setTool("brush");
-                  }}
-                >
-                  <TypeSwatch type={t} />
-                  <span>{t.name}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          <p className="hint">{ru.battlemap.hint}</p>
-        </aside>
+        <Palette types={types} objectDefs={objectDefs} />
 
         <MapCanvas
           model={model}
           types={types}
+          objectDefs={objectDefs}
           view={shown ?? { x: 0, y: 0, zoom: 1 }}
           onViewChange={setView}
           onViewportResize={onViewportResize}
           panMode={panMode}
         />
 
-        <SidePanel model={model} types={types} />
+        <SidePanel model={model} types={types} objectDefs={objectDefs} />
       </div>
 
       {exporting && (
@@ -217,6 +245,7 @@ export function MapEditor({ types }: { types: CellType[] }) {
           description={map.description}
           model={model}
           types={types}
+          objectDefs={objectDefs}
           onClose={() => setExporting(false)}
         />
       )}

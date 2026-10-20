@@ -25,7 +25,7 @@ function CurrentModule() {
     case "battlemaps":
       return (
         <RequireCampaign libraryRoot={libraryRoot}>
-          {(campaign) => <BattlemapScreen campaign={campaign} />}
+          {(campaign) => <BattlemapScreen campaign={campaign} libraryRoot={libraryRoot} />}
         </RequireCampaign>
       );
     case "relations":

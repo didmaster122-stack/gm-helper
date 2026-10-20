@@ -5,17 +5,23 @@ import { createMemoryDb } from "../../shared/db/testing";
 import type { Db } from "../../shared/db/types";
 import { addRegion, cellTypeAt, createModel, paintCells } from "./domain/grid";
 import {
+  copyMap,
   createCustomType,
   createMap,
+  createObjectDef,
   deleteCustomType,
   deleteMap,
+  deleteObjectDef,
   getMap,
   listCellTypes,
   listMaps,
+  listObjectDefs,
+  listTemplates,
   saveMapModel,
   setBuiltinColor,
   updateCustomType,
   updateMapInfo,
+  updateObjectDef,
   type RepoClock,
 } from "./repo";
 
@@ -41,12 +47,24 @@ describe("battlemap repo", () => {
     const a = await createMap(
       db,
       "c1",
-      { name: " Склеп ", description: "" },
+      { name: " Склеп ", description: "", tags: [" склеп ", "Нежить", "нежить", ""] },
       createModel(30, 20),
       clock,
     );
-    await createMap(db, "c1", { name: "Агора", description: "" }, createModel(10, 10), clock);
-    await createMap(db, "c2", { name: "Чужая", description: "" }, createModel(10, 10), clock);
+    await createMap(
+      db,
+      "c1",
+      { name: "Агора", description: "", tags: [] },
+      createModel(10, 10),
+      clock,
+    );
+    await createMap(
+      db,
+      "c2",
+      { name: "Чужая", description: "", tags: [] },
+      createModel(10, 10),
+      clock,
+    );
 
     expect((await listMaps(db, "c1")).map((m) => m.name)).toEqual(["Агора", "Склеп"]);
 
@@ -57,18 +75,140 @@ describe("battlemap repo", () => {
       { name: "Коридор", typeId: "floor", note: "", labelVisible: true },
       [32, 33, 34, 35, 36],
     );
-    await saveMapModel(db, a.id, model, clock);
-    await updateMapInfo(db, a.id, { name: "Склеп 2", description: "сырость" }, clock);
+    expect(a.tags).toEqual(["склеп", "Нежить"]);
+    await saveMapModel(db, a.id, model, "data:image/webp;base64,AAAA", clock);
+    await saveMapModel(db, a.id, model, null, clock);
+    await updateMapInfo(
+      db,
+      a.id,
+      { name: "Склеп 2", description: "сырость", tags: ["крипта"] },
+      clock,
+    );
 
     const loaded = await getMap(db, a.id);
     expect(loaded?.name).toBe("Склеп 2");
     expect(loaded?.description).toBe("сырость");
+    expect(loaded?.tags).toEqual(["крипта"]);
+    expect(loaded?.preview).toBe("data:image/webp;base64,AAAA");
     expect(loaded && cellTypeAt(loaded.model, 31)).toBe("water");
     expect(loaded && cellTypeAt(loaded.model, 0)).toBe("wall");
     expect(loaded?.model.regions[0]?.cells).toHaveLength(5);
 
     await deleteMap(db, a.id);
     expect(await getMap(db, a.id)).toBeNull();
+  });
+
+  it("saves maps as templates and creates maps from templates", async () => {
+    const info = { name: "Таверна", description: "", tags: ["город"] };
+    const map = await createMap(db, "c1", info, createModel(12, 10), clock);
+    const model = {
+      ...createModel(12, 10),
+      objects: [{ id: "o", defId: "table", x: 2, y: 2, rotation: 0 as const }],
+    };
+    await saveMapModel(db, map.id, model, "data:image/webp;base64,AAAA", clock);
+
+    const template = await copyMap(db, map.id, null, null, clock);
+    expect(template).toMatchObject({ isTemplate: true, campaignId: "", name: "Таверна" });
+    expect(template.tags).toEqual(["город"]);
+    expect(template.preview).toBe("data:image/webp;base64,AAAA");
+    expect((await listTemplates(db)).map((t) => t.id)).toEqual([template.id]);
+    // Templates are not maps of any campaign.
+    expect((await listMaps(db, "c1")).map((m) => m.id)).toEqual([map.id]);
+
+    const copy = await copyMap(
+      db,
+      template.id,
+      "c2",
+      { name: "Таверна у реки", description: "", tags: [] },
+      clock,
+    );
+    expect(copy).toMatchObject({ isTemplate: false, campaignId: "c2", name: "Таверна у реки" });
+    expect((await getMap(db, copy.id))?.model.objects).toEqual(model.objects);
+    expect((await listMaps(db, "c2")).map((m) => m.id)).toEqual([copy.id]);
+  });
+
+  it("manages the object catalog", async () => {
+    const id = await createObjectDef(
+      db,
+      {
+        name: " Стол ",
+        width: 2,
+        height: 1,
+        color: "#8a5a2b",
+        symbol: { kind: "image", value: "data:image/webp;base64,AAAA" },
+        blocksMove: true,
+        blocksSight: false,
+      },
+      clock,
+    );
+    await createObjectDef(
+      db,
+      {
+        name: "Алтарь",
+        width: 3,
+        height: 3,
+        color: "#999999",
+        symbol: { kind: "letter", value: "А" },
+        blocksMove: true,
+        blocksSight: true,
+      },
+      clock,
+    );
+    let all = await listObjectDefs(db);
+    expect(all.map((d) => d.name)).toEqual(["Алтарь", "Стол"]);
+    expect(all[1]).toMatchObject({
+      id,
+      width: 2,
+      height: 1,
+      symbol: { kind: "image", value: "data:image/webp;base64,AAAA" },
+      blocksMove: true,
+      blocksSight: false,
+    });
+
+    const bad = { name: "Огромный", width: 11, height: 1, color: "#000000" };
+    await expect(
+      createObjectDef(db, { ...bad, symbol: null, blocksMove: false, blocksSight: false }),
+    ).rejects.toThrow();
+
+    await updateObjectDef(
+      db,
+      id,
+      {
+        name: "Стол",
+        width: 3,
+        height: 1,
+        color: "#8a5a2b",
+        symbol: null,
+        blocksMove: false,
+        blocksSight: false,
+      },
+      clock,
+    );
+    all = await listObjectDefs(db);
+    expect(all.find((d) => d.id === id)).toMatchObject({ width: 3, symbol: null });
+
+    await deleteObjectDef(db, id);
+    expect((await listObjectDefs(db)).map((d) => d.name)).toEqual(["Алтарь"]);
+  });
+
+  it("stores the picture of a custom cell type", async () => {
+    const image = "data:image/png;base64,iVBORw0KGgo=";
+    const id = await createCustomType(
+      db,
+      {
+        name: "Ковёр",
+        color: "#aa3333",
+        symbol: { kind: "image", value: image },
+        blocksMove: false,
+        blocksSight: false,
+        comment: "",
+      },
+      clock,
+    );
+    expect((await listCellTypes(db)).find((t) => t.id === id)?.symbol).toEqual({
+      kind: "image",
+      value: image,
+    });
   });
 
   it("manages custom cell types and built-in colours", async () => {

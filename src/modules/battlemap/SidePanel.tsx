@@ -5,7 +5,6 @@ import {
   addCellsToRegion,
   addRegion,
   deleteRegion,
-  dominantType,
   isConnected,
   paintCells,
   removeCellsFromRegion,
@@ -13,12 +12,14 @@ import {
   type BattlemapModel,
   type Region,
 } from "./domain/grid";
+import { removeObjects, rotateObjects, type ObjectDef } from "./domain/objects";
 import { useEditorStore } from "./store";
 import { TypeSwatch } from "./TypeSwatch";
 
 interface SidePanelProps {
   model: BattlemapModel;
   types: CellType[];
+  objectDefs: ObjectDef[];
 }
 
 /** Next free "Регион N" name. */
@@ -29,7 +30,7 @@ function nextRegionName(regions: readonly Region[]): string {
   return ru.battlemap.regions.newName(n);
 }
 
-export function SidePanel({ model, types }: SidePanelProps) {
+export function SidePanel({ model, types, objectDefs }: SidePanelProps) {
   const selection = useEditorStore((s) => s.selection);
   const regionId = useEditorStore((s) => s.regionId);
   const typeId = useEditorStore((s) => s.typeId);
@@ -43,7 +44,8 @@ export function SidePanel({ model, types }: SidePanelProps) {
     const id = crypto.randomUUID();
     const props = {
       name: nextRegionName(model.regions),
-      typeId: dominantType(model, selection),
+      // An area only names the cells; a type can be chosen later.
+      typeId: null,
       note: "",
       labelVisible: true,
     };
@@ -54,6 +56,7 @@ export function SidePanel({ model, types }: SidePanelProps) {
 
   return (
     <aside className="map-side">
+      <ObjectsSection model={model} objectDefs={objectDefs} />
       <section className="map-side-section">
         <h3>{ru.battlemap.selection.title}</h3>
         {selection.size === 0 ? (
@@ -92,7 +95,11 @@ export function SidePanel({ model, types }: SidePanelProps) {
                     className={r.id === regionId ? "region-item active" : "region-item"}
                     onClick={() => setRegion(r.id === regionId ? null : r.id)}
                   >
-                    <TypeSwatch type={typeOf(r.typeId)} size={16} />
+                    {r.typeId === null ? (
+                      <span className="area-swatch" />
+                    ) : (
+                      <TypeSwatch type={typeOf(r.typeId)} size={16} />
+                    )}
                     <span className="region-name">{r.name || "—"}</span>
                     {!connected && (
                       <span className="warning" title={ru.battlemap.regions.disconnected}>
@@ -161,9 +168,12 @@ function RegionEditor({ region, model, types, selection }: RegionEditorProps) {
       <label className="field">
         <span>{ru.battlemap.regions.type}</span>
         <select
-          value={region.typeId}
-          onChange={(e) => commit(updateRegion(model, region.id, { typeId: e.target.value }))}
+          value={region.typeId ?? ""}
+          onChange={(e) =>
+            commit(updateRegion(model, region.id, { typeId: e.target.value || null }))
+          }
         >
+          <option value="">{ru.battlemap.regions.noType}</option>
           {types.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
@@ -222,5 +232,60 @@ function RegionEditor({ region, model, types, selection }: RegionEditorProps) {
         </button>
       </div>
     </div>
+  );
+}
+
+function ObjectsSection({ model, objectDefs }: { model: BattlemapModel; objectDefs: ObjectDef[] }) {
+  const tool = useEditorStore((s) => s.tool);
+  const objectDefId = useEditorStore((s) => s.objectDefId);
+  const placeRotation = useEditorStore((s) => s.placeRotation);
+  const selected = useEditorStore((s) => s.selectedObjects);
+  const commit = useEditorStore((s) => s.commit);
+  const setSelectedObjects = useEditorStore((s) => s.setSelectedObjects);
+  const t = ru.battlemap.objects;
+  const defById = useMemo(() => new Map(objectDefs.map((d) => [d.id, d])), [objectDefs]);
+
+  if (selected.size === 0 && tool !== "object") return null;
+
+  if (selected.size === 0) {
+    const def = objectDefId ? defById.get(objectDefId) : undefined;
+    return (
+      <section className="map-side-section">
+        <h3>{t.title}</h3>
+        <p className="hint">{def ? t.placing(def.name, placeRotation) : t.pickInPalette}</p>
+      </section>
+    );
+  }
+
+  // "Стол × 3, Алтарь": names of the selected objects with counts.
+  const counts = new Map<string, number>();
+  for (const o of model.objects) {
+    if (!selected.has(o.id)) continue;
+    const name = defById.get(o.defId)?.name ?? t.missing;
+    counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  const names = [...counts].map(([name, n]) => (n > 1 ? `${name} × ${n}` : name)).join(", ");
+  const sizeOf = (id: string) => defById.get(id) ?? null;
+
+  return (
+    <section className="map-side-section">
+      <h3>{t.title}</h3>
+      <p className="muted">{names}</p>
+      <div className="map-side-actions">
+        <button type="button" onClick={() => commit(rotateObjects(model, sizeOf, selected))}>
+          {t.rotate}
+        </button>
+        <button
+          type="button"
+          className="danger"
+          onClick={() => commit(removeObjects(model, selected))}
+        >
+          {t.delete}
+        </button>
+        <button type="button" onClick={() => setSelectedObjects(new Set())}>
+          {ru.battlemap.selection.deselect}
+        </button>
+      </div>
+    </section>
   );
 }

@@ -6,7 +6,6 @@ import {
   cellTypeAt,
   createModel,
   deleteRegion,
-  dominantType,
   effectiveTypeAt,
   floodCells,
   isConnected,
@@ -103,15 +102,21 @@ describe("painting", () => {
     expect(left.every((c) => c % 5 < 2)).toBe(true);
     expect(floodCells(m, 2)).toHaveLength(5);
   });
-
-  it("dominantType picks the most frequent own type", () => {
-    const m = paintCells(createModel(5, 5), [0, 1], "wall");
-    expect(dominantType(m, [0, 1, 2])).toBe("wall");
-    expect(dominantType(m, [])).toBe("floor");
-  });
 });
 
 describe("regions", () => {
+  it("keeps the cells' own types when the region has no type (an area)", () => {
+    const m = addRegion(
+      paintCells(createModel(5, 5), [1], "water"),
+      "a",
+      { name: "Алтарь", typeId: null, note: "", labelVisible: true },
+      [0, 1],
+    );
+    const lookup = regionLookup(m);
+    expect(effectiveTypeAt(m, lookup, 0)).toBe("floor");
+    expect(effectiveTypeAt(m, lookup, 1)).toBe("water");
+  });
+
   it("creates a region whose type overrides the cells' own type", () => {
     const m = addRegion(createModel(5, 5), "r1", props("Вода", "water"), [3, 1, 2, 2]);
     expect(m.regions[0]?.cells).toEqual([1, 2, 3]);

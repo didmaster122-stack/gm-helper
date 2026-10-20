@@ -1,7 +1,7 @@
-import { useState, type KeyboardEvent } from "react";
+import { useState } from "react";
 import { fileUrl, revealInExplorer } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog, Modal, PromptDialog } from "../../shared/ui";
+import { ConfirmDialog, Modal, PromptDialog, TagEditor } from "../../shared/ui";
 import { artName, joinRel, parentRel, splitExtension, toAbsolute } from "./domain/paths";
 import type { Art } from "./domain/types";
 import { nameError } from "./nameError";
@@ -87,7 +87,11 @@ export function ArtPanel({ art }: { art: Art }) {
         />
       </label>
 
-      <TagEditor tags={art.tags} onChange={(tags) => void saveMeta({ tags })} />
+      <TagEditor
+        label={ru.library.art.tags}
+        tags={art.tags}
+        onChange={(tags) => void saveMeta({ tags })}
+      />
 
       <TokensSection root={root} art={art} />
 
@@ -172,52 +176,6 @@ export function ArtPanel({ art }: { art: Art }) {
         </Modal>
       )}
     </aside>
-  );
-}
-
-function TagEditor({ tags, onChange }: { tags: string[]; onChange: (tags: string[]) => void }) {
-  const [draft, setDraft] = useState("");
-
-  function add() {
-    const tag = draft.trim();
-    setDraft("");
-    if (tag && !tags.some((t) => t.toLowerCase() === tag.toLowerCase())) onChange([...tags, tag]);
-  }
-
-  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      add();
-    } else if (e.key === "Backspace" && draft === "" && tags.length > 0) {
-      onChange(tags.slice(0, -1));
-    }
-  }
-
-  return (
-    <div className="field">
-      <span>{ru.library.art.tags}</span>
-      <div className="tag-editor">
-        {tags.map((tag) => (
-          <span key={tag} className="tag">
-            {tag}
-            <button
-              type="button"
-              aria-label={ru.library.art.removeTag(tag)}
-              onClick={() => onChange(tags.filter((t) => t !== tag))}
-            >
-              ×
-            </button>
-          </span>
-        ))}
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={onKeyDown}
-          onBlur={add}
-          placeholder={ru.library.art.addTag}
-        />
-      </div>
-    </div>
   );
 }
 

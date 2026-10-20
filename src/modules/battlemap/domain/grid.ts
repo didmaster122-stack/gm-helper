@@ -1,4 +1,5 @@
 import { FLOOR, WALL } from "./cellTypes";
+import type { MapObject } from "./objects";
 
 export const MIN_SIZE = 5;
 export const MAX_SIZE = 200;
@@ -6,8 +7,11 @@ export const MAX_SIZE = 200;
 export interface Region {
   id: string;
   name: string;
-  /** Cell type applied to every cell of the region; overrides the cells' own types. */
-  typeId: string;
+  /**
+   * Cell type applied to every cell of the region, overriding the cells' own types;
+   * null keeps the own types (the region only names an area).
+   */
+  typeId: string | null;
   note: string;
   labelVisible: boolean;
   /** Cell indices (y * width + x), ascending, without duplicates. */
@@ -24,6 +28,8 @@ export interface BattlemapModel {
   palette: readonly string[];
   cells: Uint16Array;
   regions: readonly Region[];
+  /** Placed objects in drawing order (last on top). */
+  objects: readonly MapObject[];
 }
 
 export interface Point {
@@ -54,7 +60,7 @@ export function createModel(
       cells[y * width + width - 1] = 1;
     }
   }
-  return { width, height, palette: [FLOOR, WALL], cells, regions: [] };
+  return { width, height, palette: [FLOOR, WALL], cells, regions: [], objects: [] };
 }
 
 export function cellIndex(m: { width: number }, x: number, y: number): number {
@@ -87,7 +93,7 @@ export function regionLookup(m: BattlemapModel): Int32Array {
 export function effectiveTypeAt(m: BattlemapModel, lookup: Int32Array, index: number): string {
   const ri = lookup[index] ?? -1;
   const region = ri >= 0 ? m.regions[ri] : undefined;
-  return region ? region.typeId : cellTypeAt(m, index);
+  return region?.typeId ?? cellTypeAt(m, index);
 }
 
 /** Sets the own type of the given cells. Returns `m` itself when nothing changes. */
@@ -190,24 +196,6 @@ export function isConnected(cells: readonly number[], width: number): boolean {
     }
   }
   return seen.size === set.size;
-}
-
-/** Most frequent own type among the cells; floor for an empty set. */
-export function dominantType(m: BattlemapModel, cells: Iterable<number>): string {
-  const counts = new Map<string, number>();
-  for (const c of cells) {
-    const t = cellTypeAt(m, c);
-    counts.set(t, (counts.get(t) ?? 0) + 1);
-  }
-  let best: string = FLOOR;
-  let bestCount = 0;
-  for (const [t, n] of counts) {
-    if (n > bestCount) {
-      best = t;
-      bestCount = n;
-    }
-  }
-  return best;
 }
 
 function normalizeCells(m: BattlemapModel, cells: Iterable<number>): number[] {
@@ -355,7 +343,10 @@ export function resizedSize(m: { width: number; height: number }, d: ResizeDelta
   return { width: m.width + d.left + d.right, height: m.height + d.top + d.bottom };
 }
 
-/** Grows or crops the map; new cells are floor, cropped cells leave their regions. */
+/**
+ * Grows or crops the map; new cells are floor, cropped cells leave their regions.
+ * Objects move with their top-left cell and are dropped when that cell is cropped.
+ */
 export function resizeModel(m: BattlemapModel, d: ResizeDelta): BattlemapModel {
   const { width, height } = resizedSize(m, d);
   if (!isValidSize(width) || !isValidSize(height)) {
@@ -382,7 +373,10 @@ export function resizeModel(m: BattlemapModel, d: ResizeDelta): BattlemapModel {
         .sort((a, b) => a - b),
     }))
     .filter((r) => r.cells.length > 0);
-  return { width, height, palette, cells, regions };
+  const objects = m.objects
+    .map((o) => ({ ...o, x: o.x + d.left, y: o.y + d.top }))
+    .filter((o) => inBounds({ width, height }, o.x, o.y));
+  return { width, height, palette, cells, regions, objects };
 }
 
 /** Moves a cell index of the old map to the resized one, or -1 when cropped. */

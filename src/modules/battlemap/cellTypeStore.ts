@@ -1,15 +1,17 @@
 import { create } from "zustand";
 import { getDb } from "../../shared/db";
 import { ru } from "../../shared/i18n/ru";
-import { decodeSymbol, isBuiltinTypeId, type CellType } from "./domain/cellTypes";
+import { decodeSymbol, isBuiltinTypeId, symbolImage, type CellType } from "./domain/cellTypes";
 import type { GmmapType } from "./domain/gmmapFile";
+import { loadImages } from "./imageCache";
 import * as repo from "./repo";
 
 interface CellTypeState {
   /** Built-in types (names from i18n) followed by custom ones; empty until loaded. */
   types: CellType[];
   load: () => Promise<void>;
-  create: (input: repo.CustomTypeInput) => Promise<void>;
+  /** Returns the id of the new type. */
+  create: (input: repo.CustomTypeInput) => Promise<string>;
   update: (id: string, input: repo.CustomTypeInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
   setBuiltinColor: (id: string, color: string | null) => Promise<void>;
@@ -24,7 +26,10 @@ function withNames(types: CellType[]): CellType[] {
 /** Cell types are app-wide (shared by all campaigns). */
 export const useCellTypeStore = create<CellTypeState>((set, get) => {
   async function refresh() {
-    set({ types: withNames(await repo.listCellTypes(await getDb())) });
+    const types = withNames(await repo.listCellTypes(await getDb()));
+    // Pictures must be decoded before the canvas draws them.
+    await loadImages(types.map((t) => symbolImage(t.symbol)));
+    set({ types });
   }
 
   return {
@@ -32,8 +37,9 @@ export const useCellTypeStore = create<CellTypeState>((set, get) => {
     load: refresh,
 
     async create(input) {
-      await repo.createCustomType(await getDb(), input);
+      const id = await repo.createCustomType(await getDb(), input);
       await refresh();
+      return id;
     },
 
     async update(id, input) {
@@ -61,7 +67,7 @@ export const useCellTypeStore = create<CellTypeState>((set, get) => {
         const input = {
           name: t.name,
           color: t.color,
-          symbol: decodeSymbol(t.symbol),
+          symbol: decodeSymbol(t.symbol, t.image),
           blocksMove: t.blocksMove,
           blocksSight: t.blocksSight,
           comment: t.comment,

@@ -1,5 +1,6 @@
 import type { CellType } from "./cellTypes";
 import { effectiveTypeAt, regionLookup, type BattlemapModel } from "./grid";
+import { usedObjectDefs, type ObjectDef } from "./objects";
 
 export const EXPORT_CELL_SIZES = [24, 70, 100, 140] as const;
 export type ExportCellSize = (typeof EXPORT_CELL_SIZES)[number];
@@ -42,13 +43,17 @@ export function gmmapFileName(name: string): string {
 export interface LegendEntries {
   /** Cell types visible on the map, in the order of the type list. */
   types: CellType[];
-  regions: { name: string; type: CellType }[];
+  /** `type` is null for regions that keep the cells' own types. */
+  regions: { name: string; type: CellType | null }[];
+  /** Catalog objects placed on the map (deleted ones are left out). */
+  objects: ObjectDef[];
 }
 
 export function legendEntries(
   model: BattlemapModel,
   types: readonly CellType[],
   typeOf: (id: string) => CellType,
+  objectDefs: readonly ObjectDef[],
 ): LegendEntries {
   const lookup = regionLookup(model);
   const used = new Set<string>();
@@ -58,7 +63,10 @@ export function legendEntries(
     types: types.filter((t) => used.has(t.id)),
     regions: model.regions
       .filter((r) => r.name.trim() !== "")
-      .map((r) => ({ name: r.name, type: typeOf(r.typeId) })),
+      .map((r) => ({ name: r.name, type: r.typeId === null ? null : typeOf(r.typeId) })),
+    objects: usedObjectDefs(model)
+      .map((id) => objectDefs.find((d) => d.id === id))
+      .filter((d): d is ObjectDef => d !== undefined),
   };
 }
 

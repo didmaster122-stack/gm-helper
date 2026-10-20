@@ -15,6 +15,7 @@ import {
 } from "./domain/exportLayout";
 import { toGmmapFile } from "./domain/gmmapFile";
 import type { BattlemapModel } from "./domain/grid";
+import type { ObjectDef } from "./domain/objects";
 import {
   canvasToPng,
   layoutLegend,
@@ -29,6 +30,7 @@ interface ExportDialogProps {
   description: string;
   model: BattlemapModel;
   types: CellType[];
+  objectDefs: ObjectDef[];
   onClose: () => void;
 }
 
@@ -42,7 +44,14 @@ const LEGEND_MODES: { id: LegendMode; label: string }[] = [
 
 const PNG_FILTER = [{ name: ru.battlemap.export.pngFilter, extensions: ["png"] }];
 
-export function ExportDialog({ name, description, model, types, onClose }: ExportDialogProps) {
+export function ExportDialog({
+  name,
+  description,
+  model,
+  types,
+  objectDefs,
+  onClose,
+}: ExportDialogProps) {
   const t = ru.battlemap.export;
   const [options, setOptions] = useState<ExportOptions>({
     cellPx: DEFAULT_EXPORT_CELL,
@@ -53,7 +62,10 @@ export function ExportDialog({ name, description, model, types, onClose }: Expor
   });
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const typeOf = useMemo(() => makeTypeLookup(types), [types]);
-  const entries = useMemo(() => legendEntries(model, types, typeOf), [model, types, typeOf]);
+  const entries = useMemo(
+    () => legendEntries(model, types, typeOf, objectDefs),
+    [model, types, typeOf, objectDefs],
+  );
   const legend = useMemo(
     () => (options.legend === "none" ? null : layoutLegend(entries, name, options.cellPx)),
     [entries, name, options.legend, options.cellPx],
@@ -89,7 +101,7 @@ export function ExportDialog({ name, description, model, types, onClose }: Expor
       await new Promise((r) => setTimeout(r, 0));
       await writeChosenFile(
         path,
-        await canvasToPng(renderMapImage(model, typeOf, options, legend)),
+        await canvasToPng(renderMapImage(model, typeOf, objectDefs, options, legend)),
       );
       const saved = [path];
       if (options.legend === "separate" && legend) {
@@ -112,7 +124,7 @@ export function ExportDialog({ name, description, model, types, onClose }: Expor
         { name: t.gmmapFilter, extensions: ["json"] },
       ]);
       if (!path) return [];
-      const json = JSON.stringify(toGmmapFile({ name, description }, model, types));
+      const json = JSON.stringify(toGmmapFile({ name, description }, model, types, objectDefs));
       await writeChosenFile(path, new TextEncoder().encode(json));
       return [path];
     });

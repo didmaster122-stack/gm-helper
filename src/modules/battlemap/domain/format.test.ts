@@ -25,9 +25,57 @@ describe("battlemap JSON", () => {
 
   it("stores the version and compresses runs", () => {
     const json = toJson(createModel(200, 200));
-    expect(json.version).toBe(1);
+    expect(json.version).toBe(2);
     expect(json.cells).toEqual([0, 40000]);
     expect(json.palette).toEqual(["floor"]);
+  });
+
+  it("round-trips placed objects", () => {
+    const m = {
+      ...createModel(10, 10),
+      objects: [
+        { id: "o1", defId: "table", x: 2, y: 3, rotation: 90 as const },
+        { id: "o2", defId: "altar", x: 0, y: 0, rotation: 0 as const },
+      ],
+    };
+    const back = fromJson(JSON.parse(JSON.stringify(toJson(m))) as unknown);
+    expect(back.objects).toEqual(m.objects);
+  });
+
+  it("converts version 1 maps (no objects)", () => {
+    const { objects, ...v2 } = toJson(paintCells(createModel(6, 5), [7], "water"));
+    expect(objects).toEqual([]);
+    const v1 = { ...v2, version: 1 };
+    const back = fromJson(v1);
+    expect(back.objects).toEqual([]);
+    expect(cellTypeAt(back, 7)).toBe("water");
+    expect(toJson(back).version).toBe(2);
+  });
+
+  it("drops objects off the map and rejects broken ones", () => {
+    const good = toJson(createModel(5, 5));
+    const off = { id: "o", defId: "d", x: 9, y: 0, rotation: 0 };
+    expect(fromJson({ ...good, objects: [off] }).objects).toEqual([]);
+    const odd = { id: "o", defId: "d", x: 1, y: 1, rotation: 45 };
+    expect(fromJson({ ...good, objects: [odd] }).objects[0]?.rotation).toBe(0);
+    expect(() => fromJson({ ...good, objects: [{ id: "o", x: 1, y: 1 }] })).toThrow();
+    expect(() => fromJson({ ...good, objects: [odd, odd] })).toThrow(/duplicate/);
+    expect(() => fromJson({ ...good, objects: undefined })).toThrow();
+  });
+
+  it("round-trips regions without a type and reads a missing type as none", () => {
+    const m = addRegion(
+      createModel(5, 5),
+      "a",
+      { name: "Зона", typeId: null, note: "", labelVisible: true },
+      [3],
+    );
+    const json = JSON.parse(JSON.stringify(toJson(m))) as ReturnType<typeof toJson>;
+    expect(fromJson(json).regions[0]?.typeId).toBeNull();
+    const noType: Record<string, unknown> = { ...json.regions[0] };
+    delete noType.typeId;
+    expect(fromJson({ ...json, regions: [noType] }).regions[0]?.typeId).toBeNull();
+    expect(() => fromJson({ ...json, regions: [{ ...noType, typeId: 5 }] })).toThrow();
   });
 
   it("drops unused palette entries", () => {

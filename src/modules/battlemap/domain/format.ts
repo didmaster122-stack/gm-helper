@@ -1,7 +1,8 @@
 import { FLOOR } from "./cellTypes";
-import { isValidSize, type BattlemapModel, type Region } from "./grid";
+import { inBounds, isValidSize, type BattlemapModel, type Region } from "./grid";
+import { isRotation, type MapObject } from "./objects";
 
-export const FORMAT_VERSION = 1;
+export const FORMAT_VERSION = 2;
 
 /**
  * Stored map, also the base of the `.gmmap.json` file. `cells` is run-length encoded:
@@ -16,7 +17,18 @@ export interface BattlemapJsonV1 {
   regions: Region[];
 }
 
-export type BattlemapJson = BattlemapJsonV1;
+/** Version 2 adds placed objects. */
+export interface BattlemapJsonV2 extends Omit<BattlemapJsonV1, "version"> {
+  version: 2;
+  objects: MapObject[];
+}
+
+export type BattlemapJson = BattlemapJsonV2;
+
+/** Version 1 maps had no objects. */
+export function upgradeV1(v1: Record<string, unknown>): Record<string, unknown> {
+  return { ...v1, version: 2, objects: [] };
+}
 
 export function toJson(m: BattlemapModel): BattlemapJson {
   // Drop palette entries no cell uses any more.
@@ -48,6 +60,7 @@ export function toJson(m: BattlemapModel): BattlemapJson {
     palette,
     cells,
     regions: m.regions.map((r) => ({ ...r, cells: [...r.cells] })),
+    objects: m.objects.map((o) => ({ ...o })),
   };
 }
 
@@ -65,7 +78,10 @@ function parseRegion(raw: unknown, cellCount: number, taken: Set<number>): Regio
   const { id, name, typeId, note, labelVisible, cells } = raw;
   if (typeof id !== "string" || id === "") fail("region id");
   if (typeof name !== "string") fail("region name");
-  if (typeof typeId !== "string" || typeId === "") fail("region type");
+  // A missing type (null) means the region keeps the cells' own types.
+  if (typeId !== null && typeId !== undefined && (typeof typeId !== "string" || typeId === "")) {
+    fail("region type");
+  }
   if (!Array.isArray(cells)) fail("region cells");
   // Enforce "one region per cell" even for hand-edited files: later regions lose duplicates.
   const list = [...new Set(cells)]
@@ -75,18 +91,31 @@ function parseRegion(raw: unknown, cellCount: number, taken: Set<number>): Regio
   return {
     id,
     name,
-    typeId,
+    typeId: typeof typeId === "string" ? typeId : null,
     note: typeof note === "string" ? note : "",
     labelVisible: labelVisible !== false,
     cells: list,
   };
 }
 
+function parseObject(raw: unknown, size: { width: number; height: number }): MapObject | null {
+  if (!isRecord(raw)) fail("object is not an object");
+  const { id, defId, x, y, rotation } = raw;
+  if (typeof id !== "string" || id === "") fail("object id");
+  if (typeof defId !== "string" || defId === "") fail("object catalog id");
+  if (!isNonNegInt(x) || !isNonNegInt(y)) fail("object position");
+  // Hand-edited files: an object off the map is dropped rather than failing the whole map.
+  if (!inBounds(size, x, y)) return null;
+  return { id, defId, x, y, rotation: isRotation(rotation) ? rotation : 0 };
+}
+
 /** Parses stored JSON (any known version) into a model. Throws on malformed data. */
-export function fromJson(raw: unknown): BattlemapModel {
-  if (!isRecord(raw)) fail("not an object");
-  if (raw.version !== 1) fail(`unsupported version ${String(raw.version)}`);
-  const { width, height, palette, cells, regions } = raw;
+export function fromJson(input: unknown): BattlemapModel {
+  if (!isRecord(input)) fail("not an object");
+  let raw = input;
+  if (raw.version === 1) raw = upgradeV1(raw);
+  if (raw.version !== 2) fail(`unsupported version ${String(raw.version)}`);
+  const { width, height, palette, cells, regions, objects } = raw;
   if (typeof width !== "number" || !isValidSize(width)) fail("width");
   if (typeof height !== "number" || !isValidSize(height)) fail("height");
   if (!Array.isArray(palette) || palette.length === 0) fail("palette");
@@ -111,5 +140,18 @@ export function fromJson(raw: unknown): BattlemapModel {
   const parsed = regions.map((r) => parseRegion(r, total, taken)).filter((r) => r.cells.length > 0);
   if (new Set(parsed.map((r) => r.id)).size !== parsed.length) fail("duplicate region id");
 
-  return { width, height, palette: palette as string[], cells: out, regions: parsed };
+  if (!Array.isArray(objects)) fail("objects");
+  const placed = objects
+    .map((o) => parseObject(o, { width, height }))
+    .filter((o): o is MapObject => o !== null);
+  if (new Set(placed.map((o) => o.id)).size !== placed.length) fail("duplicate object id");
+
+  return {
+    width,
+    height,
+    palette: palette as string[],
+    cells: out,
+    regions: parsed,
+    objects: placed,
+  };
 }
