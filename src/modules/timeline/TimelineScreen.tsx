@@ -6,7 +6,7 @@ export function TimelineScreen({ campaign }: { campaign: Campaign }) {
   return (
     <EmptyState
       title={`${ru.nav.timeline} · ${campaign.name}`}
-      text={ru.placeholder.comingSoon(6)}
+      text={ru.placeholder.comingSoon(7)}
     />
   );
 }

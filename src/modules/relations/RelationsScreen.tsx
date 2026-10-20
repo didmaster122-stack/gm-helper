@@ -6,7 +6,7 @@ export function RelationsScreen({ campaign }: { campaign: Campaign }) {
   return (
     <EmptyState
       title={`${ru.nav.relations} · ${campaign.name}`}
-      text={ru.placeholder.comingSoon(5)}
+      text={ru.placeholder.comingSoon(6)}
     />
   );
 }
