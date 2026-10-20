@@ -9,7 +9,14 @@ import {
   readRecords,
   readString,
 } from "../../../shared/parse";
-import { DEFAULT_CROP, DEFAULT_TOKEN_SIZE, isTokenSize } from "./tokenCrop";
+import {
+  DEFAULT_CREATURE_SIZE,
+  DEFAULT_CROP,
+  DEFAULT_TOKEN_SIZE,
+  isCreatureSize,
+  isTokenSize,
+} from "./tokenCrop";
+import { normalizeFrame } from "./tokenFrame";
 import type { Art, Token } from "./types";
 
 export interface ArtRef {
@@ -77,13 +84,18 @@ export function parseArtRefs(raw: unknown, now: string): ArtRefs {
     const relPath = readString(r.relPath);
     if (!id || !artId || !relPath) return [];
     const size = readNumber(r.size);
+    const cells = readNumber(r.cells);
     const crop = isRecord(r.crop) ? r.crop : {};
+    // Version 1 files have no size and frame: a 1×1 token without a frame.
+    const frame = isRecord(r.frame) ? r.frame : {};
     return [
       {
         id,
         artId,
         relPath,
         size: isTokenSize(size) ? size : DEFAULT_TOKEN_SIZE,
+        cells: isCreatureSize(cells) ? cells : DEFAULT_CREATURE_SIZE,
+        frame: normalizeFrame(frame.color, frame.width),
         crop: {
           centerX: readNumber(crop.centerX, DEFAULT_CROP.centerX),
           centerY: readNumber(crop.centerY, DEFAULT_CROP.centerY),

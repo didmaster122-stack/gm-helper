@@ -320,4 +320,14 @@ export const migrations: Migration[] = [
       CREATE INDEX tracks_hash ON tracks (hash);
     `,
   },
+  {
+    version: 11,
+    name: "token size and frame",
+    sql: `
+      -- cells: creature size (1..4 cells per side); frame_width: percent of the radius, 0 = none.
+      ALTER TABLE tokens ADD COLUMN cells INTEGER NOT NULL DEFAULT 1;
+      ALTER TABLE tokens ADD COLUMN frame_color TEXT NOT NULL DEFAULT '#c9a227';
+      ALTER TABLE tokens ADD COLUMN frame_width REAL NOT NULL DEFAULT 0;
+    `,
+  },
 ];

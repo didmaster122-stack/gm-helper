@@ -109,6 +109,8 @@ describe("library repo", () => {
       artId,
       relPath: `S/G/_tokens/lich.token-${n}.png`,
       size: 512,
+      cells: 1,
+      frame: { color: "#c9a227", width: 0 },
       crop: { centerX: 0.25, centerY: 0.125, zoom: 1.75 },
       createdAt: NOW,
       updatedAt: NOW,
@@ -124,9 +126,19 @@ describe("library repo", () => {
       "S/H/_tokens/lich.token-1.png",
     );
 
-    await saveTokens(db, [{ ...token(2), size: 1024, crop: { centerX: 1, centerY: 0, zoom: 3 } }]);
+    await saveTokens(db, [
+      {
+        ...token(2),
+        size: 1024,
+        cells: 3,
+        frame: { color: "#b3261e", width: 12.5 },
+        crop: { centerX: 1, centerY: 0, zoom: 3 },
+      },
+    ]);
     expect((await listTokens(db)).find((t) => t.id === "t2")).toMatchObject({
       size: 1024,
+      cells: 3,
+      frame: { color: "#b3261e", width: 12.5 },
       crop: { centerX: 1, centerY: 0, zoom: 3 },
     });
 
@@ -141,6 +153,8 @@ describe("library repo", () => {
       artId: "a",
       relPath: "S/G/_tokens/O'Brien.token-1.png",
       size: 1024,
+      cells: 4,
+      frame: { color: "#ffffff", width: 5 },
       crop: { centerX: 0.25, centerY: 0.75, zoom: 3.5 },
       createdAt: NOW,
       updatedAt: NOW,

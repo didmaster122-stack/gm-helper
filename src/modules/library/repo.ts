@@ -2,7 +2,13 @@ import { runScript, sqlLiteral as lit } from "../../shared/db/script";
 import type { Db } from "../../shared/db/types";
 import { classifyPath } from "./domain/paths";
 import type { ScanChanges } from "./domain/reconcile";
-import { DEFAULT_TOKEN_SIZE, isTokenSize } from "./domain/tokenCrop";
+import {
+  DEFAULT_CREATURE_SIZE,
+  DEFAULT_TOKEN_SIZE,
+  isCreatureSize,
+  isTokenSize,
+} from "./domain/tokenCrop";
+import { normalizeFrame } from "./domain/tokenFrame";
 import type { Art, Token } from "./domain/types";
 
 interface ArtRow {
@@ -161,6 +167,9 @@ interface TokenRow {
   art_id: string;
   rel_path: string;
   size: number;
+  cells: number;
+  frame_color: string;
+  frame_width: number;
   center_x: number;
   center_y: number;
   zoom: number;
@@ -174,6 +183,8 @@ function tokenFromRow(r: TokenRow): Token {
     artId: r.art_id,
     relPath: r.rel_path,
     size: isTokenSize(r.size) ? r.size : DEFAULT_TOKEN_SIZE,
+    cells: isCreatureSize(r.cells) ? r.cells : DEFAULT_CREATURE_SIZE,
+    frame: normalizeFrame(r.frame_color, r.frame_width),
     crop: { centerX: r.center_x, centerY: r.center_y, zoom: r.zoom },
     createdAt: r.created_at,
     updatedAt: r.updated_at,
@@ -182,7 +193,8 @@ function tokenFromRow(r: TokenRow): Token {
 
 function tokenUpdateSql(t: Token): string {
   return `UPDATE tokens SET art_id = ${lit(t.artId)}, rel_path = ${lit(t.relPath)},
-      size = ${lit(t.size)}, center_x = ${lit(t.crop.centerX)}, center_y = ${lit(t.crop.centerY)},
+      size = ${lit(t.size)}, cells = ${lit(t.cells)}, frame_color = ${lit(t.frame.color)},
+      frame_width = ${lit(t.frame.width)}, center_x = ${lit(t.crop.centerX)}, center_y = ${lit(t.crop.centerY)},
       zoom = ${lit(t.crop.zoom)}, updated_at = ${lit(t.updatedAt)}
     WHERE id = ${lit(t.id)}`;
 }
@@ -193,37 +205,36 @@ export async function listTokens(db: Db): Promise<Token[]> {
   );
 }
 
+const TOKEN_COLUMNS = `id, art_id, rel_path, size, cells, frame_color, frame_width,
+  center_x, center_y, zoom, created_at, updated_at`;
+
+function tokenValues(t: Token): (string | number)[] {
+  return [
+    t.id,
+    t.artId,
+    t.relPath,
+    t.size,
+    t.cells,
+    t.frame.color,
+    t.frame.width,
+    t.crop.centerX,
+    t.crop.centerY,
+    t.crop.zoom,
+    t.createdAt,
+    t.updatedAt,
+  ];
+}
+
 /** Insert of a token record, for a batch script (restoring a campaign backup). */
 export function tokenInsertStatement(t: Token): string {
-  return `INSERT INTO tokens (id, art_id, rel_path, size, center_x, center_y, zoom, created_at, updated_at)
-    VALUES (${[
-      lit(t.id),
-      lit(t.artId),
-      lit(t.relPath),
-      lit(t.size),
-      lit(t.crop.centerX),
-      lit(t.crop.centerY),
-      lit(t.crop.zoom),
-      lit(t.createdAt),
-      lit(t.updatedAt),
-    ].join(", ")})`;
+  return `INSERT INTO tokens (${TOKEN_COLUMNS}) VALUES (${tokenValues(t).map(lit).join(", ")})`;
 }
 
 export async function insertToken(db: Db, t: Token): Promise<void> {
+  const values = tokenValues(t);
   await db.execute(
-    `INSERT INTO tokens (id, art_id, rel_path, size, center_x, center_y, zoom, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      t.id,
-      t.artId,
-      t.relPath,
-      t.size,
-      t.crop.centerX,
-      t.crop.centerY,
-      t.crop.zoom,
-      t.createdAt,
-      t.updatedAt,
-    ],
+    `INSERT INTO tokens (${TOKEN_COLUMNS}) VALUES (${values.map(() => "?").join(", ")})`,
+    values,
   );
 }
 

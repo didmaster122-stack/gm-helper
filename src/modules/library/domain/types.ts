@@ -1,4 +1,5 @@
-import type { TokenCrop, TokenSize } from "./tokenCrop";
+import type { CreatureSize, TokenCrop, TokenSize } from "./tokenCrop";
+import type { TokenFrame } from "./tokenFrame";
 
 export interface Art {
   id: string;
@@ -32,7 +33,10 @@ export interface Token {
   artId: string;
   /** Relative to the library root; usually "<art folder>/_tokens/<art>.token-<n>.png". */
   relPath: string;
+  /** Pixels per cell; the PNG side is `size × cells`. */
   size: TokenSize;
+  cells: CreatureSize;
+  frame: TokenFrame;
   crop: TokenCrop;
   createdAt: string;
   updatedAt: string;

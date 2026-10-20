@@ -42,7 +42,7 @@ import {
   BACKUP_VERSION,
   importedCampaignName,
   parseBackup,
-  type CampaignBackupV1,
+  type CampaignBackupV2,
 } from "./domain/format";
 
 /** The campaign with its graph, timeline and maps as JSON text. */
@@ -55,7 +55,7 @@ export async function exportCampaign(campaign: Campaign): Promise<string> {
     collectMapsBackup(db, campaign.id),
   ]);
   const library = await collectLibraryRefs(db, [...graph.characters, ...graph.factions]);
-  const backup: CampaignBackupV1 = {
+  const backup: CampaignBackupV2 = {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),

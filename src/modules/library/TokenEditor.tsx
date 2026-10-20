@@ -1,23 +1,24 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { ru } from "../../shared/i18n/ru";
-import { Modal } from "../../shared/ui";
+import { Button, ColorInput, Modal, Segmented } from "../../shared/ui";
 import { toAbsolute } from "./domain/paths";
 import {
   clampCrop,
+  CREATURE_SIZES,
   DEFAULT_CROP,
-  DEFAULT_TOKEN_SIZE,
   imagePlacement,
-  isTokenSize,
   panCrop,
   sliderToZoom,
   TOKEN_SIZES,
+  tokenPixelSize,
   zoomCropAt,
   zoomToSlider,
   type ImageSize,
   type TokenCrop,
-  type TokenSize,
 } from "./domain/tokenCrop";
+import { FRAME_COLORS, frameRing, MAX_FRAME_WIDTH, type TokenFrame } from "./domain/tokenFrame";
 import type { Art, Token } from "./domain/types";
+import { loadTokenDefaults, saveTokenDefaults, type TokenDefaults } from "./tokenDefaults";
 import { createToken, loadImage, updateToken } from "./tokenService";
 
 /** Canvas side and circle diameter in CSS pixels; the margin shows the art around the circle. */
@@ -26,6 +27,8 @@ const DIAMETER = 340;
 const MARGIN = (VIEW - DIAMETER) / 2;
 const WHEEL_STEP = 1.15;
 const SLIDER_STEPS = 1000;
+/** Thickness a frame gets when a colour is picked while there is none. */
+const DEFAULT_FRAME_WIDTH = 6;
 
 interface TokenEditorProps {
   root: string;
@@ -42,7 +45,16 @@ type Loaded = { kind: "loading" } | { kind: "error" } | { kind: "ready"; img: HT
 export function TokenEditor({ root, art, token, title, onSaved, onClose }: TokenEditorProps) {
   const [loaded, setLoaded] = useState<Loaded>({ kind: "loading" });
   const [crop, setCrop] = useState<TokenCrop>(token?.crop ?? DEFAULT_CROP);
-  const [size, setSize] = useState<TokenSize>(token?.size ?? DEFAULT_TOKEN_SIZE);
+  const [options, setOptions] = useState<TokenDefaults>(() =>
+    token ? { size: token.size, cells: token.cells, frame: token.frame } : loadTokenDefaults(),
+  );
+  const { size, cells, frame } = options;
+  /** Picking a colour while there is no frame turns the frame on. */
+  const setFrameColor = (color: string) =>
+    setOptions((o) => ({
+      ...o,
+      frame: { color, width: o.frame.width > 0 ? o.frame.width : DEFAULT_FRAME_WIDTH },
+    }));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,8 +80,8 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas && img) draw(canvas, img, crop);
-  }, [img, crop]);
+    if (canvas && img) draw(canvas, img, crop, frame);
+  }, [img, crop, frame]);
 
   // React registers wheel listeners as passive, so preventDefault needs a native one.
   useEffect(() => {
@@ -108,9 +120,11 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
     setBusy(true);
     setError(null);
     try {
+      const params = { ...options, crop };
       const saved = token
-        ? await updateToken(root, token, img, crop, size)
-        : await createToken(root, art, img, crop, size);
+        ? await updateToken(root, token, img, params)
+        : await createToken(root, art, img, params);
+      saveTokenDefaults(options);
       onSaved(saved);
       onClose();
     } catch (e) {
@@ -125,12 +139,12 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
       onClose={onClose}
       footer={
         <>
-          <button type="button" onClick={onClose} disabled={busy}>
+          <Button onClick={onClose} disabled={busy}>
             {ru.common.cancel}
-          </button>
-          <button type="button" className="primary" onClick={save} disabled={busy || !img}>
+          </Button>
+          <Button variant="primary" onClick={save} disabled={busy || !img}>
             {busy ? ru.library.token.saving : ru.common.save}
-          </button>
+          </Button>
         </>
       }
     >
@@ -165,29 +179,86 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
               }}
             />
           </label>
-          <label className="field">
-            <span>{ru.library.token.size}</span>
-            <select
-              value={size}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                if (isTokenSize(value)) setSize(value);
-              }}
-            >
-              {TOKEN_SIZES.map((px) => (
-                <option key={px} value={px}>
-                  {ru.library.token.sizeOption(px)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
+          <Button
             onClick={() => img && setCrop(clampCrop(DEFAULT_CROP, imageSize(img)))}
             disabled={!img}
           >
             {ru.library.token.reset}
-          </button>
+          </Button>
+        </div>
+        <div className="token-options">
+          <span>{ru.library.token.creature}</span>
+          <div className="token-option-row">
+            <Segmented
+              size="sm"
+              label={ru.library.token.creature}
+              options={CREATURE_SIZES.map((n) => ({
+                value: n,
+                label: ru.library.token.cellsBadge(n),
+                title: ru.library.token.creatureOption(n),
+              }))}
+              value={cells}
+              onChange={(value) => setOptions((o) => ({ ...o, cells: value }))}
+            />
+            <span className="muted">{ru.library.token.creatureName(cells)}</span>
+          </div>
+          <span>{ru.library.token.resolution}</span>
+          <div className="token-option-row">
+            <Segmented
+              size="sm"
+              label={ru.library.token.resolution}
+              options={TOKEN_SIZES.map((px) => ({
+                value: px,
+                label: ru.library.token.resolutionOption(px),
+              }))}
+              value={size}
+              onChange={(value) => setOptions((o) => ({ ...o, size: value }))}
+            />
+            <span className="muted">
+              {ru.library.token.sizeOption(tokenPixelSize(size, cells))}
+            </span>
+          </div>
+          <span>{ru.library.token.frame}</span>
+          <div className="token-option-row">
+            <div className="frame-colors" role="radiogroup" aria-label={ru.library.token.frame}>
+              {FRAME_COLORS.map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  role="radio"
+                  aria-checked={frame.width > 0 && frame.color === color}
+                  className="frame-swatch"
+                  style={{ background: color }}
+                  title={ru.library.token.frameColor(color)}
+                  aria-label={ru.library.token.frameColor(color)}
+                  onClick={() => setFrameColor(color)}
+                />
+              ))}
+              <ColorInput
+                key={frame.color}
+                value={frame.color}
+                title={ru.library.token.frameCustom}
+                onCommit={setFrameColor}
+              />
+            </div>
+            <input
+              type="range"
+              className="frame-width"
+              min={0}
+              max={MAX_FRAME_WIDTH}
+              step={0.5}
+              value={frame.width}
+              title={ru.library.token.frameWidth}
+              aria-label={ru.library.token.frameWidth}
+              onChange={(e) => {
+                const width = Number(e.target.value);
+                setOptions((o) => ({ ...o, frame: { ...o.frame, width } }));
+              }}
+            />
+            <span className="frame-width-value">
+              {ru.library.token.frameWidthValue(frame.width)}
+            </span>
+          </div>
         </div>
         {error && <p className="error">{error}</p>}
       </div>
@@ -200,7 +271,12 @@ function imageSize(img: HTMLImageElement): ImageSize {
 }
 
 /** The art around the circle is dimmed so it is clear what ends up in the token. */
-function draw(canvas: HTMLCanvasElement, img: HTMLImageElement, crop: TokenCrop) {
+function draw(
+  canvas: HTMLCanvasElement,
+  img: HTMLImageElement,
+  crop: TokenCrop,
+  frame: TokenFrame,
+) {
   const dpr = window.devicePixelRatio || 1;
   const px = Math.round(VIEW * dpr);
   if (canvas.width !== px) {
@@ -222,6 +298,16 @@ function draw(canvas: HTMLCanvasElement, img: HTMLImageElement, crop: TokenCrop)
   ctx.arc(c, c, DIAMETER / 2, 0, Math.PI * 2, true);
   ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
   ctx.fill("evenodd");
+
+  const ring = frameRing(frame, DIAMETER);
+  if (ring) {
+    ctx.beginPath();
+    ctx.arc(c, c, ring.outer, 0, Math.PI * 2);
+    ctx.arc(c, c, ring.inner, 0, Math.PI * 2, true);
+    ctx.fillStyle = frame.color;
+    ctx.fill();
+    return;
+  }
 
   ctx.beginPath();
   ctx.arc(c, c, DIAMETER / 2, 0, Math.PI * 2);

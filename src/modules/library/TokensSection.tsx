@@ -4,6 +4,7 @@ import { copyPngToClipboard, revealInExplorer } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
 import { Button, ConfirmDialog, Modal } from "../../shared/ui";
 import { artName, toAbsolute } from "./domain/paths";
+import { tokenPixelSize } from "./domain/tokenCrop";
 import type { Art, Token } from "./domain/types";
 import { useArtTokens, useLibraryStore } from "./store";
 import { TokenEditor } from "./TokenEditor";
@@ -44,15 +45,19 @@ export function TokensSection({ root, art }: { root: string; art: Art }) {
       ) : (
         <div className="token-list">
           {tokens.map((token) => (
-            <button
-              key={token.id}
-              type="button"
-              className="token-thumb"
-              title={ru.library.token.open(tokenFileName(token))}
-              onClick={() => setOpenId(token.id)}
-            >
-              <TokenImage root={root} token={token} />
-            </button>
+            <div key={token.id} className="token-thumb-wrap">
+              <button
+                type="button"
+                className="token-thumb"
+                title={ru.library.token.open(tokenFileName(token))}
+                onClick={() => setOpenId(token.id)}
+              >
+                <TokenImage root={root} token={token} />
+              </button>
+              {token.cells > 1 && (
+                <span className="token-cells">{ru.library.token.cellsBadge(token.cells)}</span>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -157,8 +162,21 @@ function TokenCard({
           </dd>
           <dt>{ru.library.token.file}</dt>
           <dd>{token.relPath}</dd>
+          <dt>{ru.library.token.creature}</dt>
+          <dd>{ru.library.token.creatureOption(token.cells)}</dd>
           <dt>{ru.library.token.size}</dt>
-          <dd>{ru.library.token.sizeOption(token.size)}</dd>
+          <dd>{ru.library.token.sizeOption(tokenPixelSize(token.size, token.cells))}</dd>
+          <dt>{ru.library.token.frame}</dt>
+          <dd>
+            {token.frame.width > 0 ? (
+              <span className="token-frame-info">
+                <span className="frame-swatch" style={{ background: token.frame.color }} />
+                {ru.library.token.frameWidthValue(token.frame.width)}
+              </span>
+            ) : (
+              ru.library.token.frameNone
+            )}
+          </dd>
         </dl>
         {notice && <p className="muted">{notice}</p>}
         {error && <p className="error">{error}</p>}

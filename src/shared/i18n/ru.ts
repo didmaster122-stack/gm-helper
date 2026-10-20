@@ -12,6 +12,8 @@ import type {
   MarkerLevel,
 } from "../../modules/timeline/domain/types";
 
+const CREATURE_NAMES = ["Средний", "Большой", "Огромный", "Громадный"];
+
 export const ru = {
   appName: "GM Helper",
   common: {
@@ -419,6 +421,18 @@ export const ru = {
       deleteText: (name: string) => `Файл токена «${name}» будет перемещён в корзину Windows.`,
       size: "Размер PNG",
       sizeOption: (px: number) => `${px} × ${px}`,
+      resolution: "На клетку",
+      resolutionOption: (px: number) => `${px} px`,
+      creature: "Размер существа",
+      creatureName: (cells: number) => CREATURE_NAMES[cells - 1] ?? "",
+      creatureOption: (cells: number) => `${CREATURE_NAMES[cells - 1] ?? ""} ${cells}×${cells}`,
+      cellsBadge: (cells: number) => `${cells}×${cells}`,
+      frame: "Рамка",
+      frameColor: (color: string) => `Цвет рамки ${color}`,
+      frameCustom: "Свой цвет рамки",
+      frameWidth: "Толщина рамки",
+      frameWidthValue: (width: number) => (width === 0 ? "нет" : `${width}%`),
+      frameNone: "Без рамки",
       zoom: "Масштаб",
       reset: "Сбросить",
       hint: "Перетаскивайте арт мышью, колесо — масштаб.",

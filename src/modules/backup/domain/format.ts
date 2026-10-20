@@ -6,7 +6,8 @@ import type { GraphBackup } from "../../relations";
 import type { TimelineBackup } from "../../timeline";
 
 export const BACKUP_FORMAT = "gm-helper.campaign";
-export const BACKUP_VERSION = 1;
+/** 2: token records got `cells` and `frame` (read with defaults from version 1 files). */
+export const BACKUP_VERSION = 2;
 
 export interface BackupCampaign {
   name: string;
@@ -19,9 +20,9 @@ export interface BackupCampaign {
  * One campaign in one JSON file. Arts are not inside: they are files of the library, so the file
  * keeps their relative paths and hashes (`library`) and the import finds them again.
  */
-export interface CampaignBackupV1 {
+export interface CampaignBackupV2 {
   format: typeof BACKUP_FORMAT;
-  version: 1;
+  version: typeof BACKUP_VERSION;
   exportedAt: string;
   campaign: BackupCampaign;
   library: ArtRefs;
@@ -49,7 +50,8 @@ export class BackupError extends Error {
 
 /**
  * Reads the file and checks its envelope. A later format version gets a converter here that
- * turns the older `raw` into the current one before the sections are read.
+ * turns the older `raw` into the current one before the sections are read. Version 1 differs
+ * only by fields that the library section reads with defaults, so it needs no conversion.
  */
 export function parseBackup(text: string, now: string): BackupEnvelope {
   let raw: unknown;
@@ -62,7 +64,7 @@ export function parseBackup(text: string, now: string): BackupEnvelope {
     throw new BackupError("notBackup");
   }
   if (raw.version > BACKUP_VERSION) throw new BackupError("newerVersion");
-  if (raw.version !== 1) throw new BackupError("notBackup");
+  if (raw.version !== 1 && raw.version !== 2) throw new BackupError("notBackup");
 
   const campaign = isRecord(raw.campaign) ? raw.campaign : {};
   const name = readString(campaign.name).trim();

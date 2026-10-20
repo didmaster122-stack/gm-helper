@@ -336,6 +336,88 @@ button.spinning > svg {
   flex: 1;
 }
 
+.token-options {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px 12px;
+  width: 100%;
+}
+
+.token-options > span {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.token-option-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.frame-colors {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.frame-swatch {
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 25%);
+}
+
+.frame-swatch[aria-checked="true"] {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.frame-width {
+  flex: 1;
+  min-width: 60px;
+}
+
+.frame-width-value {
+  min-width: 3em;
+  text-align: right;
+  color: var(--text-muted);
+}
+
+.token-frame-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.token-frame-info .frame-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+}
+
+.token-thumb-wrap {
+  position: relative;
+}
+
+.token-cells {
+  position: absolute;
+  right: -4px;
+  bottom: -2px;
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 16px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+}
+
 .token-card {
   display: flex;
   flex-direction: column;
