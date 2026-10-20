@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Source of the app icon: `npx tauri icon src-tauri/app-icon.svg` regenerates src-tauri/icons. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2c3148"/>
+      <stop offset="1" stop-color="#161925"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="210" fill="url(#bg)"/>
+  <!-- A d20: hexagon outline with the facets shaded from a light source at the top left. -->
+  <g stroke="#1d1606" stroke-width="16" stroke-linejoin="round">
+    <polygon points="512,152 512,360 200,332" fill="#d8b155"/>
+    <polygon points="512,152 824,332 512,360" fill="#b58f3c"/>
+    <polygon points="200,332 512,360 352,638" fill="#d3ad52"/>
+    <polygon points="512,360 824,332 672,638" fill="#a58233"/>
+    <polygon points="200,332 352,638 200,692" fill="#b8923f"/>
+    <polygon points="824,332 824,692 672,638" fill="#8a6b27"/>
+    <polygon points="200,692 352,638 512,872" fill="#9f7d31"/>
+    <polygon points="352,638 672,638 512,872" fill="#b38e3d"/>
+    <polygon points="672,638 824,692 512,872" fill="#7c6023"/>
+    <polygon points="512,360 672,638 352,638" fill="#ecc96e"/>
+  </g>
+  <polygon points="512,152 824,332 824,692 512,872 200,692 200,332" fill="none"
+    stroke="#1d1606" stroke-width="28" stroke-linejoin="round"/>
+</svg>
