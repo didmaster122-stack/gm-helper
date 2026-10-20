@@ -116,10 +116,16 @@ export async function setCampaignArchived(
   ]);
 }
 
-/** Deletes the campaign with its maps, relation graph and timeline. */
+/**
+ * Deletes the campaign with its maps, relation graph, timeline and notes. Note attachment files
+ * stay on disk; the notes module moves unused ones to the recycle bin.
+ */
 export async function deleteCampaign(db: Db, id: string): Promise<void> {
   const key = sqlLiteral(id);
   await runScript(db, [
+    `DELETE FROM note_tag_links WHERE note_id IN (SELECT id FROM notes WHERE campaign_id = ${key})`,
+    `DELETE FROM notes WHERE campaign_id = ${key}`,
+    `DELETE FROM note_tags WHERE campaign_id = ${key}`,
     `DELETE FROM battlemaps WHERE campaign_id = ${key}`,
     `DELETE FROM relations WHERE campaign_id = ${key}`,
     `DELETE FROM characters WHERE campaign_id = ${key}`,

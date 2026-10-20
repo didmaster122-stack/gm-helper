@@ -2,12 +2,16 @@ import { safeFileName } from "../../../shared/fs/names";
 import { isRecord, readDate, readString } from "../../../shared/parse";
 import type { MapsBackup } from "../../battlemap";
 import type { ArtRefs } from "../../library";
+import type { NotesBackup } from "../../notes";
 import type { GraphBackup } from "../../relations";
 import type { TimelineBackup } from "../../timeline";
 
 export const BACKUP_FORMAT = "gm-helper.campaign";
-/** 2: token records got `cells` and `frame` (read with defaults from version 1 files). */
-export const BACKUP_VERSION = 2;
+/**
+ * 2: token records got `cells` and `frame` (read with defaults from version 1 files).
+ * 3: the `notes` section (files of versions 1 and 2 are read with no notes).
+ */
+export const BACKUP_VERSION = 3;
 
 export interface BackupCampaign {
   name: string;
@@ -20,7 +24,7 @@ export interface BackupCampaign {
  * One campaign in one JSON file. Arts are not inside: they are files of the library, so the file
  * keeps their relative paths and hashes (`library`) and the import finds them again.
  */
-export interface CampaignBackupV2 {
+export interface CampaignBackupV3 {
   format: typeof BACKUP_FORMAT;
   version: typeof BACKUP_VERSION;
   exportedAt: string;
@@ -29,6 +33,7 @@ export interface CampaignBackupV2 {
   relations: GraphBackup;
   timeline: TimelineBackup;
   battlemaps: MapsBackup;
+  notes: NotesBackup;
 }
 
 /** The checked envelope; each section is read by the module it belongs to. */
@@ -38,6 +43,7 @@ export interface BackupEnvelope {
   relations: unknown;
   timeline: unknown;
   battlemaps: unknown;
+  notes: unknown;
 }
 
 export type BackupErrorKind = "notJson" | "notBackup" | "newerVersion" | "badCampaign";
@@ -50,8 +56,9 @@ export class BackupError extends Error {
 
 /**
  * Reads the file and checks its envelope. A later format version gets a converter here that
- * turns the older `raw` into the current one before the sections are read. Version 1 differs
- * only by fields that the library section reads with defaults, so it needs no conversion.
+ * turns the older `raw` into the current one before the sections are read. Versions 1 and 2 differ
+ * only by fields and sections that are read with defaults (token frame and size, no notes), so
+ * they need no conversion.
  */
 export function parseBackup(text: string, now: string): BackupEnvelope {
   let raw: unknown;
@@ -64,7 +71,7 @@ export function parseBackup(text: string, now: string): BackupEnvelope {
     throw new BackupError("notBackup");
   }
   if (raw.version > BACKUP_VERSION) throw new BackupError("newerVersion");
-  if (raw.version !== 1 && raw.version !== 2) throw new BackupError("notBackup");
+  if (![1, 2, 3].includes(raw.version)) throw new BackupError("notBackup");
 
   const campaign = isRecord(raw.campaign) ? raw.campaign : {};
   const name = readString(campaign.name).trim();
@@ -81,6 +88,7 @@ export function parseBackup(text: string, now: string): BackupEnvelope {
     relations: raw.relations,
     timeline: raw.timeline,
     battlemaps: raw.battlemaps,
+    notes: raw.notes,
   };
 }
 

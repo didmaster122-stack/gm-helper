@@ -21,6 +21,15 @@ import {
   resolvePictureLink,
 } from "../library";
 import {
+  listNotes,
+  listTags,
+  noteInsertStatements,
+  parseNotesBackup,
+  remapNotes,
+  tagInsertStatement,
+  toNotesBackup,
+} from "../notes";
+import {
   emptyGraph,
   graphDiffStatements,
   listRelationTypes,
@@ -42,20 +51,22 @@ import {
   BACKUP_VERSION,
   importedCampaignName,
   parseBackup,
-  type CampaignBackupV2,
+  type CampaignBackupV3,
 } from "./domain/format";
 
-/** The campaign with its graph, timeline and maps as JSON text. */
+/** The campaign with its graph, timeline, maps and notes as JSON text. */
 export async function exportCampaign(campaign: Campaign): Promise<string> {
   const db = await getDb();
-  const [graph, types, timeline, battlemaps] = await Promise.all([
+  const [graph, types, timeline, battlemaps, notes, noteTags] = await Promise.all([
     loadGraph(db, campaign.id),
     listRelationTypes(db),
     loadTimeline(db, campaign.id),
     collectMapsBackup(db, campaign.id),
+    listNotes(db, campaign.id),
+    listTags(db, campaign.id),
   ]);
   const library = await collectLibraryRefs(db, [...graph.characters, ...graph.factions]);
-  const backup: CampaignBackupV2 = {
+  const backup: CampaignBackupV3 = {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
@@ -69,6 +80,7 @@ export async function exportCampaign(campaign: Campaign): Promise<string> {
     relations: toGraphBackup(graph, types),
     timeline,
     battlemaps,
+    notes: toNotesBackup(notes, noteTags),
   };
   return JSON.stringify(backup);
 }
@@ -78,6 +90,7 @@ export interface ImportReport {
   characters: number;
   events: number;
   maps: number;
+  notes: number;
   /** Maps whose data could not be read. */
   mapsSkipped: number;
   /** Arts the portraits use. */
@@ -104,6 +117,7 @@ export async function importCampaign(
   const graphIn = parseGraphBackup(envelope.relations, now);
   const timelineIn = parseTimelineBackup(envelope.timeline, now);
   const mapsIn = parseMapsBackup(envelope.battlemaps, now);
+  const notesIn = parseNotesBackup(envelope.notes, now);
   const refs = parseArtRefs(envelope.library, now);
 
   const db = await getDb();
@@ -137,6 +151,7 @@ export async function importCampaign(
     typeIds,
   );
   const timeline = remapTimeline(timelineIn, campaign.id, newId, characterIds);
+  const notes = remapNotes(notesIn, campaign.id, newId, ru.notes.untitled);
 
   await runScript(
     db,
@@ -151,6 +166,8 @@ export async function importCampaign(
           name: m.name || ru.battlemap.import.defaultName,
         }),
       ),
+      ...notes.tags.map(tagInsertStatement),
+      ...notes.notes.flatMap(noteInsertStatements),
     ],
     Number.MAX_SAFE_INTEGER,
   );
@@ -163,6 +180,7 @@ export async function importCampaign(
     characters: graph.characters.length,
     events: timeline.events.length,
     maps: mapsIn.maps.length,
+    notes: notes.notes.length,
     mapsSkipped: mapsIn.skipped,
     arts: refs.arts.length,
     artsByHash: library.resolution.byHash,

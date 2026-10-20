@@ -5,6 +5,7 @@ import {
   Monitor,
   Moon,
   Music,
+  NotebookPen,
   ScrollText,
   Settings,
   Sun,
@@ -28,6 +29,7 @@ const items: NavItem[] = [
   { id: "battlemaps", label: ru.nav.battlemaps, icon: MapIcon },
   { id: "relations", label: ru.nav.relations, icon: Waypoints },
   { id: "timeline", label: ru.nav.timeline, icon: ScrollText },
+  { id: "notes", label: ru.nav.notes, icon: NotebookPen },
   { id: "music", label: ru.nav.music, icon: Music },
 ];
 

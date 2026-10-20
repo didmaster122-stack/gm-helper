@@ -330,4 +330,40 @@ export const migrations: Migration[] = [
       ALTER TABLE tokens ADD COLUMN frame_width REAL NOT NULL DEFAULT 0;
     `,
   },
+  {
+    version: 12,
+    name: "game master notes",
+    sql: `
+      -- kind: 'text' (content is the editor document) or 'pdf' (file_path is the PDF).
+      -- plain_text: the text of the document, for search. Paths are relative to the library.
+      CREATE TABLE notes (
+        id          TEXT PRIMARY KEY,
+        campaign_id TEXT NOT NULL,
+        kind        TEXT NOT NULL,
+        title       TEXT NOT NULL,
+        content     TEXT NOT NULL DEFAULT '',
+        plain_text  TEXT NOT NULL DEFAULT '',
+        file_path   TEXT,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX notes_campaign ON notes (campaign_id);
+
+      CREATE TABLE note_tags (
+        id          TEXT PRIMARY KEY,
+        campaign_id TEXT NOT NULL,
+        name        TEXT NOT NULL,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX note_tags_campaign ON note_tags (campaign_id);
+
+      CREATE TABLE note_tag_links (
+        note_id TEXT NOT NULL,
+        tag_id  TEXT NOT NULL,
+        PRIMARY KEY (note_id, tag_id)
+      );
+      CREATE INDEX note_tag_links_tag ON note_tag_links (tag_id);
+    `,
+  },
 ];
