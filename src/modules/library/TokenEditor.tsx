@@ -1,25 +1,23 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { ru } from "../../shared/i18n/ru";
-import { Button, ColorInput, Modal, Segmented } from "../../shared/ui";
+import { Button, Modal } from "../../shared/ui";
 import { toAbsolute } from "./domain/paths";
 import {
   clampCrop,
-  CREATURE_SIZES,
   DEFAULT_CROP,
   imagePlacement,
   panCrop,
   sliderToZoom,
-  TOKEN_SIZES,
-  tokenPixelSize,
   zoomCropAt,
   zoomToSlider,
   type ImageSize,
   type TokenCrop,
 } from "./domain/tokenCrop";
-import { FRAME_COLORS, frameRing, MAX_FRAME_WIDTH, type TokenFrame } from "./domain/tokenFrame";
+import { frameRing, type TokenFrame } from "./domain/tokenFrame";
 import type { Art, Token } from "./domain/types";
 import { loadTokenDefaults, saveTokenDefaults, type TokenDefaults } from "./tokenDefaults";
 import { createToken, loadImage, updateToken } from "./tokenService";
+import { TokenOptionsFields } from "./TokenOptionsFields";
 
 /** Canvas side and circle diameter in CSS pixels; the margin shows the art around the circle. */
 const VIEW = 420;
@@ -27,34 +25,42 @@ const DIAMETER = 340;
 const MARGIN = (VIEW - DIAMETER) / 2;
 const WHEEL_STEP = 1.15;
 const SLIDER_STEPS = 1000;
-/** Thickness a frame gets when a colour is picked while there is none. */
-const DEFAULT_FRAME_WIDTH = 6;
 
 interface TokenEditorProps {
   root: string;
   art: Art;
   /** Existing token to adjust; a new one is created otherwise. */
   token?: Token;
+  /**
+   * Batch creation: only the framing is edited, with the batch's options, and handed
+   * back to the caller; nothing is written.
+   */
+  adjust?: { crop: TokenCrop; options: TokenDefaults; onApply: (crop: TokenCrop) => void };
   title: string;
-  onSaved: (token: Token) => void;
+  onSaved?: (token: Token) => void;
   onClose: () => void;
 }
 
 type Loaded = { kind: "loading" } | { kind: "error" } | { kind: "ready"; img: HTMLImageElement };
 
-export function TokenEditor({ root, art, token, title, onSaved, onClose }: TokenEditorProps) {
+export function TokenEditor({
+  root,
+  art,
+  token,
+  adjust,
+  title,
+  onSaved,
+  onClose,
+}: TokenEditorProps) {
   const [loaded, setLoaded] = useState<Loaded>({ kind: "loading" });
-  const [crop, setCrop] = useState<TokenCrop>(token?.crop ?? DEFAULT_CROP);
-  const [options, setOptions] = useState<TokenDefaults>(() =>
-    token ? { size: token.size, cells: token.cells, frame: token.frame } : loadTokenDefaults(),
-  );
-  const { size, cells, frame } = options;
-  /** Picking a colour while there is no frame turns the frame on. */
-  const setFrameColor = (color: string) =>
-    setOptions((o) => ({
-      ...o,
-      frame: { color, width: o.frame.width > 0 ? o.frame.width : DEFAULT_FRAME_WIDTH },
-    }));
+  const [crop, setCrop] = useState<TokenCrop>(adjust?.crop ?? token?.crop ?? DEFAULT_CROP);
+  const [options, setOptions] = useState<TokenDefaults>(() => {
+    if (adjust) return adjust.options;
+    return token
+      ? { size: token.size, cells: token.cells, frame: token.frame }
+      : loadTokenDefaults();
+  });
+  const { frame } = options;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -117,6 +123,11 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
 
   async function save() {
     if (!img) return;
+    if (adjust) {
+      adjust.onApply(crop);
+      onClose();
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -125,7 +136,7 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
         ? await updateToken(root, token, img, params)
         : await createToken(root, art, img, params);
       saveTokenDefaults(options);
-      onSaved(saved);
+      onSaved?.(saved);
       onClose();
     } catch (e) {
       setError(String(e));
@@ -143,7 +154,7 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
             {ru.common.cancel}
           </Button>
           <Button variant="primary" onClick={save} disabled={busy || !img}>
-            {busy ? ru.library.token.saving : ru.common.save}
+            {busy ? ru.library.token.saving : adjust ? ru.library.batch.apply : ru.common.save}
           </Button>
         </>
       }
@@ -186,80 +197,7 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
             {ru.library.token.reset}
           </Button>
         </div>
-        <div className="token-options">
-          <span>{ru.library.token.creature}</span>
-          <div className="token-option-row">
-            <Segmented
-              size="sm"
-              label={ru.library.token.creature}
-              options={CREATURE_SIZES.map((n) => ({
-                value: n,
-                label: ru.library.token.cellsBadge(n),
-                title: ru.library.token.creatureOption(n),
-              }))}
-              value={cells}
-              onChange={(value) => setOptions((o) => ({ ...o, cells: value }))}
-            />
-            <span className="muted">{ru.library.token.creatureName(cells)}</span>
-          </div>
-          <span>{ru.library.token.resolution}</span>
-          <div className="token-option-row">
-            <Segmented
-              size="sm"
-              label={ru.library.token.resolution}
-              options={TOKEN_SIZES.map((px) => ({
-                value: px,
-                label: ru.library.token.resolutionOption(px),
-              }))}
-              value={size}
-              onChange={(value) => setOptions((o) => ({ ...o, size: value }))}
-            />
-            <span className="muted">
-              {ru.library.token.sizeOption(tokenPixelSize(size, cells))}
-            </span>
-          </div>
-          <span>{ru.library.token.frame}</span>
-          <div className="token-option-row">
-            <div className="frame-colors" role="radiogroup" aria-label={ru.library.token.frame}>
-              {FRAME_COLORS.map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  role="radio"
-                  aria-checked={frame.width > 0 && frame.color === color}
-                  className="frame-swatch"
-                  style={{ background: color }}
-                  title={ru.library.token.frameColor(color)}
-                  aria-label={ru.library.token.frameColor(color)}
-                  onClick={() => setFrameColor(color)}
-                />
-              ))}
-              <ColorInput
-                key={frame.color}
-                value={frame.color}
-                title={ru.library.token.frameCustom}
-                onCommit={setFrameColor}
-              />
-            </div>
-            <input
-              type="range"
-              className="frame-width"
-              min={0}
-              max={MAX_FRAME_WIDTH}
-              step={0.5}
-              value={frame.width}
-              title={ru.library.token.frameWidth}
-              aria-label={ru.library.token.frameWidth}
-              onChange={(e) => {
-                const width = Number(e.target.value);
-                setOptions((o) => ({ ...o, frame: { ...o.frame, width } }));
-              }}
-            />
-            <span className="frame-width-value">
-              {ru.library.token.frameWidthValue(frame.width)}
-            </span>
-          </div>
-        </div>
+        {adjust ? null : <TokenOptionsFields value={options} onChange={setOptions} />}
         {error && <p className="error">{error}</p>}
       </div>
     </Modal>

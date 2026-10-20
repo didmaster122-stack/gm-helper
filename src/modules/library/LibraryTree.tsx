@@ -7,11 +7,13 @@ import {
   Images,
   Pencil,
   Plus,
+  ScanFace,
   Trash,
   type LucideIcon,
 } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
 import { ConfirmDialog, IconButton, PromptDialog } from "../../shared/ui";
+import { BatchTokensDialog } from "./BatchTokensDialog";
 import { artName, joinRel } from "./domain/paths";
 import type { LibrarySelection } from "./domain/types";
 import { nameError } from "./nameError";
@@ -26,7 +28,8 @@ import { useLibraryStore } from "./store";
 type Dialog =
   | { kind: "create"; parent: string }
   | { kind: "rename"; relPath: string; name: string }
-  | { kind: "delete"; relPath: string; name: string };
+  | { kind: "delete"; relPath: string; name: string }
+  | { kind: "tokens"; system: string; group: string };
 
 function same(a: LibrarySelection, b: LibrarySelection): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
@@ -79,9 +82,22 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
     </button>
   );
 
-  const actions = (relPath: string, name: string, canAddGroup: boolean) =>
+  const actions = (
+    relPath: string,
+    name: string,
+    canAddGroup: boolean,
+    tokensFor?: { system: string; group: string },
+  ) =>
     !browse && (
       <span className="tree-actions">
+        {tokensFor && (
+          <IconButton
+            icon={ScanFace}
+            size="sm"
+            label={ru.library.batch.command}
+            onClick={() => setDialog({ kind: "tokens", ...tokensFor })}
+          />
+        )}
         {canAddGroup && (
           <IconButton
             icon={Plus}
@@ -156,7 +172,10 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
                   { kind: "group", system: system.name, group: group.name },
                   Folder,
                 )}
-                {actions(joinRel(system.name, group.name), group.name, false)}
+                {actions(joinRel(system.name, group.name), group.name, false, {
+                  system: system.name,
+                  group: group.name,
+                })}
               </div>
             ))}
         </div>
@@ -196,6 +215,15 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
             setSelection({ kind: "all" });
             await sync();
           }}
+          onClose={() => setDialog(null)}
+        />
+      )}
+
+      {dialog?.kind === "tokens" && (
+        <BatchTokensDialog
+          root={root}
+          system={dialog.system}
+          group={dialog.group}
           onClose={() => setDialog(null)}
         />
       )}
