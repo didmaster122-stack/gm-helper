@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
+import { Plus, Swords } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { EmptyState } from "../../shared/ui";
+import { Button, EmptyState } from "../../shared/ui";
 import { CampaignForm } from "./CampaignForm";
 import { useActiveCampaign } from "./store";
 import type { Campaign } from "./types";
@@ -20,12 +21,13 @@ export function RequireCampaign({ libraryRoot, children }: RequireCampaignProps)
   return (
     <>
       <EmptyState
+        icon={Swords}
         title={ru.campaign.needCampaignTitle}
         text={ru.campaign.needCampaignText}
         action={
-          <button type="button" className="primary" onClick={() => setCreating(true)}>
+          <Button variant="primary" icon={Plus} onClick={() => setCreating(true)}>
             {ru.campaign.new}
-          </button>
+          </Button>
         }
       />
       {creating && <CampaignForm libraryRoot={libraryRoot} onClose={() => setCreating(false)} />}

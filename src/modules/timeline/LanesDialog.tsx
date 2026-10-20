@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Plus, Trash } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog, Modal } from "../../shared/ui";
+import { Button, ConfirmDialog, IconButton, Modal } from "../../shared/ui";
 import {
   addLane,
   addPersonalLane,
@@ -35,13 +36,9 @@ export function LanesDialog({ timeline, lanes, laneNames, characters, onClose }:
     <Modal
       title={ru.timeline.lanesTitle}
       onClose={onClose}
-      footer={
-        <button type="button" onClick={onClose}>
-          {ru.common.close}
-        </button>
-      }
+      footer={<Button onClick={onClose}>{ru.common.close}</Button>}
     >
-      <ul className="tl-lanes">
+      <ul className="tl-lane-list">
         {lanes.map((lane, i) => {
           const name = laneNames.get(lane.id) ?? "";
           return (
@@ -59,54 +56,48 @@ export function LanesDialog({ timeline, lanes, laneNames, characters, onClose }:
                 </span>
               )}
               {lane.hidden && <small className="muted">{t.hidden}</small>}
-              <button
-                type="button"
-                className="icon-button"
-                title={t.up}
-                aria-label={t.up}
+              <IconButton
+                icon={ArrowLeft}
+                size="sm"
+                label={t.up}
                 disabled={i === 0}
                 onClick={() => edit((tl, src) => moveLane(tl, lanes, lane.id, -1, src.now))}
-              >
-                ←
-              </button>
-              <button
-                type="button"
-                className="icon-button"
-                title={t.down}
-                aria-label={t.down}
+              />
+              <IconButton
+                icon={ArrowRight}
+                size="sm"
+                label={t.down}
                 disabled={i === lanes.length - 1}
                 onClick={() => edit((tl, src) => moveLane(tl, lanes, lane.id, 1, src.now))}
-              >
-                →
-              </button>
-              <button
-                type="button"
-                className="small"
+              />
+              <IconButton
+                icon={lane.hidden ? EyeOff : Eye}
+                size="sm"
+                label={lane.hidden ? t.show : t.hide}
+                active={lane.hidden}
                 onClick={() =>
                   edit((tl, src) => updateLane(tl, lane.id, { hidden: !lane.hidden }, src.now))
                 }
-              >
-                {lane.hidden ? t.show : t.hide}
-              </button>
-              {lane.kind !== "main" && (
-                <button
-                  type="button"
-                  className="icon-button danger"
-                  title={t.delete}
-                  aria-label={t.delete}
+              />
+              {lane.kind !== "main" ? (
+                <IconButton
+                  icon={Trash}
+                  size="sm"
+                  className="danger"
+                  label={t.delete}
                   onClick={() => setDeleting(lane)}
-                >
-                  ×
-                </button>
+                />
+              ) : (
+                <span className="tl-lane-spacer" />
               )}
             </li>
           );
         })}
       </ul>
       <div className="tl-lanes-add">
-        <button type="button" onClick={() => edit((tl, src) => addLane(tl, t.newName, src))}>
-          + {t.add}
-        </button>
+        <Button icon={Plus} onClick={() => edit((tl, src) => addLane(tl, t.newName, src))}>
+          {t.add}
+        </Button>
         {candidates.length > 0 && (
           <select
             value=""

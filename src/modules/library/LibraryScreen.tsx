@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
+import { CircleAlert, Download, ImageOff, Info, RefreshCw, SearchX, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { EmptyState } from "../../shared/ui";
+import { EmptyState, IconButton, SearchInput } from "../../shared/ui";
 import { ArtGrid } from "./ArtGrid";
 import { ArtPanel, type CharacterTarget } from "./ArtPanel";
 import { searchArts, type TokenFilter } from "./domain/search";
@@ -82,10 +83,10 @@ export function LibraryScreen({
       <LibraryTree />
 
       <section className="library-main">
-        <div className="library-toolbar">
-          <input
-            type="search"
-            className="library-search"
+        <div className="toolbar library-toolbar">
+          <SearchInput
+            wrapperClassName="library-search"
+            screenSearch
             placeholder={ru.library.searchPlaceholder}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -104,25 +105,36 @@ export function LibraryScreen({
               </option>
             ))}
           </select>
-          <span className="muted">{ru.library.count(results.length)}</span>
+          <span className="toolbar-count">{ru.library.count(results.length)}</span>
           <span className="spacer" />
-          {status && <span className="muted">{status}</span>}
+          {status && <span className="toolbar-status">{status}</span>}
           {syncErrors.length > 0 && (
-            <span className="warning" title={syncErrors.slice(0, 20).join("\n")}>
+            <span className="badge warning" title={syncErrors.slice(0, 20).join("\n")}>
               {ru.library.syncErrors(syncErrors.length)}
             </span>
           )}
-          <button type="button" onClick={() => void sync()} disabled={syncing}>
-            {ru.library.refresh}
-          </button>
+          <IconButton
+            icon={RefreshCw}
+            label={ru.library.refresh}
+            className={syncing ? "spinning" : undefined}
+            onClick={() => void sync()}
+            disabled={syncing}
+          />
         </div>
 
         {drop.notice && (
-          <div className="notice" onClick={drop.clearNotice}>
-            {drop.notice}
+          <div className="notice">
+            <Info aria-hidden />
+            <span>{drop.notice}</span>
+            <IconButton icon={X} size="sm" label={ru.common.close} onClick={drop.clearNotice} />
           </div>
         )}
-        {error && <div className="notice error">{error}</div>}
+        {error && (
+          <div className="notice error">
+            <CircleAlert aria-hidden />
+            <span>{error}</span>
+          </div>
+        )}
         {selection.kind === "unsorted" && <p className="library-hint">{ru.library.unsortedHint}</p>}
         {selection.kind === "missing" && <p className="library-hint">{ru.library.missingHint}</p>}
 
@@ -137,6 +149,7 @@ export function LibraryScreen({
         ) : (
           !syncing && (
             <EmptyState
+              icon={query.trim() ? SearchX : ImageOff}
               title={ru.library.emptyTitle}
               text={
                 query.trim()
@@ -150,7 +163,8 @@ export function LibraryScreen({
         )}
 
         {drop.dragging && (
-          <div className="drop-overlay">
+          <div className={dropTarget ? "drop-overlay" : "drop-overlay blocked"}>
+            <Download aria-hidden />
             {dropTarget ? ru.library.dropHere(dropTarget) : ru.library.dropNeedGroup}
           </div>
         )}

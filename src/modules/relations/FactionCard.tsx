@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Trash } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { ColorInput, CommitField, ConfirmDialog } from "../../shared/ui";
+import { Button, ColorInput, CommitField, ConfirmDialog } from "../../shared/ui";
 import { PortraitField, RelationList } from "./cardParts";
 import { removeFaction, updateFaction, type FactionPatch } from "./domain/graph";
 import type { Faction, RelationGraph } from "./domain/types";
@@ -81,10 +82,10 @@ export function FactionCard({ faction: f, graph, libraryRoot, preferredSystem }:
 
       <RelationList graph={graph} nodeId={f.id} />
 
-      <div className="art-actions">
-        <button type="button" className="danger" onClick={() => setDeleting(true)}>
+      <div className="panel-actions">
+        <Button variant="danger" icon={Trash} onClick={() => setDeleting(true)}>
           {t.delete}
-        </button>
+        </Button>
       </div>
 
       {deleting && (

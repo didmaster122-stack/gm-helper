@@ -1,5 +1,18 @@
 import { useMemo, useState } from "react";
+import {
+  Eraser,
+  PaintBucket,
+  Plus,
+  RotateCw,
+  SquareDashed,
+  SquareMinus,
+  SquarePlus,
+  Trash,
+  TriangleAlert,
+  X,
+} from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { Button } from "../../shared/ui";
 import { FLOOR, makeTypeLookup, type CellType } from "./domain/cellTypes";
 import {
   addCellsToRegion,
@@ -55,33 +68,33 @@ export function SidePanel({ model, types, objectDefs }: SidePanelProps) {
   }
 
   return (
-    <aside className="map-side">
+    <aside className="side-panel map-side">
       <ObjectsSection model={model} objectDefs={objectDefs} />
       <section className="map-side-section">
-        <h3>{ru.battlemap.selection.title}</h3>
+        <h3 className="subheading">{ru.battlemap.selection.title}</h3>
         {selection.size === 0 ? (
           <p className="hint">{ru.battlemap.selection.none}</p>
         ) : (
           <div className="map-side-actions">
             <span className="muted">{ru.battlemap.selection.count(selection.size)}</span>
-            <button type="button" onClick={() => commit(paintCells(model, selection, typeId))}>
-              {ru.battlemap.selection.assignType(typeOf(typeId).name)}
-            </button>
-            <button type="button" className="primary" onClick={createRegion}>
+            <Button variant="primary" icon={Plus} onClick={createRegion}>
               {ru.battlemap.selection.createRegion}
-            </button>
-            <button type="button" onClick={() => commit(paintCells(model, selection, FLOOR))}>
+            </Button>
+            <Button icon={PaintBucket} onClick={() => commit(paintCells(model, selection, typeId))}>
+              {ru.battlemap.selection.assignType(typeOf(typeId).name)}
+            </Button>
+            <Button icon={Eraser} onClick={() => commit(paintCells(model, selection, FLOOR))}>
               {ru.battlemap.selection.clear}
-            </button>
-            <button type="button" onClick={() => setSelection(new Set())}>
+            </Button>
+            <Button icon={X} variant="ghost" onClick={() => setSelection(new Set())}>
               {ru.battlemap.selection.deselect}
-            </button>
+            </Button>
           </div>
         )}
       </section>
 
       <section className="map-side-section map-side-regions">
-        <h3>{ru.battlemap.regions.title}</h3>
+        <h3 className="subheading">{ru.battlemap.regions.title}</h3>
         {model.regions.length === 0 ? (
           <p className="hint">{ru.battlemap.regions.none}</p>
         ) : (
@@ -102,9 +115,10 @@ export function SidePanel({ model, types, objectDefs }: SidePanelProps) {
                     )}
                     <span className="region-name">{r.name || "—"}</span>
                     {!connected && (
-                      <span className="warning" title={ru.battlemap.regions.disconnected}>
-                        ⚠
-                      </span>
+                      <TriangleAlert
+                        className="region-warning"
+                        aria-label={ru.battlemap.regions.disconnected}
+                      />
                     )}
                     <span className="muted">{r.cells.length}</span>
                   </button>
@@ -201,35 +215,40 @@ function RegionEditor({ region, model, types, selection }: RegionEditorProps) {
         {ru.battlemap.regions.showLabel}
       </label>
       <p className="muted">{ru.battlemap.regions.cells(region.cells.length)}</p>
-      {!connected && <p className="warning">⚠ {ru.battlemap.regions.disconnected}</p>}
+      {!connected && (
+        <div className="callout warning">
+          <TriangleAlert aria-hidden />
+          {ru.battlemap.regions.disconnected}
+        </div>
+      )}
       <div className="map-side-actions">
-        <button
-          type="button"
+        <Button
+          icon={SquarePlus}
           disabled={selection.size === 0}
           onClick={() => commit(addCellsToRegion(model, region.id, selection))}
         >
           {ru.battlemap.regions.addSelected}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          icon={SquareMinus}
           disabled={selection.size === 0}
           onClick={() => commit(removeCellsFromRegion(model, region.id, selection))}
         >
           {ru.battlemap.regions.removeSelected}
-        </button>
-        <button type="button" onClick={() => setSelection(new Set(region.cells))}>
+        </Button>
+        <Button icon={SquareDashed} onClick={() => setSelection(new Set(region.cells))}>
           {ru.battlemap.regions.selectCells}
-        </button>
-        <button
-          type="button"
-          className="danger"
+        </Button>
+        <Button
+          variant="danger"
+          icon={Trash}
           onClick={() => {
             commit(deleteRegion(model, region.id));
             setRegion(null);
           }}
         >
           {ru.battlemap.regions.delete}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -251,7 +270,7 @@ function ObjectsSection({ model, objectDefs }: { model: BattlemapModel; objectDe
     const def = objectDefId ? defById.get(objectDefId) : undefined;
     return (
       <section className="map-side-section">
-        <h3>{t.title}</h3>
+        <h3 className="subheading">{t.title}</h3>
         <p className="hint">{def ? t.placing(def.name, placeRotation) : t.pickInPalette}</p>
       </section>
     );
@@ -269,22 +288,29 @@ function ObjectsSection({ model, objectDefs }: { model: BattlemapModel; objectDe
 
   return (
     <section className="map-side-section">
-      <h3>{t.title}</h3>
+      <h3 className="subheading">{t.title}</h3>
       <p className="muted">{names}</p>
       <div className="map-side-actions">
-        <button type="button" onClick={() => commit(rotateObjects(model, sizeOf, selected))}>
+        <Button
+          icon={RotateCw}
+          shortcut="R"
+          title={t.rotate}
+          onClick={() => commit(rotateObjects(model, sizeOf, selected))}
+        >
           {t.rotate}
-        </button>
-        <button
-          type="button"
-          className="danger"
+        </Button>
+        <Button
+          variant="danger"
+          icon={Trash}
+          shortcut="Delete"
+          title={t.delete}
           onClick={() => commit(removeObjects(model, selected))}
         >
           {t.delete}
-        </button>
-        <button type="button" onClick={() => setSelectedObjects(new Set())}>
+        </Button>
+        <Button variant="ghost" icon={X} onClick={() => setSelectedObjects(new Set())}>
           {ru.battlemap.selection.deselect}
-        </button>
+        </Button>
       </div>
     </section>
   );

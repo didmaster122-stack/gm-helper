@@ -1,7 +1,19 @@
 import { getNodesBounds, useReactFlow } from "@xyflow/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import {
+  ChevronDown,
+  Funnel,
+  ImageDown,
+  Network,
+  Redo2,
+  Shield,
+  Undo2,
+  UserPlus,
+  X,
+} from "lucide-react";
 import { pickSavePath, writeChosenFile } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
+import { Button, IconButton, SearchInput, themeColor, useDismiss } from "../../shared/ui";
 import { isFiltered, noFilter, searchGraph, visibleGraph, type GraphFilter } from "./domain/filter";
 import { moveNodes } from "./domain/graph";
 import { forceLayout } from "./domain/layout";
@@ -51,7 +63,7 @@ export function GraphToolbar({
     }
     setBusy(true);
     try {
-      const bytes = await renderFlowPng(viewport, getNodesBounds(nodes), "#16171c");
+      const bytes = await renderFlowPng(viewport, getNodesBounds(nodes), themeColor("--canvas"));
       const path = await pickSavePath(t.exportTitle, `${campaignName} — ${ru.nav.relations}.png`, [
         { name: t.exportFilter, extensions: ["png"] },
       ]);
@@ -67,38 +79,49 @@ export function GraphToolbar({
   }
 
   return (
-    <div className="graph-toolbar">
-      <button type="button" onClick={onNewCharacter}>
-        + {t.newCharacter}
-      </button>
-      <button type="button" onClick={onNewFaction}>
-        + {t.newFaction}
-      </button>
+    <div className="toolbar graph-toolbar">
+      <Button variant="primary" icon={UserPlus} onClick={onNewCharacter}>
+        {t.newCharacter}
+      </Button>
+      <Button icon={Shield} onClick={onNewFaction}>
+        {t.newFaction}
+      </Button>
+      <div className="toolbar-sep" />
       <GraphSearch />
       <FilterMenu />
       <span className="spacer" />
       {notice && (
-        <span
-          className={notice.kind === "error" ? "error graph-notice" : "muted graph-notice"}
-          onClick={() => setNotice(null)}
-        >
-          {notice.text}
+        <span className={notice.kind === "error" ? "toolbar-notice error" : "toolbar-notice"}>
+          <span>{notice.text}</span>
+          <IconButton icon={X} size="sm" label={ru.common.close} onClick={() => setNotice(null)} />
         </span>
       )}
-      <button type="button" onClick={layout} title={t.autoLayoutHint}>
+      <Button icon={Network} variant="ghost" onClick={layout} title={t.autoLayoutHint}>
         {t.autoLayout}
-      </button>
+      </Button>
+      <div className="toolbar-sep" />
       <div className="toolbar-group">
-        <button type="button" onClick={undo} disabled={history.past.length === 0} title={t.undo}>
-          ↶
-        </button>
-        <button type="button" onClick={redo} disabled={history.future.length === 0} title={t.redo}>
-          ↷
-        </button>
+        <IconButton
+          icon={Undo2}
+          label={t.undo}
+          shortcut="Ctrl+Z"
+          onClick={undo}
+          disabled={history.past.length === 0}
+        />
+        <IconButton
+          icon={Redo2}
+          label={t.redo}
+          shortcut="Ctrl+Y"
+          onClick={redo}
+          disabled={history.future.length === 0}
+        />
       </div>
-      <button type="button" onClick={() => void exportPng()} disabled={busy} title={t.exportTitle}>
-        {t.exportPng}
-      </button>
+      <IconButton
+        icon={ImageDown}
+        label={t.exportPng}
+        onClick={() => void exportPng()}
+        disabled={busy}
+      />
     </div>
   );
 }
@@ -128,8 +151,8 @@ function GraphSearch() {
 
   return (
     <div className="graph-search">
-      <input
-        type="search"
+      <SearchInput
+        screenSearch
         placeholder={ru.relations.searchPlaceholder}
         value={query}
         onChange={(e) => {
@@ -147,7 +170,7 @@ function GraphSearch() {
         }}
       />
       {open && query.trim() !== "" && (
-        <ul className="graph-search-results">
+        <ul className="popover menu-list graph-search-results">
           {hits.length === 0 ? (
             <li className="muted">{ru.relations.noMatches}</li>
           ) : (
@@ -155,7 +178,7 @@ function GraphSearch() {
               <li key={h.id}>
                 <button
                   type="button"
-                  className={i === active ? "active" : ""}
+                  className={i === active ? "current" : ""}
                   // mousedown fires before the input loses focus and closes the list.
                   onMouseDown={(e) => {
                     e.preventDefault();
@@ -190,16 +213,9 @@ function FilterMenu() {
   const types = useRelationTypeStore((s) => s.types);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(ref, open, close);
   const t = ru.relations.filter;
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    window.addEventListener("mousedown", onDown);
-    return () => window.removeEventListener("mousedown", onDown);
-  }, [open]);
 
   const update = (patch: Partial<GraphFilter>) => setFilter({ ...filter, ...patch });
   const allTypes = types.map((x) => x.id);
@@ -211,16 +227,17 @@ function FilterMenu() {
 
   return (
     <div className="graph-filter" ref={ref}>
-      <button
-        type="button"
-        className={isFiltered(filter) ? "active" : ""}
+      <Button
+        icon={Funnel}
+        active={isFiltered(filter)}
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        {active > 0 ? ru.relations.filtersActive(active) : ru.relations.filters} ▾
-      </button>
+        {active > 0 ? ru.relations.filtersActive(active) : ru.relations.filters}
+        <ChevronDown aria-hidden />
+      </Button>
       {open && (
-        <div className="graph-filter-menu">
+        <div className="popover filter-menu">
           <label className="check">
             <input
               type="checkbox"
@@ -279,9 +296,9 @@ function FilterMenu() {
             </label>
           ))}
 
-          <button type="button" onClick={() => setFilter(noFilter)} disabled={!isFiltered(filter)}>
+          <Button size="sm" onClick={() => setFilter(noFilter)} disabled={!isFiltered(filter)}>
             {t.reset}
-          </button>
+          </Button>
         </div>
       )}
     </div>

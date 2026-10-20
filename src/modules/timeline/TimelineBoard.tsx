@@ -9,7 +9,9 @@ import {
   type MouseEvent,
   type PointerEvent,
 } from "react";
+import { ZoomIn, ZoomOut } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { Button, IconButton } from "../../shared/ui";
 import {
   anchorAt,
   anchorY,
@@ -633,15 +635,17 @@ function ZoomControls({ zoom, onZoom }: { zoom: number; onZoom: (zoom: number) =
   const t = ru.timeline.zoom;
   return (
     <div className="tl-zoom" onPointerDown={(e) => e.stopPropagation()}>
-      <button type="button" title={t.out} aria-label={t.out} onClick={() => onZoom(zoom / 1.25)}>
-        −
-      </button>
-      <button type="button" title={t.reset} onClick={() => onZoom(1)}>
+      <IconButton icon={ZoomOut} size="sm" label={t.out} onClick={() => onZoom(zoom / 1.25)} />
+      <Button
+        variant="ghost"
+        size="sm"
+        className="zoom-value"
+        title={t.reset}
+        onClick={() => onZoom(1)}
+      >
         {Math.round(zoom * 100)}%
-      </button>
-      <button type="button" title={t.in} aria-label={t.in} onClick={() => onZoom(zoom * 1.25)}>
-        +
-      </button>
+      </Button>
+      <IconButton icon={ZoomIn} size="sm" label={t.in} onClick={() => onZoom(zoom * 1.25)} />
     </div>
   );
 }

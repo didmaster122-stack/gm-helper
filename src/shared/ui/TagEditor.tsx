@@ -1,4 +1,5 @@
 import { useState, type KeyboardEvent } from "react";
+import { X } from "lucide-react";
 import { ru } from "../i18n/ru";
 
 interface TagEditorProps {
@@ -38,7 +39,7 @@ export function TagEditor({ label, tags, onChange }: TagEditorProps) {
               aria-label={ru.common.removeTag(tag)}
               onClick={() => onChange(tags.filter((t) => t !== tag))}
             >
-              ×
+              <X aria-hidden />
             </button>
           </span>
         ))}

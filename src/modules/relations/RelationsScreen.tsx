@@ -1,8 +1,9 @@
 import "@xyflow/react/dist/style.css";
 import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { CircleAlert, Funnel, Waypoints, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { EmptyState } from "../../shared/ui";
+import { EmptyState, IconButton } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { useLibraryStore } from "../library";
 import { CharacterCard } from "./CharacterCard";
@@ -174,8 +175,10 @@ function RelationsView({ campaign, libraryRoot, characterExtras }: RelationsScre
         canvas={() => canvasRef.current}
       />
       {saveError && (
-        <div className="notice error" onClick={clearSaveError}>
-          {ru.relations.saveFailed(saveError)}
+        <div className="notice error">
+          <CircleAlert aria-hidden />
+          <span>{ru.relations.saveFailed(saveError)}</span>
+          <IconButton icon={X} size="sm" label={ru.common.close} onClick={clearSaveError} />
         </div>
       )}
       <div className="relations-body">
@@ -184,13 +187,25 @@ function RelationsView({ campaign, libraryRoot, characterExtras }: RelationsScre
           {(empty || allHidden) && (
             <div className="graph-empty">
               <EmptyState
+                icon={empty ? Waypoints : Funnel}
                 title={empty ? ru.relations.emptyTitle : ru.relations.hiddenByFilter}
                 text={empty ? ru.relations.emptyText : undefined}
               />
             </div>
           )}
         </div>
-        {card && <aside className="graph-side">{card}</aside>}
+        {card && (
+          <aside className="side-panel graph-side">
+            <IconButton
+              icon={X}
+              className="panel-close"
+              label={ru.common.close}
+              shortcut="Esc"
+              onClick={() => useRelationsStore.getState().select(null)}
+            />
+            {card}
+          </aside>
+        )}
       </div>
 
       {dialog?.kind === "character" && (

@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { ImagePlus, ImageMinus } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { Button } from "../../shared/ui";
 import { ArtPicker } from "../library";
 import { nodeName } from "./domain/graph";
 import type { Portrait, RelationGraph } from "./domain/types";
@@ -35,13 +37,18 @@ export function PortraitField({
         <PortraitView image={image} name={name} />
       </div>
       <div className="portrait-actions">
-        <button type="button" onClick={() => setPicking(true)}>
+        <Button size="sm" icon={ImagePlus} onClick={() => setPicking(true)}>
           {portrait.artId ? t.change : t.pick}
-        </button>
+        </Button>
         {portrait.artId && (
-          <button type="button" onClick={() => onChange({ artId: null, tokenId: null })}>
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={ImageMinus}
+            onClick={() => onChange({ artId: null, tokenId: null })}
+          >
             {t.remove}
-          </button>
+          </Button>
         )}
         {image.kind === "token" && <small className="muted">{t.token}</small>}
         {image.kind === "art" && <small className="muted">{t.art}</small>}

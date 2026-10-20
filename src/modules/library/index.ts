@@ -1,3 +1,4 @@
+import "./library.css";
 export { LibraryScreen } from "./LibraryScreen";
 export { ArtPicker } from "./ArtPicker";
 export { useLibraryStore } from "./store";

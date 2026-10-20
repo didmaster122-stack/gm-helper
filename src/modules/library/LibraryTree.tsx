@@ -1,6 +1,17 @@
 import { useState } from "react";
+import {
+  ChevronRight,
+  Folder,
+  FolderInput,
+  ImageOff,
+  Images,
+  Pencil,
+  Plus,
+  Trash,
+  type LucideIcon,
+} from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog, PromptDialog } from "../../shared/ui";
+import { ConfirmDialog, IconButton, PromptDialog } from "../../shared/ui";
 import { artName, joinRel } from "./domain/paths";
 import type { LibrarySelection } from "./domain/types";
 import { nameError } from "./nameError";
@@ -49,12 +60,20 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
       ? tree.systems.map((s) => s.name)
       : (tree.systems.find((s) => s.name === parent)?.groups.map((g) => g.name) ?? []);
 
-  const item = (label: string, count: number, target: LibrarySelection, extra = "") => (
+  const item = (
+    label: string,
+    count: number,
+    target: LibrarySelection,
+    Icon: LucideIcon | null,
+    extra = "",
+  ) => (
     <button
       type="button"
       className={`tree-item ${extra} ${same(selection, target) ? "active" : ""}`}
       onClick={() => setSelection(target)}
+      aria-current={same(selection, target) || undefined}
     >
+      {Icon && <Icon className="tree-icon" aria-hidden />}
       <span className="tree-label">{label}</span>
       <span className="tree-count">{count}</span>
     </button>
@@ -64,28 +83,25 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
     !browse && (
       <span className="tree-actions">
         {canAddGroup && (
-          <button
-            type="button"
-            title={ru.library.newGroup}
+          <IconButton
+            icon={Plus}
+            size="sm"
+            label={ru.library.newGroup}
             onClick={() => setDialog({ kind: "create", parent: relPath })}
-          >
-            +
-          </button>
+          />
         )}
-        <button
-          type="button"
-          title={ru.library.renameFolder}
+        <IconButton
+          icon={Pencil}
+          size="sm"
+          label={ru.library.renameFolder}
           onClick={() => setDialog({ kind: "rename", relPath, name })}
-        >
-          ✎
-        </button>
-        <button
-          type="button"
-          title={ru.library.deleteFolder}
+        />
+        <IconButton
+          icon={Trash}
+          size="sm"
+          label={ru.library.deleteFolder}
           onClick={() => setDialog({ kind: "delete", relPath, name })}
-        >
-          ×
-        </button>
+        />
       </span>
     );
 
@@ -98,21 +114,21 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
 
   return (
     <aside className="library-tree">
-      {item(ru.library.all, tree.total, { kind: "all" })}
-      {tree.unsorted > 0 && item(ru.library.unsorted, tree.unsorted, { kind: "unsorted" }, "muted")}
+      {item(ru.library.all, tree.total, { kind: "all" }, Images)}
+      {tree.unsorted > 0 &&
+        item(ru.library.unsorted, tree.unsorted, { kind: "unsorted" }, FolderInput, "muted")}
       {tree.missing > 0 &&
-        item(ru.library.missingList, tree.missing, { kind: "missing" }, "warning")}
+        item(ru.library.missingList, tree.missing, { kind: "missing" }, ImageOff, "warning")}
 
       <div className="tree-heading">
         <span>{ru.library.systems}</span>
         {!browse && (
-          <button
-            type="button"
-            title={ru.library.newSystem}
+          <IconButton
+            icon={Plus}
+            size="sm"
+            label={ru.library.newSystem}
             onClick={() => setDialog({ kind: "create", parent: "" })}
-          >
-            +
-          </button>
+          />
         )}
       </div>
 
@@ -124,20 +140,22 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
               className="tree-toggle"
               onClick={() => toggle(system.name)}
               aria-expanded={!collapsed.has(system.name)}
+              aria-label={system.name}
             >
-              {collapsed.has(system.name) ? "▸" : "▾"}
+              <ChevronRight aria-hidden />
             </button>
-            {item(system.name, system.count, { kind: "system", system: system.name })}
+            {item(system.name, system.count, { kind: "system", system: system.name }, null)}
             {actions(system.name, system.name, true)}
           </div>
           {!collapsed.has(system.name) &&
             system.groups.map((group) => (
               <div key={group.name} className="tree-row tree-group">
-                {item(group.name, group.count, {
-                  kind: "group",
-                  system: system.name,
-                  group: group.name,
-                })}
+                {item(
+                  group.name,
+                  group.count,
+                  { kind: "group", system: system.name, group: group.name },
+                  Folder,
+                )}
                 {actions(joinRel(system.name, group.name), group.name, false)}
               </div>
             ))}

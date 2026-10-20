@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Trash, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { CommitField, ConfirmDialog, TagEditor } from "../../shared/ui";
+import { Button, CommitField, ConfirmDialog, IconButton, TagEditor } from "../../shared/ui";
 import { sessionList } from "./domain/layout";
 import {
   moveEvent,
@@ -156,15 +157,13 @@ export function EventCard({
                     <span className="muted">{name}</span>
                   )}
                   {c?.isPc && <small className="muted">{ru.relations.kinds.pc}</small>}
-                  <button
-                    type="button"
-                    className="icon-button"
-                    title={t.removeCharacter(name)}
-                    aria-label={t.removeCharacter(name)}
+                  <IconButton
+                    icon={X}
+                    size="sm"
+                    className="faction-remove"
+                    label={t.removeCharacter(name)}
                     onClick={() => patch({ characterIds: e.characterIds.filter((x) => x !== id) })}
-                  >
-                    ×
-                  </button>
+                  />
                 </li>
               );
             })}
@@ -211,10 +210,10 @@ export function EventCard({
         timeline={timeline}
       />
 
-      <div className="art-actions">
-        <button type="button" className="danger" onClick={() => setDeleting(true)}>
+      <div className="panel-actions">
+        <Button variant="danger" icon={Trash} onClick={() => setDeleting(true)}>
           {t.delete}
-        </button>
+        </Button>
       </div>
 
       {deleting && (
@@ -273,15 +272,13 @@ function LinkList({ title, empty, links, otherEnd, timeline }: LinkListProps) {
                 <small className="muted">
                   {other?.session ? ru.timeline.session(other.session) : ru.timeline.future}
                 </small>
-                <button
-                  type="button"
-                  className="icon-button"
-                  title={ru.timeline.event.removeLink}
-                  aria-label={ru.timeline.event.removeLink}
+                <IconButton
+                  icon={X}
+                  size="sm"
+                  className="faction-remove"
+                  label={ru.timeline.event.removeLink}
                   onClick={() => edit((tl) => removeLink(tl, l.id))}
-                >
-                  ×
-                </button>
+                />
               </li>
             );
           })}
@@ -320,17 +317,17 @@ export function LinkCard({ link, timeline }: { link: EventLink; timeline: Timeli
       <h2 className="graph-card-title">{t.title}</h2>
       {end(t.from, link.fromId)}
       {end(t.to, link.toId)}
-      <div className="art-actions">
-        <button
-          type="button"
-          className="danger"
+      <div className="panel-actions">
+        <Button
+          variant="danger"
+          icon={Trash}
           onClick={() => {
             edit((tl) => removeLink(tl, link.id));
             select(null);
           }}
         >
           {t.delete}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -386,17 +383,17 @@ export function MarkerCard({ marker: m, timeline }: { marker: TimeMarker; timeli
         </select>
       </label>
       <small className="hint">{t.moveHint}</small>
-      <div className="art-actions">
-        <button
-          type="button"
-          className="danger"
+      <div className="panel-actions">
+        <Button
+          variant="danger"
+          icon={Trash}
           onClick={() => {
             edit((tl) => removeMarker(tl, m.id));
             select(null);
           }}
         >
           {t.delete}
-        </button>
+        </Button>
       </div>
     </div>
   );

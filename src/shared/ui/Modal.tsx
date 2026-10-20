@@ -1,4 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { X } from "lucide-react";
+import { ru } from "../i18n/ru";
+import { IconButton } from "./Button";
 
 interface ModalProps {
   title: string;
@@ -34,7 +37,10 @@ export function Modal({ title, onClose, children, footer, wide }: ModalProps) {
         aria-label={title}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <h2 className="modal-title">{title}</h2>
+        <header className="modal-header">
+          <h2 className="modal-title">{title}</h2>
+          <IconButton icon={X} label={ru.common.close} shortcut="Esc" onClick={onClose} />
+        </header>
         <div className="modal-body">{children}</div>
         {footer && <div className="modal-footer">{footer}</div>}
       </div>

@@ -1,6 +1,14 @@
 import { useState, type ReactNode } from "react";
+import { Star, Trash, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { CommitField, ConfirmDialog, TagEditor } from "../../shared/ui";
+import {
+  Button,
+  CommitField,
+  ConfirmDialog,
+  IconButton,
+  Segmented,
+  TagEditor,
+} from "../../shared/ui";
 import { PortraitField, RelationList } from "./cardParts";
 import {
   removeCharacter,
@@ -63,18 +71,16 @@ export function CharacterCard({
 
       <div className="field">
         <span>{t.kind}</span>
-        <div className="segmented">
-          {CHARACTER_KINDS.map((kind) => (
-            <button
-              key={kind}
-              type="button"
-              className={c.kind === kind ? "active" : ""}
-              onClick={() => patch({ kind })}
-            >
-              {ru.relations.kindNames[kind]}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          className="block"
+          label={t.kind}
+          value={c.kind}
+          onChange={(kind) => patch({ kind })}
+          options={CHARACTER_KINDS.map((kind) => ({
+            value: kind,
+            label: ru.relations.kindNames[kind],
+          }))}
+        />
       </div>
 
       {c.kind === "pc" && (
@@ -121,25 +127,22 @@ export function CharacterCard({
                   {f.name}
                 </button>
                 {i === 0 ? (
-                  <small className="muted">{t.mainFaction}</small>
+                  <span className="badge accent">{t.mainFaction}</span>
                 ) : (
-                  <button
-                    type="button"
-                    className="small"
+                  <IconButton
+                    icon={Star}
+                    size="sm"
+                    label={t.makeMain}
                     onClick={() => patch({ factionIds: withMainFaction(c.factionIds, f.id) })}
-                  >
-                    {t.makeMain}
-                  </button>
+                  />
                 )}
-                <button
-                  type="button"
-                  className="icon-button"
-                  title={t.removeFaction(f.name)}
-                  aria-label={t.removeFaction(f.name)}
+                <IconButton
+                  icon={X}
+                  size="sm"
+                  className="faction-remove"
+                  label={t.removeFaction(f.name)}
                   onClick={() => patch({ factionIds: c.factionIds.filter((id) => id !== f.id) })}
-                >
-                  ×
-                </button>
+                />
               </li>
             ))}
           </ul>
@@ -184,10 +187,10 @@ export function CharacterCard({
       <RelationList graph={graph} nodeId={c.id} />
       {extras}
 
-      <div className="art-actions">
-        <button type="button" className="danger" onClick={() => setDeleting(true)}>
+      <div className="panel-actions">
+        <Button variant="danger" icon={Trash} onClick={() => setDeleting(true)}>
           {t.delete}
-        </button>
+        </Button>
       </div>
 
       {deleting && (

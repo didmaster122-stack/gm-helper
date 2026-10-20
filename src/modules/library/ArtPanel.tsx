@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { FolderInput, FolderOpen, ImageOff, Pencil, Trash, UserPlus, X } from "lucide-react";
 import { fileUrl, revealInExplorer } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog, Modal, PromptDialog, TagEditor } from "../../shared/ui";
+import { Button, ConfirmDialog, IconButton, Modal, PromptDialog, TagEditor } from "../../shared/ui";
 import { artName, joinRel, parentRel, splitExtension, toAbsolute } from "./domain/paths";
 import type { Art } from "./domain/types";
 import { nameError } from "./nameError";
@@ -69,7 +70,12 @@ export function ArtPanel({
     .map((a) => a.fileName);
 
   return (
-    <aside className="art-panel" key={art.id}>
+    <aside className="side-panel art-panel" key={art.id}>
+      <div className="panel-header">
+        <h2 className="art-title">{artName(art)}</h2>
+        <IconButton icon={X} label={ru.common.close} onClick={() => selectArt(null)} />
+      </div>
+
       <button
         type="button"
         className="art-preview"
@@ -78,13 +84,14 @@ export function ArtPanel({
         disabled={art.missing}
       >
         {art.missing ? (
-          <span className="warning">{ru.library.missing}</span>
+          <span className="art-preview-missing">
+            <ImageOff aria-hidden />
+            {ru.library.missing}
+          </span>
         ) : (
           <img src={fileUrl(path)} alt="" />
         )}
       </button>
-
-      <h2 className="art-title">{artName(art)}</h2>
 
       <label className="field">
         <span>{ru.library.art.displayName}</span>
@@ -129,9 +136,10 @@ export function ArtPanel({
 
       <div className="art-actions">
         {!art.missing && characterTarget && (
-          <button
-            type="button"
-            className="primary"
+          <Button
+            variant="primary"
+            icon={UserPlus}
+            className="art-action-main"
             title={ru.relations.character.createFromArtHint(characterTarget.campaignName)}
             onClick={() =>
               void run(async () =>
@@ -140,24 +148,24 @@ export function ArtPanel({
             }
           >
             {ru.relations.character.createFromArt}
-          </button>
+          </Button>
         )}
         {!art.missing && (
           <>
-            <button type="button" onClick={() => setDialog("rename")}>
+            <Button icon={Pencil} onClick={() => setDialog("rename")}>
               {ru.library.art.rename}
-            </button>
-            <button type="button" onClick={() => setDialog("move")}>
+            </Button>
+            <Button icon={FolderInput} onClick={() => setDialog("move")}>
               {ru.library.art.move}
-            </button>
-            <button type="button" onClick={() => void run(() => revealInExplorer(path))}>
+            </Button>
+            <Button icon={FolderOpen} onClick={() => void run(() => revealInExplorer(path))}>
               {ru.library.art.reveal}
-            </button>
+            </Button>
           </>
         )}
-        <button type="button" className="danger" onClick={() => setDialog("delete")}>
+        <Button variant="danger" icon={Trash} onClick={() => setDialog("delete")}>
           {art.missing ? ru.library.art.forget : ru.library.art.delete}
-        </button>
+        </Button>
       </div>
 
       {dialog === "rename" && (

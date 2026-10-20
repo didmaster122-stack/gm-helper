@@ -7,6 +7,7 @@ import {
   useState,
   type PointerEvent,
 } from "react";
+import { useThemeColor } from "../../shared/ui";
 import { FLOOR, makeTypeLookup, type CellType } from "./domain/cellTypes";
 import {
   cellIndex,
@@ -74,6 +75,7 @@ export function MapCanvas({
   onViewportResize,
   panMode,
 }: MapCanvasProps) {
+  const background = useThemeColor("--canvas");
   const tool = useEditorStore((s) => s.tool);
   const typeId = useEditorStore((s) => s.typeId);
   const selection = useEditorStore((s) => s.selection);
@@ -196,6 +198,7 @@ export function MapCanvas({
         view,
         width: size.width,
         height: size.height,
+        background,
         regions: overlays,
         activeRegion,
         selection,
@@ -211,6 +214,7 @@ export function MapCanvas({
     });
     return () => cancelAnimationFrame(frameId);
   }, [
+    background,
     model,
     lookup,
     base,

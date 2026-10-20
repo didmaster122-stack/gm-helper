@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { Copy, FolderOpen, Pencil, Plus, Trash } from "lucide-react";
 import { copyPngToClipboard, revealInExplorer } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog, Modal } from "../../shared/ui";
+import { Button, ConfirmDialog, Modal } from "../../shared/ui";
 import { artName, toAbsolute } from "./domain/paths";
 import type { Art, Token } from "./domain/types";
 import { useArtTokens, useLibraryStore } from "./store";
@@ -31,11 +32,11 @@ export function TokensSection({ root, art }: { root: string; art: Art }) {
   return (
     <section className="tokens-section">
       <div className="tokens-heading">
-        <span>{ru.library.token.section}</span>
+        <h3 className="subheading">{ru.library.token.section}</h3>
         {!art.missing && (
-          <button type="button" onClick={() => setCreating(true)}>
+          <Button size="sm" icon={Plus} onClick={() => setCreating(true)}>
             {ru.library.token.create}
-          </button>
+          </Button>
         )}
       </div>
       {tokens.length === 0 ? (
@@ -163,12 +164,12 @@ function TokenCard({
         {error && <p className="error">{error}</p>}
         <div className="art-actions">
           {!art.missing && (
-            <button type="button" onClick={() => setDialog("edit")}>
+            <Button icon={Pencil} onClick={() => setDialog("edit")}>
               {ru.library.token.edit}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
+          <Button
+            icon={Copy}
             onClick={() =>
               void run(async () => {
                 await copyPngToClipboard(path);
@@ -177,13 +178,13 @@ function TokenCard({
             }
           >
             {ru.library.token.copy}
-          </button>
-          <button type="button" onClick={() => void run(() => revealInExplorer(path))}>
+          </Button>
+          <Button icon={FolderOpen} onClick={() => void run(() => revealInExplorer(path))}>
             {ru.library.token.reveal}
-          </button>
-          <button type="button" className="danger" onClick={() => setDialog("delete")}>
+          </Button>
+          <Button variant="danger" icon={Trash} onClick={() => setDialog("delete")}>
             {ru.library.token.delete}
-          </button>
+          </Button>
         </div>
       </div>
     </Modal>

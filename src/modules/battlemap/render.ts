@@ -9,7 +9,6 @@ import { CELL_PX, cellSize, visibleCells, type View } from "./domain/view";
 import { getImage } from "./imageCache";
 
 export const COLORS = {
-  background: "#16171c",
   grid: "rgba(0, 0, 0, 0.28)",
   region: "#c9a24a",
   regionActive: "#ffd36b",
@@ -350,6 +349,8 @@ export interface Scene {
   /** Viewport in CSS pixels. */
   width: number;
   height: number;
+  /** Fill around the map; follows the app theme. */
+  background: string;
   regions: readonly RegionOverlay[];
   activeRegion: { id: string; cells: readonly number[] } | null;
   selection: ReadonlySet<number>;
@@ -504,7 +505,7 @@ export function drawRegionLabels(
 export function drawScene(ctx: CanvasRenderingContext2D, sc: Scene) {
   const { model, view } = sc;
   const s = cellSize(view);
-  ctx.fillStyle = COLORS.background;
+  ctx.fillStyle = sc.background;
   ctx.fillRect(0, 0, sc.width, sc.height);
 
   const range = visibleCells(view, model, sc);

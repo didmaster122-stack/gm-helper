@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { ImageOff, SearchX } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { EmptyState, Modal } from "../../shared/ui";
+import { EmptyState, Modal, SearchInput } from "../../shared/ui";
 import { ArtGrid } from "./ArtGrid";
 import { searchArts, type TokenFilter } from "./domain/search";
 import type { Art, LibrarySelection, Token } from "./domain/types";
@@ -105,8 +106,8 @@ export function ArtPicker({
       }
     >
       <div className="picker-toolbar">
-        <input
-          type="search"
+        <SearchInput
+          wrapperClassName="picker-search"
           placeholder={ru.library.searchPlaceholder}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -140,6 +141,8 @@ export function ArtPicker({
           ) : (
             !syncing && (
               <EmptyState
+                compact
+                icon={query.trim() ? SearchX : ImageOff}
                 title={ru.library.emptyTitle}
                 text={query.trim() ? ru.library.noResults(query.trim()) : ru.library.emptySelection}
               />
@@ -152,7 +155,7 @@ export function ArtPicker({
           <span className="muted">{ru.library.picker.variant}</span>
           <button
             type="button"
-            className={chosenToken === null ? "picker-variant active" : "picker-variant"}
+            className={chosenToken === null ? "sm active" : "sm"}
             onClick={() => setVariant({ artId: selected.id, tokenId: null })}
           >
             {ru.library.picker.wholeArt}

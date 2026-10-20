@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Keyboard, TriangleAlert } from "lucide-react";
 import { ru } from "../shared/i18n/ru";
-import { EmptyState } from "../shared/ui";
+import { Button, EmptyState, IconButton } from "../shared/ui";
 import { CampaignSwitcher, RequireCampaign, useActiveCampaign } from "../modules/campaigns";
 import { LibraryScreen } from "../modules/library";
 import { BattlemapScreen } from "../modules/battlemap";
@@ -8,6 +9,8 @@ import { createCharacter, RelationsScreen, showCharacter } from "../modules/rela
 import { CharacterEvents, showEvent, TimelineScreen } from "../modules/timeline";
 import { SettingsScreen } from "../modules/settings";
 import { FirstRun } from "./FirstRun";
+import { ShortcutsDialog } from "./ShortcutsDialog";
+import { useGlobalShortcuts } from "./shortcuts";
 import { Sidebar } from "./Sidebar";
 import { useAppStore } from "./store";
 
@@ -90,24 +93,30 @@ export function App() {
   const libraryRoot = useAppStore((s) => s.libraryRoot);
   const missing = useAppStore((s) => s.libraryRootMissing);
   const init = useAppStore((s) => s.init);
+  const setModule = useAppStore((s) => s.setModule);
+  const [help, setHelp] = useState(false);
+  const openHelp = useCallback(() => setHelp(true), []);
+  useGlobalShortcuts(setModule, openHelp);
 
   useEffect(() => {
     void init();
   }, [init]);
 
   if (status.kind === "loading") {
-    return <div className="center muted">{ru.common.loading}</div>;
+    return (
+      <div className="center">
+        <div className="spinner" role="status" aria-label={ru.common.loading} />
+      </div>
+    );
   }
   if (status.kind === "error") {
     return (
       <EmptyState
+        icon={TriangleAlert}
+        tone="error"
         title={ru.startup.errorTitle}
         text={status.message}
-        action={
-          <button type="button" onClick={() => void init()}>
-            {ru.common.retry}
-          </button>
-        }
+        action={<Button onClick={() => void init()}>{ru.common.retry}</Button>}
       />
     );
   }
@@ -119,11 +128,14 @@ export function App() {
       <div className="main">
         <header className="topbar">
           <CampaignSwitcher libraryRoot={libraryRoot} />
+          <div className="spacer" />
+          <IconButton icon={Keyboard} label={ru.shortcuts.open} shortcut="F1" onClick={openHelp} />
         </header>
         <main className="content">
           <CurrentModule />
         </main>
       </div>
+      {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
     </div>
   );
 }

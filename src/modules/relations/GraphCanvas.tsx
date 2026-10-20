@@ -12,6 +12,7 @@ import {
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ru } from "../../shared/i18n/ru";
+import { useTheme, useThemeColor } from "../../shared/ui";
 import { splitInnerRelations, visibleGraph } from "./domain/filter";
 import {
   avatarCenter,
@@ -53,6 +54,8 @@ interface GraphCanvasProps {
 }
 
 export function GraphCanvas({ libraryRoot, onConnect }: GraphCanvasProps) {
+  const theme = useTheme();
+  const muted = useThemeColor("--text-subtle");
   const graph = useGraph();
   const filter = useRelationsStore((s) => s.filter);
   const selection = useRelationsStore((s) => s.selection);
@@ -298,14 +301,14 @@ export function GraphCanvas({ libraryRoot, onConnect }: GraphCanvasProps) {
       maxZoom={2.5}
       fitView={fitOnInit}
       fitViewOptions={{ padding: 0.2, maxZoom: 1 }}
-      colorMode="dark"
+      colorMode={theme}
     >
       <Background gap={24} />
       <Controls showInteractive={false} />
       <MiniMap<GraphNode>
         pannable
         zoomable
-        nodeColor={(n) => (n.type === "faction" ? `${n.data.color}55` : (n.data.ring ?? "#9a9caa"))}
+        nodeColor={(n) => (n.type === "faction" ? `${n.data.color}55` : (n.data.ring ?? muted))}
         nodeStrokeColor={(n) => (n.type === "faction" ? n.data.color : "transparent")}
       />
     </ReactFlow>

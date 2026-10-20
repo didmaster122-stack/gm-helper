@@ -1,3 +1,4 @@
+import "./relations.css";
 export { RelationsScreen } from "./RelationsScreen";
 export { RelationTypesSettings } from "./RelationTypesSettings";
 export {

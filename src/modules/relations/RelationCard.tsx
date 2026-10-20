@@ -1,5 +1,6 @@
+import { ArrowLeftRight, Trash } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { CommitField } from "../../shared/ui";
+import { Button, CommitField } from "../../shared/ui";
 import { nodeName, removeRelation, updateRelation, type RelationPatch } from "./domain/graph";
 import type { Relation, RelationGraph } from "./domain/types";
 import { TypeSelect } from "./RelationDialogs";
@@ -53,22 +54,24 @@ export function RelationCard({ relation: r, graph }: { relation: Relation; graph
         onCommit={(label) => patch({ label: label.trim() })}
       />
       <CommitField label={t.note} value={r.note} multiline onCommit={(note) => patch({ note })} />
-      <div className="art-actions">
+      <div className="panel-actions">
         {!r.mutual && (
-          <button type="button" onClick={() => patch({ fromId: r.toId, toId: r.fromId })}>
+          <Button icon={ArrowLeftRight} onClick={() => patch({ fromId: r.toId, toId: r.fromId })}>
             {t.reverse}
-          </button>
+          </Button>
         )}
-        <button
-          type="button"
-          className="danger"
+        <Button
+          variant="danger"
+          icon={Trash}
+          shortcut="Delete"
+          title={t.delete}
           onClick={() => {
             edit((g) => removeRelation(g, r.id));
             select(null);
           }}
         >
           {t.delete}
-        </button>
+        </Button>
       </div>
     </div>
   );

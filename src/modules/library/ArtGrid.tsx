@@ -1,5 +1,6 @@
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { memo, useEffect, useRef, useState } from "react";
+import { ImageOff } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
 import { artName, toAbsolute } from "./domain/paths";
 import type { Art } from "./domain/types";
@@ -124,8 +125,14 @@ const ArtTile = memo(function ArtTile({
       title={art.relPath}
     >
       <div className="art-thumb">
-        {thumb.kind === "ready" && <img src={thumb.url} alt="" draggable={false} />}
-        {thumb.kind === "error" && <span className="muted">{ru.library.art.noPreview}</span>}
+        {art.missing ? (
+          <ImageOff className="art-thumb-icon" aria-label={ru.library.missing} />
+        ) : (
+          <>
+            {thumb.kind === "ready" && <img src={thumb.url} alt="" draggable={false} />}
+            {thumb.kind === "error" && <span className="muted">{ru.library.art.noPreview}</span>}
+          </>
+        )}
         {tokens > 0 && (
           <span className="token-badge" title={ru.library.tokenBadge(tokens)}>
             {tokens}

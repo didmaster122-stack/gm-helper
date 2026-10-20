@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog } from "../../shared/ui";
+import { Pencil, Plus, Trash } from "lucide-react";
+import { Button, ConfirmDialog, IconButton } from "../../shared/ui";
 import type { ObjectDef } from "./domain/objects";
 import { LibraryContext } from "./libraryContext";
 import { ObjectForm } from "./ObjectForm";
@@ -31,32 +32,33 @@ export function ObjectsSettings({ libraryRoot }: ObjectsSettingsProps) {
 
   return (
     <LibraryContext.Provider value={{ root: libraryRoot, system: null }}>
-      <div className="tokens-heading subheading">
+      <div className="settings-subhead">
         <p className="hint">{ru.objects.hint}</p>
-        <button type="button" onClick={() => setEditing("new")}>
+        <Button size="sm" icon={Plus} onClick={() => setEditing("new")}>
           {ru.objects.add}
-        </button>
+        </Button>
       </div>
       {defs.length === 0 ? (
         <p className="muted">{ru.objects.none}</p>
       ) : (
-        <ul className="type-list">
+        <ul className="row-list type-list">
           {defs.map((d) => (
             <li key={d.id}>
               <ObjectSwatch def={d} size={32} />
-              <div className="type-info">
+              <div className="row-info">
                 <strong>
                   {d.name} <span className="muted">{ru.objects.size(d.width, d.height)}</span>
                 </strong>
                 <div className="muted">{objectFlagsText(d)}</div>
               </div>
               <div className="row-actions">
-                <button type="button" onClick={() => setEditing(d)}>
-                  {ru.common.change}
-                </button>
-                <button type="button" className="danger" onClick={() => setDeleting(d)}>
-                  {ru.common.delete}
-                </button>
+                <IconButton icon={Pencil} label={ru.common.change} onClick={() => setEditing(d)} />
+                <IconButton
+                  icon={Trash}
+                  label={ru.common.delete}
+                  className="danger"
+                  onClick={() => setDeleting(d)}
+                />
               </div>
             </li>
           ))}

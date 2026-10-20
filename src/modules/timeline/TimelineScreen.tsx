@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { CircleAlert, Funnel, Info, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { EmptyState } from "../../shared/ui";
+import { Button, EmptyState, IconButton } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { useGraph, useRelationsStore } from "../relations";
 import { noFilter, visibleEvents } from "./domain/filter";
@@ -45,12 +46,10 @@ export function TimelineScreen({ campaign, onOpenCharacter }: TimelineScreenProp
   if (status === "error") {
     return (
       <EmptyState
+        icon={CircleAlert}
+        tone="error"
         title={ru.timeline.loadFailed}
-        action={
-          <button type="button" onClick={() => void load(campaign.id, true)}>
-            {ru.common.retry}
-          </button>
-        }
+        action={<Button onClick={() => void load(campaign.id, true)}>{ru.common.retry}</Button>}
       />
     );
   }
@@ -228,7 +227,7 @@ function TimelineView({ campaign, onOpenCharacter }: TimelineScreenProps) {
   const allHidden = timeline.events.length > 0 && events.length === 0;
 
   return (
-    <div className="relations">
+    <div className="tl-screen">
       <TimelineToolbar
         campaignName={campaign.name}
         lanes={unhidden}
@@ -240,12 +239,14 @@ function TimelineView({ campaign, onOpenCharacter }: TimelineScreenProps) {
         exportSource={() => canvasRef.current?.querySelector<HTMLElement>(".tl-content") ?? null}
       />
       {saveError && (
-        <div className="notice error" onClick={clearSaveError}>
-          {ru.timeline.saveFailed(saveError)}
+        <div className="notice error">
+          <CircleAlert aria-hidden />
+          <span>{ru.timeline.saveFailed(saveError)}</span>
+          <IconButton icon={X} size="sm" label={ru.common.close} onClick={clearSaveError} />
         </div>
       )}
-      <div className="relations-body tl-body">
-        <div className="relations-canvas" ref={canvasRef}>
+      <div className="tl-body">
+        <div className="tl-canvas" ref={canvasRef}>
           <TimelineBoard
             timeline={timeline}
             lanes={gridLanes}
@@ -259,11 +260,23 @@ function TimelineView({ campaign, onOpenCharacter }: TimelineScreenProps) {
           />
           {(timeline.events.length === 0 || allHidden) && (
             <div className="tl-hint">
+              {allHidden ? <Funnel aria-hidden /> : <Info aria-hidden />}
               {allHidden ? ru.timeline.hiddenByFilter : ru.timeline.emptyHint}
             </div>
           )}
         </div>
-        {card && <aside className="graph-side">{card}</aside>}
+        {card && (
+          <aside className="side-panel tl-side">
+            <IconButton
+              icon={X}
+              className="panel-close"
+              label={ru.common.close}
+              shortcut="Esc"
+              onClick={() => useTimelineStore.getState().select(null)}
+            />
+            {card}
+          </aside>
+        )}
       </div>
 
       {lanesOpen && (

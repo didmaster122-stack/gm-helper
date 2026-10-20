@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { Pencil, Plus } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { IconButton } from "../../shared/ui";
 import { CellTypeForm } from "./CellTypeForm";
 import type { CellType } from "./domain/cellTypes";
 import type { ObjectDef } from "./domain/objects";
@@ -31,91 +33,85 @@ export function Palette({ types, objectDefs }: PaletteProps) {
 
   return (
     <aside className="map-palette">
-      <div className="palette-heading">
-        <h3>{ru.battlemap.types}</h3>
-        <button
-          type="button"
-          className="icon-button"
-          title={ru.battlemap.palette.newType}
-          aria-label={ru.battlemap.palette.newType}
-          onClick={() => setTypeForm("new")}
-        >
-          +
-        </button>
-      </div>
-      <ul>
-        {types.map((t) => (
-          <li key={t.id} className="palette-row">
-            <button
-              type="button"
-              className={
-                t.id === typeId && tool !== "object" ? "palette-item active" : "palette-item"
-              }
-              title={t.comment || undefined}
-              onClick={() => pickType(t.id)}
-            >
-              <TypeSwatch type={t} />
-              <span>{t.name}</span>
-            </button>
-            {!t.builtin && (
-              <button
-                type="button"
-                className="palette-edit"
-                title={ru.battlemap.palette.edit}
-                aria-label={ru.battlemap.palette.edit}
-                onClick={() => setTypeForm(t)}
-              >
-                ✎
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      <div className="palette-heading">
-        <h3>{ru.battlemap.palette.objects}</h3>
-        <button
-          type="button"
-          className="icon-button"
-          title={ru.battlemap.palette.newObject}
-          aria-label={ru.battlemap.palette.newObject}
-          onClick={() => setObjectForm("new")}
-        >
-          +
-        </button>
-      </div>
-      {objectDefs.length === 0 ? (
-        <p className="hint">{ru.battlemap.palette.noObjects}</p>
-      ) : (
+      <div className="map-palette-list">
+        <div className="palette-heading">
+          <h3 className="subheading">{ru.battlemap.types}</h3>
+          <IconButton
+            icon={Plus}
+            size="sm"
+            label={ru.battlemap.palette.newType}
+            onClick={() => setTypeForm("new")}
+          />
+        </div>
         <ul>
-          {objectDefs.map((d) => (
-            <li key={d.id} className="palette-row">
+          {types.map((t) => (
+            <li key={t.id} className="palette-row">
               <button
                 type="button"
                 className={
-                  d.id === objectDefId && tool === "object" ? "palette-item active" : "palette-item"
+                  t.id === typeId && tool !== "object" ? "palette-item active" : "palette-item"
                 }
-                title={ru.battlemap.palette.objectHint}
-                onClick={() => setObjectDef(d.id)}
+                title={t.comment || undefined}
+                onClick={() => pickType(t.id)}
               >
-                <ObjectSwatch def={d} />
-                <span>{d.name}</span>
-                <span className="muted">{ru.objects.size(d.width, d.height)}</span>
+                <TypeSwatch type={t} />
+                <span>{t.name}</span>
               </button>
-              <button
-                type="button"
-                className="palette-edit"
-                title={ru.battlemap.palette.edit}
-                aria-label={ru.battlemap.palette.edit}
-                onClick={() => setObjectForm(d)}
-              >
-                ✎
-              </button>
+              {!t.builtin && (
+                <IconButton
+                  icon={Pencil}
+                  size="sm"
+                  className="palette-edit"
+                  label={ru.battlemap.palette.edit}
+                  onClick={() => setTypeForm(t)}
+                />
+              )}
             </li>
           ))}
         </ul>
-      )}
-      <p className="hint">{ru.battlemap.hint}</p>
+
+        <div className="palette-heading">
+          <h3 className="subheading">{ru.battlemap.palette.objects}</h3>
+          <IconButton
+            icon={Plus}
+            size="sm"
+            label={ru.battlemap.palette.newObject}
+            onClick={() => setObjectForm("new")}
+          />
+        </div>
+        {objectDefs.length === 0 ? (
+          <p className="hint">{ru.battlemap.palette.noObjects}</p>
+        ) : (
+          <ul>
+            {objectDefs.map((d) => (
+              <li key={d.id} className="palette-row">
+                <button
+                  type="button"
+                  className={
+                    d.id === objectDefId && tool === "object"
+                      ? "palette-item active"
+                      : "palette-item"
+                  }
+                  title={ru.battlemap.palette.objectHint}
+                  onClick={() => setObjectDef(d.id)}
+                >
+                  <ObjectSwatch def={d} />
+                  <span>{d.name}</span>
+                  <span className="muted">{ru.objects.size(d.width, d.height)}</span>
+                </button>
+                <IconButton
+                  icon={Pencil}
+                  size="sm"
+                  className="palette-edit"
+                  label={ru.battlemap.palette.edit}
+                  onClick={() => setObjectForm(d)}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <p className="hint map-palette-hint">{ru.battlemap.hint}</p>
 
       {typeForm && (
         <CellTypeForm

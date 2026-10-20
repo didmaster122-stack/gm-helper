@@ -1,8 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import {
+  CalendarMinus,
+  CalendarPlus,
+  ChevronDown,
+  Clock,
+  Funnel,
+  History,
+  ImageDown,
+  Plus,
+  Redo2,
+  Rows3,
+  Undo2,
+  X,
+} from "lucide-react";
 import { renderElementPng } from "../../shared/pngExport";
 import { pickSavePath, writeChosenFile } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog } from "../../shared/ui";
+import { Button, ConfirmDialog, IconButton, themeColor, useDismiss } from "../../shared/ui";
 import { activeFilters, allTags, noFilter, type TimelineFilter } from "./domain/filter";
 import { addSession, removeLastSession, setCurrentSession } from "./domain/timeline";
 import { EVENT_STATUSES, type CharacterRef, type EventStatus, type Lane } from "./domain/types";
@@ -55,7 +69,7 @@ export function TimelineToolbar({
         source,
         source.offsetWidth,
         source.offsetHeight,
-        "#16171c",
+        themeColor("--canvas"),
       );
       const path = await pickSavePath(t.exportTitle, `${campaignName} — ${ru.nav.timeline}.png`, [
         { name: t.exportFilter, extensions: ["png"] },
@@ -72,77 +86,84 @@ export function TimelineToolbar({
   }
 
   return (
-    <div className="graph-toolbar">
-      <button type="button" onClick={onNewEvent} title={t.newEventHint}>
-        + {t.newEvent}
-      </button>
-      <button type="button" onClick={onNewMarker} title={t.marker.newHint}>
-        + {t.marker.new}
-      </button>
+    <div className="toolbar graph-toolbar">
+      <Button variant="primary" icon={Plus} onClick={onNewEvent} title={t.newEventHint}>
+        {t.newEvent}
+      </Button>
+      <IconButton icon={Clock} variant="secondary" label={t.marker.newHint} onClick={onNewMarker} />
+      <div className="toolbar-sep" />
       <div className="toolbar-group">
-        <button type="button" onClick={() => edit((tl) => addSession(tl))} title={t.addSessionHint}>
+        <Button
+          variant="ghost"
+          icon={CalendarPlus}
+          onClick={() => edit((tl) => addSession(tl))}
+          title={t.addSessionHint}
+        >
           {t.addSession}
-        </button>
-        <button
-          type="button"
+        </Button>
+        <IconButton
+          icon={CalendarMinus}
+          label={t.removeSession}
           onClick={() => setRemovingSession(true)}
           disabled={last === 0}
-          title={t.removeSessionHint}
-        >
-          {t.removeSession}
-        </button>
+        />
       </div>
-      <label className="tl-current">
-        <span>{t.currentSession}</span>
-        <select
-          value={timeline.currentSession ?? ""}
-          onChange={(e) =>
-            edit((tl) =>
-              setCurrentSession(tl, e.target.value === "" ? null : Number(e.target.value)),
-            )
-          }
-        >
-          <option value="">{t.noCurrentSession}</option>
-          {Array.from({ length: last }, (_, i) => i + 1).map((n) => (
-            <option key={n} value={n}>
-              {n}
-            </option>
-          ))}
-        </select>
-      </label>
-      <button
-        type="button"
-        className={filter.happenedOnly ? "active" : ""}
-        aria-pressed={filter.happenedOnly}
+      <select
+        className="tl-current"
+        aria-label={t.currentSession}
+        title={t.currentSession}
+        value={timeline.currentSession ?? ""}
+        onChange={(e) =>
+          edit((tl) => setCurrentSession(tl, e.target.value === "" ? null : Number(e.target.value)))
+        }
+      >
+        <option value="">{t.noCurrentSession}</option>
+        {Array.from({ length: last }, (_, i) => i + 1).map((n) => (
+          <option key={n} value={n}>
+            {t.currentOption(n)}
+          </option>
+        ))}
+      </select>
+      <div className="toolbar-sep" />
+      <Button
+        icon={History}
+        active={filter.happenedOnly}
         title={t.happenedOnlyHint}
         onClick={() => setFilter({ ...filter, happenedOnly: !filter.happenedOnly })}
       >
         {t.happenedOnly}
-      </button>
+      </Button>
       <FilterMenu lanes={lanes} laneNames={laneNames} characters={characters} />
-      <button type="button" onClick={onLanes}>
-        {t.lanes}
-      </button>
+      <IconButton icon={Rows3} label={t.lanes} onClick={onLanes} />
       <span className="spacer" />
       {notice && (
-        <span
-          className={notice.kind === "error" ? "error graph-notice" : "muted graph-notice"}
-          onClick={() => setNotice(null)}
-        >
-          {notice.text}
+        <span className={notice.kind === "error" ? "toolbar-notice error" : "toolbar-notice"}>
+          <span>{notice.text}</span>
+          <IconButton icon={X} size="sm" label={ru.common.close} onClick={() => setNotice(null)} />
         </span>
       )}
       <div className="toolbar-group">
-        <button type="button" onClick={undo} disabled={history.past.length === 0} title={t.undo}>
-          ↶
-        </button>
-        <button type="button" onClick={redo} disabled={history.future.length === 0} title={t.redo}>
-          ↷
-        </button>
+        <IconButton
+          icon={Undo2}
+          label={t.undo}
+          shortcut="Ctrl+Z"
+          onClick={undo}
+          disabled={history.past.length === 0}
+        />
+        <IconButton
+          icon={Redo2}
+          label={t.redo}
+          shortcut="Ctrl+Y"
+          onClick={redo}
+          disabled={history.future.length === 0}
+        />
       </div>
-      <button type="button" onClick={() => void exportPng()} disabled={busy} title={t.exportTitle}>
-        {t.exportPng}
-      </button>
+      <IconButton
+        icon={ImageDown}
+        label={t.exportPng}
+        onClick={() => void exportPng()}
+        disabled={busy}
+      />
 
       {removingSession && (
         <ConfirmDialog
@@ -169,16 +190,9 @@ function FilterMenu({ lanes, laneNames, characters }: FilterMenuProps) {
   const setFilter = useTimelineStore((s) => s.setFilter);
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(ref, open, close);
   const t = ru.timeline.filter;
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    window.addEventListener("mousedown", onDown);
-    return () => window.removeEventListener("mousedown", onDown);
-  }, [open]);
 
   const update = (patch: Partial<TimelineFilter>) => setFilter({ ...filter, ...patch });
   const count = activeFilters(filter);
@@ -195,16 +209,17 @@ function FilterMenu({ lanes, laneNames, characters }: FilterMenuProps) {
 
   return (
     <div className="graph-filter" ref={ref}>
-      <button
-        type="button"
-        className={count > 0 ? "active" : ""}
+      <Button
+        icon={Funnel}
+        active={count > 0}
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
-        {count > 0 ? ru.timeline.filtersActive(count) : ru.timeline.filters} ▾
-      </button>
+        {count > 0 ? ru.timeline.filtersActive(count) : ru.timeline.filters}
+        <ChevronDown aria-hidden />
+      </Button>
       {open && (
-        <div className="graph-filter-menu">
+        <div className="popover filter-menu">
           <label className="field">
             <span>{t.lane}</span>
             <select
@@ -262,13 +277,13 @@ function FilterMenu({ lanes, laneNames, characters }: FilterMenuProps) {
             </select>
           </label>
 
-          <button
-            type="button"
+          <Button
+            size="sm"
             onClick={() => setFilter({ ...noFilter, happenedOnly: filter.happenedOnly })}
             disabled={count === 0}
           >
             {t.reset}
-          </button>
+          </Button>
         </div>
       )}
     </div>

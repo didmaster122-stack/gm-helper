@@ -1,5 +1,8 @@
+import type { ReactNode } from "react";
+import { FolderOpen, Monitor, Moon, Sun } from "lucide-react";
 import { pickDirectory } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
+import { Button, Segmented, useThemeStore } from "../../shared/ui";
 import { CellTypesSettings, ObjectsSettings } from "../battlemap";
 import { CampaignList } from "../campaigns";
 import { RelationTypesSettings } from "../relations";
@@ -9,7 +12,22 @@ interface SettingsScreenProps {
   onLibraryRootChange: (path: string) => Promise<void>;
 }
 
+function Section({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
+  return (
+    <section className="card settings-section">
+      <header>
+        <h2>{title}</h2>
+        <p className="hint">{hint}</p>
+      </header>
+      {children}
+    </section>
+  );
+}
+
 export function SettingsScreen({ libraryRoot, onLibraryRootChange }: SettingsScreenProps) {
+  const preference = useThemeStore((s) => s.preference);
+  const setPreference = useThemeStore((s) => s.setPreference);
+
   async function changeRoot() {
     const path = await pickDirectory(ru.firstRun.dialogTitle, libraryRoot ?? undefined);
     if (path) await onLibraryRootChange(path);
@@ -19,35 +37,43 @@ export function SettingsScreen({ libraryRoot, onLibraryRootChange }: SettingsScr
     <div className="screen settings">
       <h1>{ru.settings.title}</h1>
 
-      <section className="card">
-        <h2>{ru.settings.libraryRoot}</h2>
+      <Section title={ru.settings.appearance} hint={ru.settings.appearanceHint}>
+        <Segmented
+          label={ru.theme.label}
+          value={preference}
+          onChange={setPreference}
+          options={[
+            { value: "system", label: ru.theme.system, icon: Monitor },
+            { value: "light", label: ru.theme.light, icon: Sun },
+            { value: "dark", label: ru.theme.dark, icon: Moon },
+          ]}
+        />
+      </Section>
+
+      <Section title={ru.settings.libraryRoot} hint={ru.settings.libraryRootHint}>
         <div className="path-row">
           <code className="path">{libraryRoot}</code>
-          <button type="button" onClick={changeRoot}>
+          <Button icon={FolderOpen} onClick={changeRoot}>
             {ru.common.change}
-          </button>
+          </Button>
         </div>
-      </section>
+      </Section>
 
-      <section className="card">
-        <h2>{ru.settings.campaigns}</h2>
+      <Section title={ru.settings.campaigns} hint={ru.settings.campaignsHint}>
         <CampaignList libraryRoot={libraryRoot} />
-      </section>
+      </Section>
 
-      <section className="card">
-        <h2>{ru.cellTypes.title}</h2>
+      <Section title={ru.cellTypes.title} hint={ru.settings.cellTypesHint}>
         <CellTypesSettings libraryRoot={libraryRoot} />
-      </section>
+      </Section>
 
-      <section className="card">
-        <h2>{ru.objects.title}</h2>
+      <Section title={ru.objects.title} hint={ru.settings.objectsHint}>
         <ObjectsSettings libraryRoot={libraryRoot} />
-      </section>
+      </Section>
 
-      <section className="card">
-        <h2>{ru.relations.types.title}</h2>
+      <Section title={ru.relations.types.title} hint={ru.settings.relationTypesHint}>
         <RelationTypesSettings />
-      </section>
+      </Section>
     </div>
   );
 }

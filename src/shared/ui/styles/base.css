@@ -1,0 +1,382 @@
+/*
+ * Element defaults and control variants. Element selectors are wrapped in :where() so any
+ * component class overrides them without fighting specificity.
+ */
+
+:root {
+  font-family: var(--font);
+  font-size: var(--text-base);
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+:where(h1) {
+  margin: 0 0 16px;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+:where(h2) {
+  margin: 0 0 12px;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+:where(h3) {
+  margin: 0 0 8px;
+  font-size: var(--text-md);
+  font-weight: 600;
+}
+
+:where(p) {
+  margin: 0 0 12px;
+}
+
+:where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+/* ---- Buttons ---- */
+
+:where(button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--control-h);
+  padding: 0 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--duration) var(--ease),
+    border-color var(--duration) var(--ease),
+    color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+:where(button):hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+:where(button):active:not(:disabled) {
+  background: var(--surface-3);
+}
+
+:where(button):disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+:where(button) > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+}
+
+:where(button).primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+:where(button).primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+:where(button).ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+:where(button).ghost:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+:where(button).danger {
+  color: var(--danger);
+}
+
+:where(button).danger:hover:not(:disabled) {
+  background: var(--danger-soft);
+  border-color: var(--danger);
+}
+
+:where(button).destructive {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+  font-weight: 600;
+}
+
+:where(button).destructive:hover:not(:disabled) {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+}
+
+:where(button).active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+:where(button).active:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+:where(button).sm {
+  min-height: var(--control-h-sm);
+  padding: 0 8px;
+  font-size: var(--text-md);
+  gap: 4px;
+}
+
+:where(button).sm > svg {
+  width: 14px;
+  height: 14px;
+}
+
+:where(button).icon-only {
+  width: var(--control-h);
+  padding: 0;
+}
+
+:where(button).icon-only.sm {
+  width: var(--control-h-sm);
+}
+
+/* Quiet icons: muted until hovered, red only when about to delete. */
+:where(button).ghost.icon-only {
+  color: var(--text-muted);
+}
+
+:where(button).ghost.icon-only:hover:not(:disabled) {
+  color: var(--text);
+}
+
+:where(button).ghost.icon-only.danger:hover:not(:disabled) {
+  color: var(--danger);
+  background: var(--danger-soft);
+  border-color: transparent;
+}
+
+:where(button).ghost.icon-only.active {
+  color: var(--accent-text);
+}
+
+:where(button).link {
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+  color: var(--accent-text);
+  font-weight: 500;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: var(--accent-soft);
+}
+
+:where(button).link:hover:not(:disabled) {
+  background: none;
+  text-decoration-color: currentColor;
+}
+
+/* ---- Inputs ---- */
+
+:where(
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"]),
+  select,
+  textarea
+) {
+  width: 100%;
+  min-height: var(--control-h);
+  padding: 5px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+:where(input, select, textarea):hover:not(:disabled, :focus) {
+  border-color: var(--text-subtle);
+}
+
+:where(input, select, textarea)::placeholder {
+  color: var(--text-subtle);
+}
+
+:where(input, select, textarea):disabled {
+  opacity: 0.55;
+}
+
+:where(textarea) {
+  resize: vertical;
+  line-height: 1.45;
+}
+
+:where(select) {
+  appearance: none;
+  padding-right: 30px;
+  background-image: var(--select-arrow);
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  cursor: pointer;
+}
+
+:where(select) option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+:where(input[type="search"])::-webkit-search-cancel-button {
+  cursor: pointer;
+}
+
+:where(input[type="checkbox"], input[type="radio"], input[type="range"]) {
+  accent-color: var(--accent);
+  margin: 0;
+}
+
+:where(input[type="checkbox"], input[type="radio"]) {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  cursor: pointer;
+}
+
+:where(input[type="color"]) {
+  width: 40px;
+  height: var(--control-h);
+  padding: 3px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+:where(input[type="color"])::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+:where(input[type="color"])::-webkit-color-swatch {
+  border: none;
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Focus ---- */
+
+:where(input, select, textarea):focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+:where(button, a, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+/* ---- Scrollbars ---- */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 2px solid transparent;
+  border-radius: var(--radius-full);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--text-subtle);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ---- Text helpers ---- */
+
+code.path {
+  display: inline-block;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: var(--text-md);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  word-break: break-all;
+}
+
+.muted,
+.hint {
+  color: var(--text-muted);
+}
+
+.hint {
+  font-size: var(--text-md);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.warning {
+  color: var(--warning);
+}
+
+.spacer {
+  flex: 1;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  font-family: var(--font);
+  font-size: var(--text-xs);
+  line-height: 18px;
+  text-align: center;
+  color: var(--text-muted);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: var(--radius-sm);
+}

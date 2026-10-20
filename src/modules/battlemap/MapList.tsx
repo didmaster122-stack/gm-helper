@@ -1,7 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
+import {
+  Check,
+  CircleAlert,
+  Grid3x3,
+  LayoutTemplate,
+  Map as MapIcon,
+  Pencil,
+  Plus,
+  SearchX,
+  Trash,
+  Upload,
+  X,
+} from "lucide-react";
 import { pickFile, readChosenFile } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog, EmptyState } from "../../shared/ui";
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  IconButton,
+  SearchInput,
+  Segmented,
+} from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { useCellTypeStore } from "./cellTypeStore";
 import { parseGmmapFile } from "./domain/gmmapFile";
@@ -90,61 +110,73 @@ export function MapList({ campaign }: { campaign: Campaign }) {
     }
   }
 
-  const actions = (
-    <div className="row-actions">
-      {tab === "maps" && (
-        <>
-          <button type="button" onClick={() => void importFile()}>
-            {ru.battlemap.import.button}
-          </button>
-          <button type="button" className="primary" onClick={() => setForm({ kind: "new" })}>
-            {ru.battlemap.newMap}
-          </button>
-        </>
-      )}
-    </div>
-  );
-
   return (
-    <div className="screen map-list-screen">
+    <div className="screen wide map-list-screen">
       <div className="screen-heading">
         <h1>{ru.battlemap.title}</h1>
-        <div className="segmented">
-          {(["maps", "templates"] as const satisfies readonly GalleryTab[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={tab === t ? "active" : undefined}
-              onClick={() => setTab(t)}
-            >
-              {ru.battlemap.gallery.tabs[t]}
-            </button>
-          ))}
-        </div>
-        <input
-          type="search"
-          className="gallery-search"
+        <Segmented
+          value={tab}
+          onChange={setTab}
+          options={(["maps", "templates"] as const satisfies readonly GalleryTab[]).map((t) => ({
+            value: t,
+            label: ru.battlemap.gallery.tabs[t],
+            icon: t === "maps" ? MapIcon : LayoutTemplate,
+          }))}
+        />
+        <span className="spacer" />
+        <SearchInput
+          wrapperClassName="gallery-search"
+          screenSearch
           placeholder={ru.battlemap.gallery.search}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <span className="spacer" />
-        {actions}
+        {tab === "maps" && (
+          <>
+            <Button icon={Upload} onClick={() => void importFile()}>
+              {ru.battlemap.import.button}
+            </Button>
+            <Button variant="primary" icon={Plus} onClick={() => setForm({ kind: "new" })}>
+              {ru.battlemap.newMap}
+            </Button>
+          </>
+        )}
       </div>
-      {error && <p className="error">{error}</p>}
-      {notice && <p className="notice-text">{notice}</p>}
+      {error && (
+        <div className="notice error">
+          <CircleAlert aria-hidden />
+          <span>{error}</span>
+        </div>
+      )}
+      {notice && (
+        <div className="notice">
+          <Check aria-hidden />
+          <span>{notice}</span>
+          <IconButton icon={X} size="sm" label={ru.common.close} onClick={() => setNotice(null)} />
+        </div>
+      )}
 
       {list.length === 0 ? (
         tab === "maps" ? (
-          <EmptyState title={ru.battlemap.emptyTitle} text={ru.battlemap.emptyText} />
+          <EmptyState
+            icon={MapIcon}
+            title={ru.battlemap.emptyTitle}
+            text={ru.battlemap.emptyText}
+            action={
+              <Button variant="primary" icon={Plus} onClick={() => setForm({ kind: "new" })}>
+                {ru.battlemap.newMap}
+              </Button>
+            }
+          />
         ) : (
           <EmptyState
+            icon={LayoutTemplate}
             title={ru.battlemap.templates.emptyTitle}
             text={ru.battlemap.templates.emptyText}
           />
         )
       ) : shown.length === 0 ? (
-        <p className="muted">{ru.battlemap.gallery.noResults(query.trim())}</p>
+        <EmptyState compact icon={SearchX} title={ru.battlemap.gallery.noResults(query.trim())} />
       ) : (
         <ul className="map-gallery">
           {shown.map((m) => (
@@ -159,15 +191,16 @@ export function MapList({ campaign }: { campaign: Campaign }) {
                   <img className="map-card-preview" src={m.preview} alt="" />
                 ) : (
                   <span className="map-card-preview empty">
-                    {ru.battlemap.sizeCells(m.width, m.height)}
+                    <Grid3x3 aria-hidden />
                   </span>
                 )}
+                <span className="map-card-size badge">
+                  {ru.battlemap.sizeCells(m.width, m.height)}
+                </span>
               </button>
               <div className="map-card-body">
-                <div className="map-card-title">
-                  <strong>{m.name}</strong>
-                  <span className="muted">{ru.battlemap.sizeCells(m.width, m.height)}</span>
-                </div>
+                <strong className="map-card-title">{m.name}</strong>
+                {m.description && <p className="muted map-card-desc">{m.description}</p>}
                 {m.tags.length > 0 && (
                   <div className="map-card-tags">
                     {m.tags.map((tag) => (
@@ -183,27 +216,38 @@ export function MapList({ campaign }: { campaign: Campaign }) {
                     ))}
                   </div>
                 )}
-                {m.description && <p className="muted map-card-desc">{m.description}</p>}
-                <div className="row-actions">
+                <div className="map-card-actions">
                   {tab === "templates" ? (
-                    <button
-                      type="button"
-                      className="primary"
+                    <Button
+                      size="sm"
+                      variant="primary"
+                      icon={Plus}
                       onClick={() => setForm({ kind: "fromTemplate", template: m })}
                     >
                       {ru.battlemap.templates.createMap}
-                    </button>
+                    </Button>
                   ) : (
-                    <button type="button" onClick={() => void toTemplate(m)}>
-                      {ru.battlemap.templates.saveAs}
-                    </button>
+                    <IconButton
+                      size="sm"
+                      icon={LayoutTemplate}
+                      label={ru.battlemap.templates.saveAs}
+                      onClick={() => void toTemplate(m)}
+                    />
                   )}
-                  <button type="button" onClick={() => setForm({ kind: "edit", map: m })}>
-                    {ru.common.change}
-                  </button>
-                  <button type="button" className="danger" onClick={() => setDeleting(m)}>
-                    {ru.common.delete}
-                  </button>
+                  <span className="spacer" />
+                  <IconButton
+                    size="sm"
+                    icon={Pencil}
+                    label={ru.common.change}
+                    onClick={() => setForm({ kind: "edit", map: m })}
+                  />
+                  <IconButton
+                    size="sm"
+                    icon={Trash}
+                    label={ru.common.delete}
+                    className="danger"
+                    onClick={() => setDeleting(m)}
+                  />
                 </div>
               </div>
             </li>

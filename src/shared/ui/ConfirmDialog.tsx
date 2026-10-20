@@ -42,7 +42,7 @@ export function ConfirmDialog({
           </button>
           <button
             type="button"
-            className={danger ? "danger" : "primary"}
+            className={danger ? "destructive" : "primary"}
             onClick={confirm}
             disabled={busy}
             autoFocus

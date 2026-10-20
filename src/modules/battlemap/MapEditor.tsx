@@ -1,5 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Armchair,
+  ArrowLeft,
+  Check,
+  CircleAlert,
+  Download,
+  Eraser,
+  LayoutTemplate,
+  LoaderCircle,
+  MousePointer2,
+  PaintBucket,
+  Paintbrush,
+  Redo2,
+  Scaling,
+  Square,
+  SquareDashed,
+  Undo2,
+  ZoomIn,
+  ZoomOut,
+  type LucideIcon,
+} from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { Button, IconButton, Segmented } from "../../shared/ui";
 import { FLOOR, type CellType } from "./domain/cellTypes";
 import { paintCells } from "./domain/grid";
 import { removeObjects, rotateObjects, type ObjectDef, type ObjectSizeOf } from "./domain/objects";
@@ -11,15 +33,22 @@ import { ResizeDialog } from "./ResizeDialog";
 import { SidePanel } from "./SidePanel";
 import { useEditorStore, useMapListStore, type SaveState, type Tool } from "./store";
 
-const TOOLS: { id: Tool; icon: string; code: string }[] = [
-  { id: "pointer", icon: "↖", code: "KeyP" },
-  { id: "brush", icon: "✎", code: "KeyB" },
-  { id: "rect", icon: "▭", code: "KeyR" },
-  { id: "fill", icon: "◩", code: "KeyG" },
-  { id: "eraser", icon: "⌫", code: "KeyE" },
-  { id: "select", icon: "⬚", code: "KeyV" },
-  { id: "object", icon: "▣", code: "KeyO" },
+const TOOLS: { id: Tool; icon: LucideIcon; code: string }[] = [
+  { id: "pointer", icon: MousePointer2, code: "KeyP" },
+  { id: "brush", icon: Paintbrush, code: "KeyB" },
+  { id: "rect", icon: Square, code: "KeyR" },
+  { id: "fill", icon: PaintBucket, code: "KeyG" },
+  { id: "eraser", icon: Eraser, code: "KeyE" },
+  { id: "select", icon: SquareDashed, code: "KeyV" },
+  { id: "object", icon: Armchair, code: "KeyO" },
 ];
+
+const SAVE_ICON: Record<SaveState, LucideIcon> = {
+  saved: Check,
+  pending: LoaderCircle,
+  saving: LoaderCircle,
+  error: CircleAlert,
+};
 
 const SAVE_LABEL: Record<SaveState, string> = {
   saved: ru.battlemap.saved,
@@ -137,74 +166,65 @@ export function MapEditor({ types, objectDefs }: MapEditorProps) {
 
   return (
     <div className="map-editor">
-      <div className="map-toolbar">
-        <button type="button" onClick={() => void close()} title={ru.battlemap.back}>
-          ←
-        </button>
-        <div className="map-title">
-          {map.isTemplate && <span className="badge">{ru.battlemap.templates.badge}</span>}
-          <strong>{map.name}</strong>
-          <span className="muted">{ru.battlemap.sizeCells(model.width, model.height)}</span>
+      <div className="toolbar map-toolbar">
+        <IconButton icon={ArrowLeft} label={ru.battlemap.back} onClick={() => void close()} />
+        <div className="toolbar-title">
+          {map.isTemplate && <span className="badge accent">{ru.battlemap.templates.badge}</span>}
+          <span>{map.name}</span>
+          <span className="badge">{ru.battlemap.sizeCells(model.width, model.height)}</span>
         </div>
-        <div className="segmented">
-          {TOOLS.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className={tool === t.id ? "active" : undefined}
-              title={ru.battlemap.tools[t.id]}
-              aria-label={ru.battlemap.tools[t.id]}
-              onClick={() => setTool(t.id)}
-            >
-              {t.icon}
-            </button>
-          ))}
-        </div>
+        <div className="toolbar-sep" />
+        <Segmented
+          label={ru.battlemap.toolsLabel}
+          value={tool}
+          onChange={setTool}
+          options={TOOLS.map((t) => ({
+            value: t.id,
+            label: ru.battlemap.tools[t.id],
+            icon: t.icon,
+            iconOnly: true,
+            shortcut: t.code.slice(3),
+          }))}
+        />
+        <div className="toolbar-sep" />
         <div className="toolbar-group">
-          <button
-            type="button"
+          <IconButton
+            icon={Undo2}
+            label={ru.battlemap.undo}
+            shortcut="Ctrl+Z"
             onClick={undo}
             disabled={history.past.length === 0}
-            title={ru.battlemap.undo}
-            aria-label={ru.battlemap.undo}
-          >
-            ↶
-          </button>
-          <button
-            type="button"
+          />
+          <IconButton
+            icon={Redo2}
+            label={ru.battlemap.redo}
+            shortcut="Ctrl+Y"
             onClick={redo}
             disabled={history.future.length === 0}
-            title={ru.battlemap.redo}
-            aria-label={ru.battlemap.redo}
-          >
-            ↷
-          </button>
+          />
         </div>
         <div className="toolbar-group">
-          <button type="button" onClick={() => zoomBy(1 / 1.25)} title={ru.battlemap.zoomOut}>
-            −
-          </button>
-          <button
-            type="button"
+          <IconButton
+            icon={ZoomOut}
+            label={ru.battlemap.zoomOut}
+            onClick={() => zoomBy(1 / 1.25)}
+          />
+          <Button
+            variant="ghost"
             className="zoom-value"
             onClick={() => setView(fitView(model, viewport))}
             title={ru.battlemap.zoomFit}
           >
             {shown ? `${Math.round(shown.zoom * 100)}%` : ""}
-          </button>
-          <button type="button" onClick={() => zoomBy(1.25)} title={ru.battlemap.zoomIn}>
-            +
-          </button>
+          </Button>
+          <IconButton icon={ZoomIn} label={ru.battlemap.zoomIn} onClick={() => zoomBy(1.25)} />
         </div>
-        <button type="button" onClick={() => setResizing(true)}>
-          {ru.battlemap.resize}
-        </button>
-        <button type="button" onClick={() => setExporting(true)}>
-          {ru.battlemap.export.button}
-        </button>
+        <div className="toolbar-sep" />
+        <IconButton icon={Scaling} label={ru.battlemap.resize} onClick={() => setResizing(true)} />
         {!map.isTemplate && (
-          <button
-            type="button"
+          <IconButton
+            icon={LayoutTemplate}
+            label={ru.battlemap.templates.saveAs}
             onClick={() =>
               void saveAsTemplate(map.id).then(
                 () => setNotice(ru.battlemap.templates.saved),
@@ -214,13 +234,14 @@ export function MapEditor({ types, objectDefs }: MapEditorProps) {
                 },
               )
             }
-          >
-            {ru.battlemap.templates.saveAs}
-          </button>
+          />
         )}
         <span className="spacer" />
         {notice && <span className="notice-text">{notice}</span>}
-        <span className={saveState === "error" ? "error" : "muted"}>{SAVE_LABEL[saveState]}</span>
+        <SaveIndicator state={saveState} />
+        <Button icon={Download} onClick={() => setExporting(true)}>
+          {ru.battlemap.export.button}
+        </Button>
       </div>
 
       <div className="map-body">
@@ -261,5 +282,15 @@ export function MapEditor({ types, objectDefs }: MapEditorProps) {
         />
       )}
     </div>
+  );
+}
+
+function SaveIndicator({ state }: { state: SaveState }) {
+  const Icon = SAVE_ICON[state];
+  return (
+    <span className={`save-state ${state}`} role="status">
+      <Icon aria-hidden />
+      {SAVE_LABEL[state]}
+    </span>
   );
 }

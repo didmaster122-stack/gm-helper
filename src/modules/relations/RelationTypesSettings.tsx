@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { getDb } from "../../shared/db";
 import { ru } from "../../shared/i18n/ru";
-import { ColorInput, ConfirmDialog } from "../../shared/ui";
+import { Plus, Trash } from "lucide-react";
+import { Button, ColorInput, ConfirmDialog, IconButton } from "../../shared/ui";
 import { LINE_STYLES, type LineStyle, type RelationType } from "./domain/types";
 import { useRelationTypeStore } from "./relationTypeStore";
 import { countRelationsOfType } from "./repo";
@@ -62,7 +63,7 @@ export function RelationTypesSettings() {
   return (
     <>
       <p className="muted">{t.builtinHint}</p>
-      <ul className="type-list">
+      <ul className="row-list type-list">
         {types.map((type) => (
           <li key={type.id}>
             <LinePreview type={type} />
@@ -102,8 +103,9 @@ export function RelationTypesSettings() {
                 ))}
               </select>
               {!type.builtin && (
-                <button
-                  type="button"
+                <IconButton
+                  icon={Trash}
+                  label={ru.common.delete}
                   className="danger"
                   onClick={() =>
                     void run(async () =>
@@ -113,22 +115,22 @@ export function RelationTypesSettings() {
                       }),
                     )
                   }
-                >
-                  {ru.common.delete}
-                </button>
+                />
               )}
             </div>
           </li>
         ))}
       </ul>
-      <button
-        type="button"
+      <Button
+        size="sm"
+        icon={Plus}
+        className="list-add"
         onClick={() =>
           void run(() => create({ name: t.newName, color: "#8fb3a0", lineStyle: "solid" }))
         }
       >
         {t.add}
-      </button>
+      </Button>
       {error && <p className="error">{error}</p>}
 
       {deleting && (

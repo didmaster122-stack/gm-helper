@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ru } from "../../shared/i18n/ru";
-import { ColorInput, ConfirmDialog } from "../../shared/ui";
+import { Pencil, Plus, RotateCcw, Trash } from "lucide-react";
+import { Button, ColorInput, ConfirmDialog, IconButton } from "../../shared/ui";
 import { useCellTypeStore } from "./cellTypeStore";
 import { CellTypeForm } from "./CellTypeForm";
 import { BUILTIN_TYPES, type CellType } from "./domain/cellTypes";
@@ -35,13 +36,13 @@ export function CellTypesSettings({ libraryRoot }: { libraryRoot: string | null 
   return (
     <LibraryContext.Provider value={{ root: libraryRoot, system: null }}>
       <h3 className="subheading">{ru.cellTypes.builtin}</h3>
-      <ul className="type-list">
+      <ul className="row-list type-list">
         {builtins.map((t) => {
           const changed = t.color !== DEFAULT_COLORS.get(t.id);
           return (
             <li key={t.id}>
               <TypeSwatch type={t} size={24} />
-              <div className="type-info">
+              <div className="row-info">
                 <strong>{t.name}</strong>
                 <div className="muted">{flagsText(t)}</div>
               </div>
@@ -52,9 +53,11 @@ export function CellTypesSettings({ libraryRoot }: { libraryRoot: string | null 
                   onCommit={(c) => void setBuiltinColor(t.id, c)}
                 />
                 {changed && (
-                  <button type="button" onClick={() => void setBuiltinColor(t.id, null)}>
-                    {ru.cellTypes.resetColor}
-                  </button>
+                  <IconButton
+                    icon={RotateCcw}
+                    label={ru.cellTypes.resetColor}
+                    onClick={() => void setBuiltinColor(t.id, null)}
+                  />
                 )}
               </div>
             </li>
@@ -62,31 +65,32 @@ export function CellTypesSettings({ libraryRoot }: { libraryRoot: string | null 
         })}
       </ul>
 
-      <div className="tokens-heading subheading">
-        <h3>{ru.cellTypes.custom}</h3>
-        <button type="button" onClick={() => setEditing("new")}>
+      <div className="settings-subhead">
+        <h3 className="subheading">{ru.cellTypes.custom}</h3>
+        <Button size="sm" icon={Plus} onClick={() => setEditing("new")}>
           {ru.cellTypes.add}
-        </button>
+        </Button>
       </div>
       {custom.length === 0 ? (
         <p className="muted">{ru.cellTypes.noCustom}</p>
       ) : (
-        <ul className="type-list">
+        <ul className="row-list type-list">
           {custom.map((t) => (
             <li key={t.id}>
               <TypeSwatch type={t} size={24} />
-              <div className="type-info">
+              <div className="row-info">
                 <strong>{t.name}</strong>
                 <div className="muted">{flagsText(t)}</div>
                 {t.comment && <div className="type-comment">{t.comment}</div>}
               </div>
               <div className="row-actions">
-                <button type="button" onClick={() => setEditing(t)}>
-                  {ru.common.change}
-                </button>
-                <button type="button" className="danger" onClick={() => setDeleting(t)}>
-                  {ru.common.delete}
-                </button>
+                <IconButton icon={Pencil} label={ru.common.change} onClick={() => setEditing(t)} />
+                <IconButton
+                  icon={Trash}
+                  label={ru.common.delete}
+                  className="danger"
+                  onClick={() => setDeleting(t)}
+                />
               </div>
             </li>
           ))}

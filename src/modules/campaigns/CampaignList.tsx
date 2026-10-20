@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Archive, ArchiveRestore, Pencil, Trash } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog } from "../../shared/ui";
+import { ConfirmDialog, IconButton } from "../../shared/ui";
 import { CampaignForm } from "./CampaignForm";
 import { useCampaignStore } from "./store";
 import type { Campaign } from "./types";
@@ -18,25 +19,30 @@ export function CampaignList({ libraryRoot }: { libraryRoot: string | null }) {
 
   return (
     <>
-      <ul className="campaign-list">
+      <ul className="row-list campaign-list">
         {campaigns.map((c) => (
           <li key={c.id} className={c.archived ? "archived" : undefined}>
-            <div className="campaign-info">
-              <strong>{c.name}</strong>
-              {c.id === activeId && <span className="badge accent">●</span>}
-              {c.archived && <span className="badge">{ru.campaign.archived}</span>}
+            <div className="row-info">
+              <div className="row-title">
+                <strong>{c.name}</strong>
+                {c.id === activeId && <span className="badge accent">{ru.campaign.active}</span>}
+                {c.archived && <span className="badge">{ru.campaign.archived}</span>}
+              </div>
               <div className="muted">{c.system}</div>
             </div>
             <div className="row-actions">
-              <button type="button" onClick={() => setEditing(c)}>
-                {ru.common.change}
-              </button>
-              <button type="button" onClick={() => void setArchived(c.id, !c.archived)}>
-                {c.archived ? ru.campaign.unarchive : ru.campaign.archive}
-              </button>
-              <button type="button" className="danger" onClick={() => setDeleting(c)}>
-                {ru.common.delete}
-              </button>
+              <IconButton icon={Pencil} label={ru.common.change} onClick={() => setEditing(c)} />
+              <IconButton
+                icon={c.archived ? ArchiveRestore : Archive}
+                label={c.archived ? ru.campaign.unarchive : ru.campaign.archive}
+                onClick={() => void setArchived(c.id, !c.archived)}
+              />
+              <IconButton
+                icon={Trash}
+                label={ru.common.delete}
+                className="danger"
+                onClick={() => setDeleting(c)}
+              />
             </div>
           </li>
         ))}

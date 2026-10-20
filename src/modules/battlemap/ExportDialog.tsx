@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { pickSavePath, writeChosenFile } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { Modal } from "../../shared/ui";
+import { FileDown, ImageDown } from "lucide-react";
+import { Button, Modal } from "../../shared/ui";
 import { makeTypeLookup, type CellType } from "./domain/cellTypes";
 import {
   DEFAULT_EXPORT_CELL,
@@ -205,20 +206,20 @@ export function ExportDialog({
           {t.vttHint(size.widthCells, size.heightCells)}
         </p>
         {!fits && <p className="error">{t.tooBig}</p>}
-        <button
-          type="button"
-          className="primary"
+        <Button
+          variant="primary"
+          icon={ImageDown}
           onClick={() => void savePng()}
           disabled={busy || !fits}
         >
           {busy ? t.rendering : t.savePng}
-        </button>
+        </Button>
 
         <h3 className="subheading">{t.file}</h3>
         <p className="hint">{t.fileHint}</p>
-        <button type="button" onClick={() => void saveFile()} disabled={busy}>
+        <Button icon={FileDown} onClick={() => void saveFile()} disabled={busy}>
           {t.saveFile}
-        </button>
+        </Button>
 
         {status.kind === "done" && <p className="notice-text">{status.text}</p>}
         {status.kind === "error" && <p className="error">{status.text}</p>}
