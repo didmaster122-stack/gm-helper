@@ -1,6 +1,8 @@
 export type { Campaign, CampaignInput, CampaignInputError } from "./types";
 export { useCampaignStore, useActiveCampaign } from "./store";
 export { validateCampaignInput } from "./validation";
+export { campaignInsertStatement } from "./repo";
+export { CAMPAIGN_NAME_MAX } from "./types";
 export { CampaignSwitcher } from "./CampaignSwitcher";
 export { CampaignForm } from "./CampaignForm";
 export { CampaignList } from "./CampaignList";

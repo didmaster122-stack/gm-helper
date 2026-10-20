@@ -6,7 +6,9 @@ import { ArtGrid } from "./ArtGrid";
 import { ArtPanel, type CharacterTarget } from "./ArtPanel";
 import { searchArts, type TokenFilter } from "./domain/search";
 import { ImportDialog } from "../../shared/catalog/ImportDialog";
+import { MissingBar } from "../../shared/catalog/MissingBar";
 import { LibraryTree } from "./LibraryTree";
+import { forgetMissingArts } from "./service";
 import { useLibraryStore, useSelectedArt } from "./store";
 import { useDropImport } from "./useDropImport";
 
@@ -42,6 +44,7 @@ export function LibraryScreen({
   const error = useLibraryStore((s) => s.error);
   const sync = useLibraryStore((s) => s.sync);
   const selectArt = useLibraryStore((s) => s.selectArt);
+  const arts = useLibraryStore((s) => s.arts);
   const selected = useSelectedArt();
   const drop = useDropImport();
 
@@ -136,7 +139,23 @@ export function LibraryScreen({
           </div>
         )}
         {selection.kind === "unsorted" && <p className="library-hint">{ru.library.unsortedHint}</p>}
-        {selection.kind === "missing" && <p className="library-hint">{ru.library.missingHint}</p>}
+        {selection.kind === "missing" && (
+          <MissingBar
+            hint={ru.library.missingHint}
+            buttonLabel={ru.library.forgetMissing}
+            confirmTitle={ru.library.forgetMissingTitle}
+            confirmText={ru.library.forgetMissingText(
+              tree.missing,
+              arts.reduce((n, a) => n + (a.missing ? (tokensByArt.get(a.id)?.length ?? 0) : 0), 0),
+            )}
+            empty={tree.missing === 0}
+            onConfirm={async () => {
+              await forgetMissingArts(libraryRoot, arts, tokensByArt);
+              selectArt(null);
+              await sync();
+            }}
+          />
+        )}
 
         {results.length > 0 ? (
           <ArtGrid

@@ -171,11 +171,19 @@ export function parseGmmapFile(text: string): GmmapContent {
     name,
     description: typeof raw.description === "string" ? raw.description : "",
     model: fromJson(raw.map),
-    customTypes: Array.isArray(raw.customTypes)
-      ? raw.customTypes.map(parseType).filter((t): t is GmmapType => t !== null)
-      : [],
-    objects: Array.isArray(raw.objects)
-      ? raw.objects.map(parseObjectDef).filter((d): d is GmmapObject => d !== null)
-      : [],
+    customTypes: parseGmmapTypes(raw.customTypes),
+    objects: parseGmmapObjects(raw.objects),
   };
+}
+
+/** Custom types of a map file or a campaign backup; invalid entries are skipped. */
+export function parseGmmapTypes(raw: unknown): GmmapType[] {
+  return Array.isArray(raw) ? raw.map(parseType).filter((t): t is GmmapType => t !== null) : [];
+}
+
+/** Catalog objects of a map file or a campaign backup; invalid entries are skipped. */
+export function parseGmmapObjects(raw: unknown): GmmapObject[] {
+  return Array.isArray(raw)
+    ? raw.map(parseObjectDef).filter((d): d is GmmapObject => d !== null)
+    : [];
 }

@@ -145,6 +145,12 @@ export async function deleteTrack(root: string, track: Track): Promise<void> {
   await repo.deleteTracks(await getDb(), [track.id]);
 }
 
+/** Forgets the records of files that are gone from disk (tags included). */
+export async function forgetMissingTracks(tracks: readonly Track[]): Promise<void> {
+  const ids = tracks.filter((t) => t.missing).map((t) => t.id);
+  await repo.deleteTracks(await getDb(), ids);
+}
+
 export async function saveTrackMeta(
   track: Track,
   meta: { displayName: string | null; tags: string[] },

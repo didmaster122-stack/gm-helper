@@ -12,6 +12,8 @@ interface RelationTypeState {
   create: (input: repo.RelationTypeInput) => Promise<string>;
   update: (id: string, input: repo.RelationTypeInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
+  /** Adds custom types from a campaign backup that this PC does not have yet (matched by id). */
+  importMissing: (types: readonly RelationType[]) => Promise<void>;
 }
 
 function withNames(types: RelationType[]): RelationType[] {
@@ -23,7 +25,7 @@ function withNames(types: RelationType[]): RelationType[] {
 }
 
 /** Relation types are app-wide (shared by all campaigns). */
-export const useRelationTypeStore = create<RelationTypeState>((set) => {
+export const useRelationTypeStore = create<RelationTypeState>((set, get) => {
   async function refresh() {
     set({ types: withNames(await repo.listRelationTypes(await getDb())) });
   }
@@ -52,8 +54,26 @@ export const useRelationTypeStore = create<RelationTypeState>((set) => {
       await repo.deleteRelationType(await getDb(), id);
       await refresh();
     },
+
+    async importMissing(types) {
+      if (get().types.length === 0) await refresh();
+      const known = new Set(get().types.map((t) => t.id));
+      const missing = types.filter((t) => !known.has(t.id));
+      if (missing.length === 0) return;
+      const db = await getDb();
+      for (const t of missing) {
+        const input = { name: t.name, color: t.color, lineStyle: t.lineStyle };
+        await repo.createRelationType(db, input, undefined, t.id);
+      }
+      await refresh();
+    },
   };
 });
+
+/** Adds the custom relation types of a campaign backup that this PC does not have yet. */
+export function restoreRelationTypes(types: readonly RelationType[]): Promise<void> {
+  return useRelationTypeStore.getState().importMissing(types);
+}
 
 /** Type of a relation; relations of a deleted type are shown as "unknown". */
 export function typeLookup(types: readonly RelationType[]): (id: string) => RelationType {

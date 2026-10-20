@@ -15,6 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { ImportDialog } from "../../shared/catalog/ImportDialog";
+import { MissingBar } from "../../shared/catalog/MissingBar";
 import { toAbsolute } from "../../shared/catalog/paths";
 import { fileUrl, pickDirectory } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
@@ -28,6 +29,7 @@ import { PlayerBar } from "./PlayerControls";
 import { EditorScreen } from "./editor/EditorScreen";
 import { addTrackToEditor } from "./editor/store";
 import { useMusicStore, useSelectedTrack, type MusicTab } from "./store";
+import { forgetMissingTracks } from "./service";
 import { TrackList } from "./TrackList";
 import { TrackPanel } from "./TrackPanel";
 import { useMusicDrop } from "./useMusicDrop";
@@ -124,6 +126,8 @@ function MusicCatalog({ root }: { root: string }) {
   const error = useMusicStore((s) => s.error);
   const sync = useMusicStore((s) => s.sync);
   const selectTrack = useMusicStore((s) => s.selectTrack);
+  const tracks = useMusicStore((s) => s.tracks);
+  const missingCount = useMusicStore((s) => s.tree.missing);
   const selected = useSelectedTrack();
   const currentId = usePlayerStore((s) => s.current?.trackId ?? null);
   const playing = usePlayerStore((s) => s.playing);
@@ -214,7 +218,20 @@ function MusicCatalog({ root }: { root: string }) {
             </div>
           )}
           {selection.kind === "unsorted" && <p className="library-hint">{ru.music.unsortedHint}</p>}
-          {selection.kind === "missing" && <p className="library-hint">{ru.music.missingHint}</p>}
+          {selection.kind === "missing" && (
+            <MissingBar
+              hint={ru.music.missingHint}
+              buttonLabel={ru.music.forgetMissing}
+              confirmTitle={ru.music.forgetMissingTitle}
+              confirmText={ru.music.forgetMissingText(missingCount)}
+              empty={missingCount === 0}
+              onConfirm={async () => {
+                await forgetMissingTracks(tracks);
+                selectTrack(null);
+                await sync();
+              }}
+            />
+          )}
 
           {results.length > 0 ? (
             <TrackList

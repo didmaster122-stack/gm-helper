@@ -7,3 +7,5 @@ export type { Art, Token } from "./domain/types";
 export { tokenUrl } from "./tokenUrl";
 export type { CharacterTarget } from "./ArtPanel";
 export { useThumbnail } from "./thumbnails";
+export { collectLibraryRefs, reloadLibrary, resolveLibraryRefs } from "./backup";
+export { parseArtRefs, resolvePictureLink, type ArtRefs } from "./domain/artRefs";

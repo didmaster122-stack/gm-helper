@@ -193,6 +193,22 @@ export async function listTokens(db: Db): Promise<Token[]> {
   );
 }
 
+/** Insert of a token record, for a batch script (restoring a campaign backup). */
+export function tokenInsertStatement(t: Token): string {
+  return `INSERT INTO tokens (id, art_id, rel_path, size, center_x, center_y, zoom, created_at, updated_at)
+    VALUES (${[
+      lit(t.id),
+      lit(t.artId),
+      lit(t.relPath),
+      lit(t.size),
+      lit(t.crop.centerX),
+      lit(t.crop.centerY),
+      lit(t.crop.zoom),
+      lit(t.createdAt),
+      lit(t.updatedAt),
+    ].join(", ")})`;
+}
+
 export async function insertToken(db: Db, t: Token): Promise<void> {
   await db.execute(
     `INSERT INTO tokens (id, art_id, rel_path, size, center_x, center_y, zoom, created_at, updated_at)

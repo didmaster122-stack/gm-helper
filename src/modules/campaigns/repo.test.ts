@@ -3,7 +3,9 @@ import { migrate } from "../../shared/db/migrate";
 import { migrations } from "../../shared/db/migrations";
 import { createMemoryDb } from "../../shared/db/testing";
 import type { Db } from "../../shared/db/types";
+import { runScript } from "../../shared/db/script";
 import {
+  campaignInsertStatement,
   createCampaign,
   deleteCampaign,
   getCampaign,
@@ -162,5 +164,24 @@ describe("validateCampaignInput", () => {
     [{ name: "Ок", system: "D&D 5e" }, []],
   ])("%o → %o", (input, expected) => {
     expect(validateCampaignInput({ description: "", ...input })).toEqual(expected);
+  });
+});
+
+describe("campaignInsertStatement", () => {
+  it("inserts a campaign restored from a backup, and validates it", async () => {
+    const db = createMemoryDb();
+    await migrate(db, migrations);
+    const campaign = {
+      id: "c1",
+      name: " Тьма O'Hara ",
+      system: "D&D 5e",
+      description: "",
+      archived: false,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-10-21T00:00:00.000Z",
+    };
+    await runScript(db, [campaignInsertStatement(campaign)]);
+    expect(await getCampaign(db, "c1")).toEqual({ ...campaign, name: "Тьма O'Hara" });
+    expect(() => campaignInsertStatement({ ...campaign, system: "" })).toThrow();
   });
 });

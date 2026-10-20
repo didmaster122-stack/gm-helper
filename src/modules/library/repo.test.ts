@@ -16,7 +16,9 @@ import {
   relocate,
   saveArts,
   saveTokens,
+  tokenInsertStatement,
 } from "./repo";
+import { runScript } from "../../shared/db/script";
 
 const NOW = "2026-10-20T12:00:00.000Z";
 
@@ -131,5 +133,19 @@ describe("library repo", () => {
     await deleteTokens(db, ["t2"]);
     await deleteArts(db, [a.id]);
     expect((await listTokens(db)).map((t) => t.id)).toEqual(["t3"]);
+  });
+
+  it("inserts token records from a batch script", async () => {
+    const token: Token = {
+      id: "t'1",
+      artId: "a",
+      relPath: "S/G/_tokens/O'Brien.token-1.png",
+      size: 1024,
+      crop: { centerX: 0.25, centerY: 0.75, zoom: 3.5 },
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    await runScript(db, [tokenInsertStatement(token)]);
+    expect(await listTokens(db)).toEqual([token]);
   });
 });

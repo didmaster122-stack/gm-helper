@@ -3,6 +3,7 @@ import { FolderOpen, Monitor, Moon, Sun } from "lucide-react";
 import { pickDirectory } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
 import { Button, Segmented, useThemeStore } from "../../shared/ui";
+import { BackupSettings } from "../backup";
 import { CellTypesSettings, ObjectsSettings } from "../battlemap";
 import { CampaignList } from "../campaigns";
 import { RelationTypesSettings } from "../relations";
@@ -82,6 +83,10 @@ export function SettingsScreen({
 
       <Section title={ru.settings.campaigns} hint={ru.settings.campaignsHint}>
         <CampaignList libraryRoot={libraryRoot} />
+      </Section>
+
+      <Section title={ru.settings.backup} hint={ru.settings.backupHint}>
+        <BackupSettings libraryRoot={libraryRoot} />
       </Section>
 
       <Section title={ru.cellTypes.title} hint={ru.settings.cellTypesHint}>

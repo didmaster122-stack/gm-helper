@@ -74,6 +74,22 @@ export async function createCampaign(
   return { id, ...data, archived: false, createdAt: now, updatedAt: now };
 }
 
+/** Insert of a new campaign for a batch script (restoring a backup together with its data). */
+export function campaignInsertStatement(campaign: Campaign): string {
+  const data = assertValid(campaign);
+  const values = [
+    campaign.id,
+    data.name,
+    data.system,
+    data.description,
+    campaign.archived,
+    campaign.createdAt,
+    campaign.updatedAt,
+  ];
+  return `INSERT INTO campaigns (id, name, system, description, archived, created_at, updated_at)
+    VALUES (${values.map(sqlLiteral).join(", ")})`;
+}
+
 export async function updateCampaign(
   db: Db,
   id: string,

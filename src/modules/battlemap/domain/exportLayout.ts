@@ -1,3 +1,4 @@
+import { safeFileName as safeName } from "../../../shared/fs/names";
 import type { CellType } from "./cellTypes";
 import { effectiveTypeAt, regionLookup, type BattlemapModel } from "./grid";
 import { usedObjectDefs, type ObjectDef } from "./objects";
@@ -18,13 +19,7 @@ export function fitsCanvas(width: number, height: number): boolean {
 
 /** Windows-safe file name part; falls back to "map". */
 export function safeFileName(name: string): string {
-  const cleaned = name
-    // eslint-disable-next-line no-control-regex
-    .replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/[. ]+$/, "");
-  return cleaned === "" ? "map" : cleaned;
+  return safeName(name, "map");
 }
 
 /** `Склеп_30x20_70px.png`: the size in cells lets the user set up the VTT grid. */

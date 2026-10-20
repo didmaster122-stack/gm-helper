@@ -799,6 +799,19 @@ label.check {
   font-size: var(--text-base);
 }
 
+/* Hint over the "missing files" list of a catalog with its clean-up button. */
+.missing-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 12px 0;
+}
+
+.missing-bar > p.library-hint {
+  flex: 1;
+  margin: 0;
+}
+
 /* A clickable message bar over a screen (import results, warnings). */
 .notice {
   display: flex;

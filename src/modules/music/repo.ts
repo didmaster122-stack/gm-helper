@@ -130,5 +130,6 @@ export async function saveDurations(db: Db, durations: ReadonlyMap<string, numbe
 
 export async function deleteTracks(db: Db, ids: readonly string[]): Promise<void> {
   if (ids.length === 0) return;
-  await db.execute(`DELETE FROM tracks WHERE id IN (${ids.map(() => "?").join(", ")})`, ids);
+  // Inlined: a long "?" list could exceed SQLite's parameter limit (clean-up of missing files).
+  await db.execute(`DELETE FROM tracks WHERE id IN (${ids.map(lit).join(", ")})`);
 }

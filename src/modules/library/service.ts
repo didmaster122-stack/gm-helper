@@ -179,6 +179,26 @@ export async function deleteArt(root: string, art: Art, tokens: readonly Token[]
   await repo.deleteArts(await getDb(), [art.id]);
 }
 
+/**
+ * Forgets the records of arts whose files are gone (e.g. after the library root changed). Their
+ * token files, which the app made itself, go to the recycle bin, as when forgetting one art.
+ */
+export async function forgetMissingArts(
+  root: string,
+  arts: readonly Art[],
+  tokensByArt: ReadonlyMap<string, readonly Token[]>,
+): Promise<void> {
+  const missing = arts.filter((a) => a.missing);
+  await trashTokenFiles(
+    root,
+    missing.flatMap((a) => tokensByArt.get(a.id) ?? []),
+  );
+  await repo.deleteArts(
+    await getDb(),
+    missing.map((a) => a.id),
+  );
+}
+
 export async function saveArtMeta(
   art: Art,
   meta: { displayName: string | null; tags: string[] },

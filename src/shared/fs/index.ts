@@ -16,9 +16,9 @@ import {
   type UnwatchFn,
 } from "@tauri-apps/plugin-fs";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
-import { isServiceName } from "./names";
+import { isServiceName, safeFileName } from "./names";
 
-export { isServiceName };
+export { isServiceName, safeFileName };
 
 export async function pickDirectory(title: string, defaultPath?: string): Promise<string | null> {
   const result = await open({ directory: true, multiple: false, title, defaultPath });

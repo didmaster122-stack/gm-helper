@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { migrate } from "../../shared/db/migrate";
 import { migrations } from "../../shared/db/migrations";
 import { createMemoryDb } from "../../shared/db/testing";
+import { runScript } from "../../shared/db/script";
 import type { Db } from "../../shared/db/types";
 import { addRegion, cellTypeAt, createModel, paintCells } from "./domain/grid";
 import {
@@ -17,6 +18,7 @@ import {
   listMaps,
   listObjectDefs,
   listTemplates,
+  mapInsertStatement,
   saveMapModel,
   setBuiltinColor,
   updateCustomType,
@@ -270,5 +272,34 @@ describe("battlemap repo", () => {
     all = await listCellTypes(db);
     expect(all.some((t) => t.id === id)).toBe(false);
     expect(all.some((t) => t.id === "floor")).toBe(true);
+  });
+});
+
+describe("mapInsertStatement", () => {
+  it("inserts a map restored from a backup with its preview and tags", async () => {
+    const db = createMemoryDb();
+    await migrate(db, migrations);
+    const model = paintCells(createModel(8, 6, { perimeter: true }), [9, 10], "water");
+    const entry = {
+      name: " Склеп ",
+      description: "Сырой",
+      tags: ["нежить", "Нежить"],
+      preview: "data:image/png;base64,AAAA",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-02-01T00:00:00.000Z",
+      model,
+    };
+    await runScript(db, [mapInsertStatement("m1", "camp", entry)]);
+    const [summary] = await listMaps(db, "camp");
+    expect(summary).toMatchObject({
+      id: "m1",
+      name: "Склеп",
+      tags: ["нежить"],
+      preview: entry.preview,
+      isTemplate: false,
+      createdAt: entry.createdAt,
+    });
+    const stored = await getMap(db, "m1");
+    expect(stored && cellTypeAt(stored.model, 9)).toBe("water");
   });
 });

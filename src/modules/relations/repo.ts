@@ -288,12 +288,13 @@ export interface RelationTypeInput {
   lineStyle: LineStyle;
 }
 
+/** Creates a custom type; `id` is given when restoring a campaign backup that uses it. */
 export async function createRelationType(
   db: Db,
   input: RelationTypeInput,
   clock: RepoClock = defaultClock,
+  id: string = clock.newId(),
 ): Promise<string> {
-  const id = clock.newId();
   const now = clock.now().toISOString();
   await db.execute(
     `INSERT INTO relation_types (id, builtin, name, color, line_style, sort, created_at, updated_at)

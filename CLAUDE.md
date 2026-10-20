@@ -30,6 +30,7 @@ src/
     relations/    # персонажи, фракции, граф
     timeline/     # дорожки, события, связи событий
     music/        # каталог музыки, плеер (player.ts), мини-плеер для боковой панели
+    backup/       # экспорт и импорт кампании; секции файла читает и пишет модуль-владелец (domain/backup.ts)
     settings/
   shared/
     catalog/      # общее для папок-каталогов (арты, музыка): пути, сопоставление по хэшу, дерево, импорт
@@ -82,7 +83,8 @@ npm run lint
 npm run typecheck
 npm test              # vitest run; npm run test:watch — в режиме наблюдения
 npm run format        # prettier --write .
-npm run tauri build   # сборка установщика
+npm run tauri build   # сборка установщика NSIS: src-tauri/target/release/bundle/nsis/
+npx tauri icon src-tauri/app-icon.svg   # пересоздать иконки (потом удалить icons/android, icons/ios, icons/64x64.png)
 ```
 
 - Права плагинов Tauri — в `src-tauri/capabilities/default.json`. Библиотека лежит в произвольной папке пользователя, поэтому операциям fs, которые с ней работают (чтение, mkdir, rename, copy, remove, watch), выдан scope `**`. Запись файлов (`write-file`) разрешена только в `$APPCACHE`. Экспорт пишет файл в кэш и копирует его по пути из системного диалога «Сохранить как» (`pickSavePath` + `writeChosenFile`), импорт так же читает через кэш (`readChosenFile`). Asset-протокол (показ картинок с диска) включён в `tauri.conf.json`.

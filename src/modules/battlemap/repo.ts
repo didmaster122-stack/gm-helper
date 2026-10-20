@@ -1,4 +1,6 @@
+import { sqlLiteral as L } from "../../shared/db/script";
 import type { Db } from "../../shared/db/types";
+import type { MapEntry } from "./domain/backup";
 import {
   BUILTIN_TYPES,
   decodeSymbol,
@@ -244,6 +246,28 @@ export async function saveMapModel(
       id,
     ],
   );
+}
+
+/** Insert of a map restored from a campaign backup, for a batch script. */
+export function mapInsertStatement(id: string, campaignId: string, entry: MapEntry): string {
+  const info = normalizeInfo(entry);
+  const { model } = entry;
+  return `INSERT INTO battlemaps (id, campaign_id, is_template, name, description, tags, width, height,
+    data, preview, created_at, updated_at)
+    VALUES (${[
+      L(id),
+      L(campaignId),
+      L(0),
+      L(info.name),
+      L(info.description),
+      L(JSON.stringify(info.tags)),
+      L(model.width),
+      L(model.height),
+      L(JSON.stringify(toJson(model))),
+      L(entry.preview),
+      L(entry.createdAt),
+      L(entry.updatedAt),
+    ].join(", ")})`;
 }
 
 export async function deleteMap(db: Db, id: string): Promise<void> {

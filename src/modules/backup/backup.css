@@ -1,0 +1,42 @@
+.backup-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.backup-row .field {
+  flex: 1;
+  min-width: 240px;
+}
+
+.backup-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.backup-settings .notice {
+  margin: 12px 0 0;
+}
+
+.backup-report {
+  align-items: flex-start;
+}
+
+.backup-report > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.backup-report p {
+  margin: 0 0 4px;
+}
+
+.backup-report ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.backup-report code {
+  overflow-wrap: anywhere;
+}
