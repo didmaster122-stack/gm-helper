@@ -6,6 +6,10 @@
   "permissions": [
     "core:default",
     "opener:default",
+    {
+      "identifier": "opener:allow-reveal-item-in-dir",
+      "allow": [{ "path": "**" }]
+    },
     "sql:default",
     "sql:allow-execute",
     "dialog:allow-open",
@@ -16,6 +20,39 @@
     {
       "identifier": "fs:allow-exists",
       "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-stat",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-rename",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-copy-file",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-remove",
+      "allow": [{ "path": "**" }]
+    },
+    {
+      "identifier": "fs:allow-watch",
+      "allow": [{ "path": "**" }]
+    },
+    "fs:allow-unwatch",
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [{ "path": "$APPCACHE/**" }]
+    },
+    {
+      "identifier": "fs:allow-read-file",
+      "allow": [{ "path": "$APPCACHE/**" }]
     }
   ]
 }

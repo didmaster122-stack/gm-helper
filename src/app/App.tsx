@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { ru } from "../shared/i18n/ru";
 import { EmptyState } from "../shared/ui";
-import { CampaignSwitcher, RequireCampaign } from "../modules/campaigns";
+import { CampaignSwitcher, RequireCampaign, useActiveCampaign } from "../modules/campaigns";
 import { LibraryScreen } from "../modules/library";
 import { BattlemapScreen } from "../modules/battlemap";
 import { RelationsScreen } from "../modules/relations";
@@ -15,10 +15,13 @@ function CurrentModule() {
   const module = useAppStore((s) => s.module);
   const libraryRoot = useAppStore((s) => s.libraryRoot);
   const setLibraryRoot = useAppStore((s) => s.setLibraryRoot);
+  const campaign = useActiveCampaign();
 
   switch (module) {
     case "library":
-      return <LibraryScreen />;
+      return libraryRoot ? (
+        <LibraryScreen libraryRoot={libraryRoot} preferredSystem={campaign?.system ?? null} />
+      ) : null;
     case "battlemaps":
       return (
         <RequireCampaign libraryRoot={libraryRoot}>

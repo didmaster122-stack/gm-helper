@@ -30,4 +30,29 @@ export const migrations: Migration[] = [
       );
     `,
   },
+  {
+    version: 2,
+    name: "arts",
+    sql: `
+      CREATE TABLE arts (
+        id           TEXT PRIMARY KEY,
+        rel_path     TEXT NOT NULL UNIQUE,
+        system       TEXT,
+        grp          TEXT,
+        unsorted     INTEGER NOT NULL,
+        file_name    TEXT NOT NULL,
+        size         INTEGER NOT NULL,
+        mtime        INTEGER NOT NULL,
+        hash         TEXT,
+        width        INTEGER,
+        height       INTEGER,
+        display_name TEXT,
+        tags         TEXT NOT NULL DEFAULT '[]',
+        missing      INTEGER NOT NULL DEFAULT 0,
+        created_at   TEXT NOT NULL,
+        updated_at   TEXT NOT NULL
+      );
+      CREATE INDEX arts_hash ON arts (hash);
+    `,
+  },
 ];

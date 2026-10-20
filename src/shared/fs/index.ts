@@ -1,11 +1,23 @@
 // The only place that talks to the file system directly (see CLAUDE.md).
+// Paths passed here are absolute; Windows accepts "/" as a separator.
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { appCacheDir, join } from "@tauri-apps/api/path";
 import { open } from "@tauri-apps/plugin-dialog";
-import { exists, readDir } from "@tauri-apps/plugin-fs";
+import {
+  copyFile,
+  exists,
+  mkdir,
+  readDir,
+  remove,
+  rename,
+  watch,
+  writeFile,
+  type UnwatchFn,
+} from "@tauri-apps/plugin-fs";
+import { revealItemInDir } from "@tauri-apps/plugin-opener";
+import { isServiceName } from "./names";
 
-/** Folders starting with "_" or "." are service folders, not systems or groups. */
-export function isServiceFolderName(name: string): boolean {
-  return name.startsWith("_") || name.startsWith(".");
-}
+export { isServiceName };
 
 export async function pickDirectory(title: string, defaultPath?: string): Promise<string | null> {
   const result = await open({ directory: true, multiple: false, title, defaultPath });
@@ -20,7 +32,89 @@ export function pathExists(path: string): Promise<boolean> {
 export async function listSubfolders(path: string): Promise<string[]> {
   const entries = await readDir(path);
   return entries
-    .filter((e) => e.isDirectory && !isServiceFolderName(e.name))
+    .filter((e) => e.isDirectory && !isServiceName(e.name))
     .map((e) => e.name)
     .sort((a, b) => a.localeCompare(b, "ru"));
+}
+
+/** Names of all entries (files and folders) directly inside a folder. */
+export async function listNames(path: string): Promise<string[]> {
+  return (await readDir(path)).map((e) => e.name);
+}
+
+export interface LibraryScanResult {
+  files: { relPath: string; size: number; mtime: number }[];
+  folders: string[];
+  errors: string[];
+}
+
+export function scanLibrary(
+  root: string,
+  extensions: readonly string[],
+): Promise<LibraryScanResult> {
+  return invoke("scan_library", { root, extensions });
+}
+
+export interface FileInfo {
+  path: string;
+  hash: string | null;
+  width: number | null;
+  height: number | null;
+  error: string | null;
+}
+
+export function inspectFiles(paths: readonly string[]): Promise<FileInfo[]> {
+  return invoke("inspect_files", { paths });
+}
+
+/** Recycle bin, so the user can restore what was deleted. */
+export function moveToTrash(paths: readonly string[]): Promise<void> {
+  return invoke("move_to_trash", { paths });
+}
+
+export function createFolder(path: string): Promise<void> {
+  return mkdir(path, { recursive: true });
+}
+
+/** Removes a folder only if it is empty (fails otherwise). */
+export function removeEmptyFolder(path: string): Promise<void> {
+  return remove(path, { recursive: false });
+}
+
+export async function movePath(from: string, to: string): Promise<void> {
+  if (from.toLowerCase() !== to.toLowerCase() && (await exists(to))) {
+    throw new Error(`Target already exists: ${to}`);
+  }
+  await rename(from, to);
+}
+
+export async function copyNewFile(from: string, to: string): Promise<void> {
+  if (await exists(to)) throw new Error(`Target already exists: ${to}`);
+  await copyFile(from, to);
+}
+
+export function revealInExplorer(path: string): Promise<void> {
+  return revealItemInDir(path);
+}
+
+/** URL the webview can load an image from. */
+export function fileUrl(path: string): string {
+  return convertFileSrc(path);
+}
+
+/** Watches a folder tree; the callback is debounced by the plugin. */
+export function watchTree(path: string, onChange: () => void, delayMs = 800): Promise<UnwatchFn> {
+  return watch(path, () => onChange(), { recursive: true, delayMs });
+}
+
+// App cache (thumbnails). Never inside the user's library.
+
+export async function cacheDir(...parts: string[]): Promise<string> {
+  const dir = await join(await appCacheDir(), ...parts);
+  await mkdir(dir, { recursive: true });
+  return dir;
+}
+
+export async function writeCacheFile(path: string, data: Uint8Array): Promise<void> {
+  await writeFile(path, data);
 }

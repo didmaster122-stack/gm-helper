@@ -5,9 +5,11 @@ interface ModalProps {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  /** Large dialog for grids and previews. */
+  wide?: boolean;
 }
 
-export function Modal({ title, onClose, children, footer }: ModalProps) {
+export function Modal({ title, onClose, children, footer, wide }: ModalProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -19,7 +21,7 @@ export function Modal({ title, onClose, children, footer }: ModalProps) {
   return (
     <div className="modal-backdrop" onMouseDown={onClose}>
       <div
-        className="modal"
+        className={wide ? "modal wide" : "modal"}
         role="dialog"
         aria-modal="true"
         aria-label={title}
