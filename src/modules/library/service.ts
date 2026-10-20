@@ -20,13 +20,15 @@ import {
   toAbsolute,
 } from "./domain/paths";
 import { filesToInspect, hasChanges, planScan, resolveScan } from "./domain/reconcile";
-import type { Art, FileInspection } from "./domain/types";
+import type { Art, FileInspection, Token } from "./domain/types";
 import * as repo from "./repo";
+import { relocateTokenFiles, trashTokenFiles } from "./tokenService";
 
 const INSPECT_BATCH = 40;
 
 export interface SyncResult {
   arts: Art[];
+  tokens: Token[];
   folders: string[];
   errors: string[];
 }
@@ -62,7 +64,8 @@ export async function syncLibrary(root: string, onProgress?: Progress): Promise<
   const changes = resolveScan(plan, inspected, { now, newId: () => crypto.randomUUID() });
   if (hasChanges(changes)) await repo.applyScanChanges(db, changes, now);
 
-  return { arts: await repo.listArts(db), folders: scan.folders, errors };
+  const [arts, tokens] = await Promise.all([repo.listArts(db), repo.listTokens(db)]);
+  return { arts, tokens, folders: scan.folders, errors };
 }
 
 // Folders (systems and groups)
@@ -71,12 +74,13 @@ export async function createLibraryFolder(root: string, relPath: string): Promis
   await createFolder(toAbsolute(root, relPath));
 }
 
-/** Renames a system or group folder and rewrites paths of the arts inside it. */
+/** Renames a system or group folder and rewrites paths of the arts and tokens inside it. */
 export async function renameLibraryFolder(
   root: string,
   relPath: string,
   newName: string,
   arts: readonly Art[],
+  tokens: readonly Token[],
 ): Promise<void> {
   const target = joinRel(parentRel(relPath), newName);
   await movePath(toAbsolute(root, relPath), toAbsolute(root, target));
@@ -85,7 +89,11 @@ export async function renameLibraryFolder(
     const path = replacePrefix(art.relPath, relPath, target);
     return path === null ? [] : [repo.relocate(art, path, now)];
   });
-  await repo.saveArts(await getDb(), moved);
+  const movedTokens = tokens.flatMap((token) => {
+    const path = replacePrefix(token.relPath, relPath, target);
+    return path === null ? [] : [{ ...token, relPath: path, updatedAt: now }];
+  });
+  await repo.saveArts(await getDb(), moved, movedTokens);
 }
 
 /** Arts whose files are inside the folder (for the delete confirmation). */
@@ -98,40 +106,76 @@ export async function deleteLibraryFolder(
   root: string,
   relPath: string,
   arts: readonly Art[],
+  tokens: readonly Token[],
 ): Promise<void> {
   const abs = toAbsolute(root, relPath);
   const inside = arts.filter((a) => replacePrefix(a.relPath, relPath, "") !== null);
   if ((await listNames(abs)).length === 0) await removeEmptyFolder(abs);
   else await moveToTrash([abs]);
+  const db = await getDb();
   await repo.deleteArts(
-    await getDb(),
+    db,
     inside.map((a) => a.id),
+  );
+  // Tokens of arts kept elsewhere whose files were in this folder are gone too.
+  await repo.deleteTokens(
+    db,
+    tokens.filter((t) => replacePrefix(t.relPath, relPath, "") !== null).map((t) => t.id),
   );
 }
 
 // Arts
 
-/** Renames the file, keeping its extension. Tokens follow in stage 2. */
-export async function renameArt(root: string, art: Art, newBaseName: string): Promise<Art> {
+export interface Relocated {
+  art: Art;
+  /** Tokens whose files moved along. */
+  tokens: Token[];
+}
+
+/** Renames the file, keeping its extension. Token files are renamed to match. */
+export async function renameArt(
+  root: string,
+  art: Art,
+  tokens: readonly Token[],
+  newBaseName: string,
+): Promise<Relocated> {
   const { ext } = splitExtension(art.fileName);
   const target = joinRel(parentRel(art.relPath), `${newBaseName.trim()}${ext}`);
-  return relocateArt(root, art, target);
+  return relocateArt(root, art, tokens, target);
 }
 
-export async function moveArt(root: string, art: Art, system: string, group: string): Promise<Art> {
-  return relocateArt(root, art, joinRel(system, group, art.fileName));
+/** Moves the art into another group; its tokens go to that group's "_tokens". */
+export async function moveArt(
+  root: string,
+  art: Art,
+  tokens: readonly Token[],
+  system: string,
+  group: string,
+): Promise<Relocated> {
+  return relocateArt(root, art, tokens, joinRel(system, group, art.fileName));
 }
 
-async function relocateArt(root: string, art: Art, target: string): Promise<Art> {
-  if (target === art.relPath) return art;
+async function relocateArt(
+  root: string,
+  art: Art,
+  tokens: readonly Token[],
+  target: string,
+): Promise<Relocated> {
+  if (target === art.relPath) return { art, tokens: [] };
   await movePath(toAbsolute(root, art.relPath), toAbsolute(root, target));
   const updated = repo.relocate(art, target, new Date().toISOString());
-  await repo.saveArts(await getDb(), [updated]);
-  return updated;
+  const db = await getDb();
+  // Save the art first: if moving tokens fails midway, the art record is still right.
+  await repo.saveArts(db, [updated]);
+  const movedTokens = await relocateTokenFiles(root, tokens, target);
+  await repo.saveTokens(db, movedTokens);
+  return { art: updated, tokens: movedTokens };
 }
 
-export async function deleteArt(root: string, art: Art): Promise<void> {
+/** The art and its token files go to the recycle bin; their records are removed. */
+export async function deleteArt(root: string, art: Art, tokens: readonly Token[]): Promise<void> {
   if (!art.missing) await moveToTrash([toAbsolute(root, art.relPath)]);
+  await trashTokenFiles(root, tokens);
   await repo.deleteArts(await getDb(), [art.id]);
 }
 

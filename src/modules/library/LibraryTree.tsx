@@ -25,6 +25,7 @@ export function LibraryTree() {
   const root = useLibraryStore((s) => s.root);
   const tree = useLibraryStore((s) => s.tree);
   const arts = useLibraryStore((s) => s.arts);
+  const tokens = useLibraryStore((s) => s.tokens);
   const selection = useLibraryStore((s) => s.selection);
   const setSelection = useLibraryStore((s) => s.setSelection);
   const sync = useLibraryStore((s) => s.sync);
@@ -160,7 +161,7 @@ export function LibraryTree() {
             return nameError(v, siblingsOf(parent), dialog.name);
           }}
           onSubmit={async (name) => {
-            await renameLibraryFolder(root, dialog.relPath, name, arts);
+            await renameLibraryFolder(root, dialog.relPath, name, arts, tokens);
             setSelection({ kind: "all" });
             await sync();
           }}
@@ -190,6 +191,7 @@ function DeleteFolderDialog({
 }) {
   const root = useLibraryStore((s) => s.root);
   const arts = useLibraryStore((s) => s.arts);
+  const tokens = useLibraryStore((s) => s.tokens);
   const setSelection = useLibraryStore((s) => s.setSelection);
   const sync = useLibraryStore((s) => s.sync);
   if (!root) return null;
@@ -209,7 +211,7 @@ function DeleteFolderDialog({
       confirmLabel={ru.common.delete}
       danger
       onConfirm={async () => {
-        await deleteLibraryFolder(root, relPath, arts);
+        await deleteLibraryFolder(root, relPath, arts, tokens);
         setSelection({ kind: "all" });
         await sync();
       }}

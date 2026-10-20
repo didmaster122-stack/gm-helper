@@ -85,6 +85,7 @@ npm run tauri build   # сборка установщика
 - Права плагинов Tauri — в `src-tauri/capabilities/default.json`. Библиотека лежит в произвольной папке пользователя, поэтому операциям fs, которые с ней работают (чтение, mkdir, rename, copy, remove, watch), выдан scope `**`. Запись файлов (`write-file`) разрешена только в `$APPCACHE`. Asset-протокол (показ картинок с диска) включён в `tauri.conf.json`.
 - Команды Rust (`src-tauri/src/files.rs`): `scan_library` (обход библиотеки с размером и mtime за один вызов), `inspect_files` (SHA-256 и размеры по заголовку), `move_to_trash`. Вызываются только из `shared/fs`.
 - Миниатюры: `%LOCALAPPDATA%\com.gmhelper.app\thumbs\<sha256>.webp`, создаются лениво (`modules/library/thumbnails.ts`).
+- Токены: PNG в `<группа>/_tokens/<арт>.token-<n>.png`, параметры кадрирования в таблице `tokens` (`modules/library/tokenService.ts`, чистая логика в `domain/tokenCrop.ts` и `domain/tokenNames.ts`). В библиотеку файлы пишутся через `writeOwnLibraryFile` (сначала в `$APPCACHE/staging`, потом копирование). Картинки для Canvas загружай с `crossOrigin = "anonymous"`, иначе холст нельзя экспортировать.
 
 ## Окружение
 

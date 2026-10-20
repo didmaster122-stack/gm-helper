@@ -55,4 +55,22 @@ export const migrations: Migration[] = [
       CREATE INDEX arts_hash ON arts (hash);
     `,
   },
+  {
+    version: 3,
+    name: "tokens",
+    sql: `
+      CREATE TABLE tokens (
+        id         TEXT PRIMARY KEY,
+        art_id     TEXT NOT NULL,
+        rel_path   TEXT NOT NULL,
+        size       INTEGER NOT NULL,
+        center_x   REAL NOT NULL,
+        center_y   REAL NOT NULL,
+        zoom       REAL NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+      CREATE INDEX tokens_art ON tokens (art_id);
+    `,
+  },
 ];

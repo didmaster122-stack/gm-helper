@@ -1,3 +1,5 @@
+import type { TokenCrop, TokenSize } from "./tokenCrop";
+
 export interface Art {
   id: string;
   /** Relative to the library root, "/"-separated. */
@@ -20,6 +22,18 @@ export interface Art {
   tags: string[];
   /** The file is gone from disk; the record is kept until the user cleans it up. */
   missing: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Round PNG made from an art (spec §2.5). */
+export interface Token {
+  id: string;
+  artId: string;
+  /** Relative to the library root; usually "<art folder>/_tokens/<art>.token-<n>.png". */
+  relPath: string;
+  size: TokenSize;
+  crop: TokenCrop;
   createdAt: string;
   updatedAt: string;
 }

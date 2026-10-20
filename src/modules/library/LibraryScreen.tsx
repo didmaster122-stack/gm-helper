@@ -3,11 +3,13 @@ import { ru } from "../../shared/i18n/ru";
 import { EmptyState } from "../../shared/ui";
 import { ArtGrid } from "./ArtGrid";
 import { ArtPanel } from "./ArtPanel";
-import { searchArts } from "./domain/search";
+import { searchArts, type TokenFilter } from "./domain/search";
 import { ImportDialog } from "./ImportDialog";
 import { LibraryTree } from "./LibraryTree";
 import { useLibraryStore, useSelectedArt } from "./store";
 import { useDropImport } from "./useDropImport";
+
+const TOKEN_FILTERS: readonly TokenFilter[] = ["any", "with", "without"];
 
 interface LibraryScreenProps {
   libraryRoot: string;
@@ -24,6 +26,9 @@ export function LibraryScreen({ libraryRoot, preferredSystem }: LibraryScreenPro
   const setSelection = useLibraryStore((s) => s.setSelection);
   const query = useLibraryStore((s) => s.query);
   const setQuery = useLibraryStore((s) => s.setQuery);
+  const tokensByArt = useLibraryStore((s) => s.tokensByArt);
+  const tokenFilter = useLibraryStore((s) => s.tokenFilter);
+  const setTokenFilter = useLibraryStore((s) => s.setTokenFilter);
   const syncing = useLibraryStore((s) => s.syncing);
   const progress = useLibraryStore((s) => s.progress);
   const syncErrors = useLibraryStore((s) => s.syncErrors);
@@ -49,7 +54,14 @@ export function LibraryScreen({ libraryRoot, preferredSystem }: LibraryScreenPro
     }
   }, [tree, preferredSystem, libraryRoot, setSelection]);
 
-  const results = useMemo(() => searchArts(entries, query, selection), [entries, query, selection]);
+  const results = useMemo(
+    () =>
+      searchArts(entries, query, selection, {
+        filter: tokenFilter,
+        artsWithTokens: new Set(tokensByArt.keys()),
+      }),
+    [entries, query, selection, tokenFilter, tokensByArt],
+  );
 
   if (root !== libraryRoot) return null;
 
@@ -73,6 +85,19 @@ export function LibraryScreen({ libraryRoot, preferredSystem }: LibraryScreenPro
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
           />
+          <select
+            value={tokenFilter}
+            onChange={(e) =>
+              setTokenFilter(TOKEN_FILTERS.find((f) => f === e.target.value) ?? "any")
+            }
+            aria-label={ru.library.filter.label}
+          >
+            {TOKEN_FILTERS.map((f) => (
+              <option key={f} value={f}>
+                {ru.library.filter[f]}
+              </option>
+            ))}
+          </select>
           <span className="muted">{ru.library.count(results.length)}</span>
           <span className="spacer" />
           {status && <span className="muted">{status}</span>}
@@ -101,6 +126,7 @@ export function LibraryScreen({ libraryRoot, preferredSystem }: LibraryScreenPro
             arts={results}
             selectedId={selected?.id ?? null}
             onSelect={(art) => selectArt(art.id)}
+            tokensByArt={tokensByArt}
           />
         ) : (
           !syncing && (
@@ -109,7 +135,7 @@ export function LibraryScreen({ libraryRoot, preferredSystem }: LibraryScreenPro
               text={
                 query.trim()
                   ? ru.library.noResults(query.trim())
-                  : selection.kind === "group"
+                  : selection.kind === "group" && tokenFilter === "any"
                     ? ru.library.emptyGroup
                     : ru.library.emptySelection
               }

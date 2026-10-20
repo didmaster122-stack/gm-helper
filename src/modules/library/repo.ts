@@ -2,7 +2,8 @@ import { runScript, sqlLiteral as lit } from "../../shared/db/script";
 import type { Db } from "../../shared/db/types";
 import { classifyPath } from "./domain/paths";
 import type { ScanChanges } from "./domain/reconcile";
-import type { Art } from "./domain/types";
+import { DEFAULT_TOKEN_SIZE, isTokenSize } from "./domain/tokenCrop";
+import type { Art, Token } from "./domain/types";
 
 interface ArtRow {
   id: string;
@@ -121,21 +122,100 @@ export async function applyScanChanges(db: Db, changes: ScanChanges, now: string
   );
 }
 
-/** Saves records changed by the app itself (rename, move, metadata). */
-export async function saveArts(db: Db, arts: readonly Art[]): Promise<void> {
-  await runScript(db, updatesSql(arts), Number.MAX_SAFE_INTEGER);
+/** Saves records changed by the app itself (rename, move, metadata), with tokens that moved along. */
+export async function saveArts(
+  db: Db,
+  arts: readonly Art[],
+  tokens: readonly Token[] = [],
+): Promise<void> {
+  await runScript(
+    db,
+    [...updatesSql(arts), ...tokens.map(tokenUpdateSql)],
+    Number.MAX_SAFE_INTEGER,
+  );
 }
 
 export async function insertArts(db: Db, arts: readonly Art[]): Promise<void> {
   await runScript(db, arts.map(insertSql));
 }
 
+/** Deletes arts with their token records (token files are handled by the caller). */
 export async function deleteArts(db: Db, ids: readonly string[]): Promise<void> {
   if (ids.length === 0) return;
-  await runScript(db, [`DELETE FROM arts WHERE id IN (${ids.map(lit).join(", ")})`]);
+  const list = ids.map(lit).join(", ");
+  await runScript(db, [
+    `DELETE FROM tokens WHERE art_id IN (${list})`,
+    `DELETE FROM arts WHERE id IN (${list})`,
+  ]);
 }
 
 /** Copy of the art at a new relative path, with location fields recomputed. */
 export function relocate(art: Art, relPath: string, now: string): Art {
   return { ...art, ...classifyPath(relPath), relPath, updatedAt: now };
+}
+
+// Tokens
+
+interface TokenRow {
+  id: string;
+  art_id: string;
+  rel_path: string;
+  size: number;
+  center_x: number;
+  center_y: number;
+  zoom: number;
+  created_at: string;
+  updated_at: string;
+}
+
+function tokenFromRow(r: TokenRow): Token {
+  return {
+    id: r.id,
+    artId: r.art_id,
+    relPath: r.rel_path,
+    size: isTokenSize(r.size) ? r.size : DEFAULT_TOKEN_SIZE,
+    crop: { centerX: r.center_x, centerY: r.center_y, zoom: r.zoom },
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function tokenUpdateSql(t: Token): string {
+  return `UPDATE tokens SET art_id = ${lit(t.artId)}, rel_path = ${lit(t.relPath)},
+      size = ${lit(t.size)}, center_x = ${lit(t.crop.centerX)}, center_y = ${lit(t.crop.centerY)},
+      zoom = ${lit(t.crop.zoom)}, updated_at = ${lit(t.updatedAt)}
+    WHERE id = ${lit(t.id)}`;
+}
+
+export async function listTokens(db: Db): Promise<Token[]> {
+  return (await db.select<TokenRow>("SELECT * FROM tokens ORDER BY created_at, rel_path")).map(
+    tokenFromRow,
+  );
+}
+
+export async function insertToken(db: Db, t: Token): Promise<void> {
+  await db.execute(
+    `INSERT INTO tokens (id, art_id, rel_path, size, center_x, center_y, zoom, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      t.id,
+      t.artId,
+      t.relPath,
+      t.size,
+      t.crop.centerX,
+      t.crop.centerY,
+      t.crop.zoom,
+      t.createdAt,
+      t.updatedAt,
+    ],
+  );
+}
+
+export async function saveTokens(db: Db, tokens: readonly Token[]): Promise<void> {
+  if (tokens.length > 0) await runScript(db, tokens.map(tokenUpdateSql), Number.MAX_SAFE_INTEGER);
+}
+
+export async function deleteTokens(db: Db, ids: readonly string[]): Promise<void> {
+  if (ids.length === 0) return;
+  await db.execute(`DELETE FROM tokens WHERE id IN (${ids.map(() => "?").join(", ")})`, ids);
 }

@@ -118,3 +118,26 @@ export async function cacheDir(...parts: string[]): Promise<string> {
 export async function writeCacheFile(path: string, data: Uint8Array): Promise<void> {
   await writeFile(path, data);
 }
+
+/**
+ * Writes a file the app owns inside the library (token PNGs), replacing it if
+ * present. Direct writes are only allowed to the app cache, so the data is
+ * staged there and copied into place.
+ */
+export async function writeOwnLibraryFile(path: string, data: Uint8Array): Promise<void> {
+  const staging = await join(await cacheDir("staging"), `${crypto.randomUUID()}.tmp`);
+  await writeFile(staging, data);
+  try {
+    await copyFile(staging, path);
+  } finally {
+    await remove(staging).catch(() => undefined);
+  }
+}
+
+/** Puts a PNG file on the clipboard as an image (e.g. to paste a token into a VTT). */
+export async function copyPngToClipboard(path: string): Promise<void> {
+  const response = await fetch(fileUrl(path), { cache: "no-store" });
+  if (!response.ok) throw new Error(`Cannot read ${path}: ${response.status}`);
+  const blob = new Blob([await response.arrayBuffer()], { type: "image/png" });
+  await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+}

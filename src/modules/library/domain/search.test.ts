@@ -73,6 +73,18 @@ describe("searchArts", () => {
     expect(names("босс")).toEqual(["red-dragon.png"]);
   });
 
+  it("filters by having tokens", () => {
+    const list = [art("S/G/a.png"), art("S/G/b.png"), art("S/G/c.png")].map(buildEntry);
+    const withTokens = new Set([list[1]?.art.id ?? ""]);
+    const run = (filter: "any" | "with" | "without") =>
+      searchArts(list, "", { kind: "all" }, { filter, artsWithTokens: withTokens }).map(
+        (a) => a.fileName,
+      );
+    expect(run("with")).toEqual(["b.png"]);
+    expect(run("without")).toEqual(["a.png", "c.png"]);
+    expect(run("any")).toHaveLength(3);
+  });
+
   it("ranks exact matches above fuzzy ones", () => {
     const list = [art("S/G/лич.png"), art("S/G/личинка.png"), art("S/G/лис.png")].map(buildEntry);
     expect(searchArts(list, "лич", { kind: "all" }).map((a) => a.fileName)).toEqual([

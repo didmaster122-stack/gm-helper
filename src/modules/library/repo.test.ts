@@ -4,8 +4,19 @@ import { migrations } from "../../shared/db/migrations";
 import { createMemoryDb } from "../../shared/db/testing";
 import type { Db } from "../../shared/db/types";
 import { classifyPath } from "./domain/paths";
-import type { Art } from "./domain/types";
-import { applyScanChanges, deleteArts, insertArts, listArts, relocate, saveArts } from "./repo";
+import type { Art, Token } from "./domain/types";
+import {
+  applyScanChanges,
+  deleteArts,
+  deleteTokens,
+  insertArts,
+  insertToken,
+  listArts,
+  listTokens,
+  relocate,
+  saveArts,
+  saveTokens,
+} from "./repo";
 
 const NOW = "2026-10-20T12:00:00.000Z";
 
@@ -85,5 +96,40 @@ describe("library repo", () => {
     await insertArts(db, [art("S/G/a.png"), art("S/G/b.png")]);
     await deleteArts(db, ["id:S/G/a.png"]);
     expect((await listArts(db)).map((x) => x.relPath)).toEqual(["S/G/b.png"]);
+  });
+
+  it("stores tokens, moves them with their art and deletes them with it", async () => {
+    const a = art("S/G/lich.png");
+    const other = art("S/G/other.png");
+    await insertArts(db, [a, other]);
+    const token = (n: number, artId = a.id): Token => ({
+      id: `t${n}`,
+      artId,
+      relPath: `S/G/_tokens/lich.token-${n}.png`,
+      size: 512,
+      crop: { centerX: 0.25, centerY: 0.125, zoom: 1.75 },
+      createdAt: NOW,
+      updatedAt: NOW,
+    });
+    await insertToken(db, token(1));
+    await insertToken(db, token(2));
+    await insertToken(db, token(3, other.id));
+    expect(await listTokens(db)).toContainEqual(token(1));
+
+    const movedToken = { ...token(1), relPath: "S/H/_tokens/lich.token-1.png" };
+    await saveArts(db, [relocate(a, "S/H/lich.png", NOW)], [movedToken]);
+    expect((await listTokens(db)).find((t) => t.id === "t1")?.relPath).toBe(
+      "S/H/_tokens/lich.token-1.png",
+    );
+
+    await saveTokens(db, [{ ...token(2), size: 1024, crop: { centerX: 1, centerY: 0, zoom: 3 } }]);
+    expect((await listTokens(db)).find((t) => t.id === "t2")).toMatchObject({
+      size: 1024,
+      crop: { centerX: 1, centerY: 0, zoom: 3 },
+    });
+
+    await deleteTokens(db, ["t2"]);
+    await deleteArts(db, [a.id]);
+    expect((await listTokens(db)).map((t) => t.id)).toEqual(["t3"]);
   });
 });

@@ -16,6 +16,8 @@ interface ArtGridProps {
   onSelect: (art: Art) => void;
   /** Double click / Enter. */
   onActivate?: (art: Art) => void;
+  /** Tokens per art id, for the badge on tiles. */
+  tokensByArt?: ReadonlyMap<string, readonly unknown[]>;
 }
 
 function useWidth(ref: React.RefObject<HTMLElement | null>): number {
@@ -30,7 +32,14 @@ function useWidth(ref: React.RefObject<HTMLElement | null>): number {
   return width;
 }
 
-export function ArtGrid({ root, arts, selectedId, onSelect, onActivate }: ArtGridProps) {
+export function ArtGrid({
+  root,
+  arts,
+  selectedId,
+  onSelect,
+  onActivate,
+  tokensByArt,
+}: ArtGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const width = useWidth(scrollRef);
   const columns = Math.max(1, Math.floor((width - GAP) / (TILE + GAP)));
@@ -71,6 +80,7 @@ export function ArtGrid({ root, arts, selectedId, onSelect, onActivate }: ArtGri
                 art={art}
                 path={toAbsolute(root, art.relPath)}
                 selected={art.id === selectedId}
+                tokens={tokensByArt?.get(art.id)?.length ?? 0}
                 onSelect={onSelect}
                 onActivate={onActivate}
               />
@@ -86,11 +96,19 @@ interface ArtTileProps {
   art: Art;
   path: string;
   selected: boolean;
+  tokens: number;
   onSelect: (art: Art) => void;
   onActivate?: (art: Art) => void;
 }
 
-const ArtTile = memo(function ArtTile({ art, path, selected, onSelect, onActivate }: ArtTileProps) {
+const ArtTile = memo(function ArtTile({
+  art,
+  path,
+  selected,
+  tokens,
+  onSelect,
+  onActivate,
+}: ArtTileProps) {
   const thumb = useThumbnail(path, art.hash);
   const name = artName(art);
 
@@ -108,6 +126,11 @@ const ArtTile = memo(function ArtTile({ art, path, selected, onSelect, onActivat
       <div className="art-thumb">
         {thumb.kind === "ready" && <img src={thumb.url} alt="" draggable={false} />}
         {thumb.kind === "error" && <span className="muted">{ru.library.art.noPreview}</span>}
+        {tokens > 0 && (
+          <span className="token-badge" title={ru.library.tokenBadge(tokens)}>
+            {tokens}
+          </span>
+        )}
       </div>
       <div className="art-name">{name}</div>
     </button>

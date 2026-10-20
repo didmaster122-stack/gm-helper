@@ -6,7 +6,8 @@ import { artName, joinRel, parentRel, splitExtension, toAbsolute } from "./domai
 import type { Art } from "./domain/types";
 import { nameError } from "./nameError";
 import { createLibraryFolder, deleteArt, moveArt, renameArt, saveArtMeta } from "./service";
-import { useLibraryStore } from "./store";
+import { useArtTokens, useLibraryStore } from "./store";
+import { TokensSection } from "./TokensSection";
 
 function formatSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} Б`;
@@ -20,8 +21,10 @@ export function ArtPanel({ art }: { art: Art }) {
   const root = useLibraryStore((s) => s.root);
   const arts = useLibraryStore((s) => s.arts);
   const putArt = useLibraryStore((s) => s.putArt);
+  const putTokens = useLibraryStore((s) => s.putTokens);
   const sync = useLibraryStore((s) => s.sync);
   const selectArt = useLibraryStore((s) => s.selectArt);
+  const tokens = useArtTokens(art.id);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<string | null>(null);
   if (!root) return null;
@@ -86,6 +89,8 @@ export function ArtPanel({ art }: { art: Art }) {
 
       <TagEditor tags={art.tags} onChange={(tags) => void saveMeta({ tags })} />
 
+      <TokensSection root={root} art={art} />
+
       <dl className="art-info">
         <dt>{ru.library.art.file}</dt>
         <dd>{art.fileName}</dd>
@@ -131,7 +136,11 @@ export function ArtPanel({ art }: { art: Art }) {
           initialValue={base}
           confirmLabel={ru.common.save}
           validate={(v) => nameError(`${v.trim()}${ext}`, siblings, art.fileName)}
-          onSubmit={async (name) => putArt(await renameArt(root, art, name))}
+          onSubmit={async (name) => {
+            const result = await renameArt(root, art, tokens, name);
+            putArt(result.art);
+            putTokens(result.tokens);
+          }}
           onClose={() => setDialog(null)}
         />
       )}
@@ -143,13 +152,13 @@ export function ArtPanel({ art }: { art: Art }) {
           title={art.missing ? ru.library.art.forgetTitle : ru.library.art.deleteTitle}
           text={
             art.missing
-              ? ru.library.art.forgetText(art.fileName)
-              : ru.library.art.deleteText(art.fileName)
+              ? ru.library.art.forgetText(art.fileName, tokens.length)
+              : ru.library.art.deleteText(art.fileName, tokens.length)
           }
           confirmLabel={art.missing ? ru.library.art.forget : ru.library.art.delete}
           danger
           onConfirm={async () => {
-            await deleteArt(root, art);
+            await deleteArt(root, art, tokens);
             selectArt(null);
             await sync();
           }}
@@ -220,7 +229,9 @@ function MoveDialog({ art, onClose }: { art: Art; onClose: () => void }) {
   const tree = useLibraryStore((s) => s.tree);
   const arts = useLibraryStore((s) => s.arts);
   const putArt = useLibraryStore((s) => s.putArt);
+  const putTokens = useLibraryStore((s) => s.putTokens);
   const sync = useLibraryStore((s) => s.sync);
+  const tokens = useArtTokens(art.id);
   const groupsOf = (name: string) => tree.systems.find((s) => s.name === name)?.groups ?? [];
   const defaultGroup = (name: string, preferred?: string | null) => {
     const list = groupsOf(name);
@@ -259,7 +270,9 @@ function MoveDialog({ art, onClose }: { art: Art; onClose: () => void }) {
     setError(null);
     try {
       if (creating) await createLibraryFolder(libraryRoot, joinRel(system, targetGroup));
-      putArt(await moveArt(libraryRoot, art, system, targetGroup));
+      const result = await moveArt(libraryRoot, art, tokens, system, targetGroup);
+      putArt(result.art);
+      putTokens(result.tokens);
       // A new folder only appears in the tree after a rescan.
       if (creating) void sync();
       onClose();
