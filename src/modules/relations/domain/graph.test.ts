@@ -232,6 +232,18 @@ describe("layout", () => {
     expect(dist("b1", "b2")).toBeLessThan(dist("a2", "b2"));
   });
 
+  it("keeps characters without relations close together", () => {
+    const characters = Array.from({ length: 12 }, (_, i) =>
+      character(`c${i}`, { x: (i % 4) * 200, y: Math.floor(i / 4) * 150 }),
+    );
+    const points = [...forceLayout({ characters, factions: [], relations: [] }).values()];
+    const extent = (axis: "x" | "y") =>
+      Math.max(...points.map((p) => p[axis])) - Math.min(...points.map((p) => p[axis]));
+    // Roughly a 4×3 grid at the preferred distance (240), not scattered across the canvas.
+    expect(extent("x")).toBeLessThan(2000);
+    expect(extent("y")).toBeLessThan(2000);
+  });
+
   it("stores the frame position of factions with members", () => {
     const graph: RelationGraph = {
       characters: [character("a", { x: 100, y: 100, factionIds: ["f"] })],
