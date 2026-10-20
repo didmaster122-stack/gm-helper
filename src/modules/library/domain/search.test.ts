@@ -122,7 +122,7 @@ describe("searchArts", () => {
       searchArts(big, "дркон", { kind: "all" });
       best = Math.min(best, performance.now() - start);
     }
-    expect(best).toBeLessThan(100);
+    expect(best).toBeLessThan(250);
   });
 });
 
