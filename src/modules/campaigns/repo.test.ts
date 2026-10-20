@@ -82,6 +82,17 @@ describe("campaign repo", () => {
     await deleteCampaign(db, c.id);
     expect(await getCampaign(db, c.id)).toBeNull();
   });
+
+  it("deletes the campaign's maps with it", async () => {
+    const c = await createCampaign(db, { name: "К", system: "PF2e", description: "" }, clock);
+    const insert = `INSERT INTO battlemaps (id, campaign_id, name, width, height, data, created_at, updated_at)
+      VALUES (?, ?, 'Карта', 5, 5, '{}', '', '')`;
+    await db.execute(insert, ["m1", c.id]);
+    await db.execute(insert, ["m2", "other"]);
+    await deleteCampaign(db, c.id);
+    const left = await db.select<{ id: string }>("SELECT id FROM battlemaps");
+    expect(left.map((r) => r.id)).toEqual(["m2"]);
+  });
 });
 
 describe("validateCampaignInput", () => {

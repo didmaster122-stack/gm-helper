@@ -73,4 +73,35 @@ export const migrations: Migration[] = [
       CREATE INDEX tokens_art ON tokens (art_id);
     `,
   },
+  {
+    version: 4,
+    name: "battlemaps",
+    sql: `
+      CREATE TABLE battlemaps (
+        id          TEXT PRIMARY KEY,
+        campaign_id TEXT NOT NULL,
+        name        TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        width       INTEGER NOT NULL,
+        height      INTEGER NOT NULL,
+        data        TEXT NOT NULL,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX battlemaps_campaign ON battlemaps (campaign_id);
+
+      -- Custom cell types (builtin = 0) and colour overrides of built-in ones (builtin = 1).
+      CREATE TABLE cell_types (
+        id           TEXT PRIMARY KEY,
+        builtin      INTEGER NOT NULL,
+        name         TEXT NOT NULL DEFAULT '',
+        color        TEXT NOT NULL,
+        symbol       TEXT NOT NULL DEFAULT '',
+        blocks_move  INTEGER NOT NULL DEFAULT 0,
+        blocks_sight TEXT NOT NULL DEFAULT 'no',
+        created_at   TEXT NOT NULL,
+        updated_at   TEXT NOT NULL
+      );
+    `,
+  },
 ];

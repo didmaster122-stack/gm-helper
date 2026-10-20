@@ -1,3 +1,4 @@
+import { runScript, sqlLiteral } from "../../shared/db/script";
 import type { Db } from "../../shared/db/types";
 import type { Campaign, CampaignInput } from "./types";
 import { normalizeCampaignInput, validateCampaignInput } from "./validation";
@@ -99,7 +100,11 @@ export async function setCampaignArchived(
   ]);
 }
 
-/** Deletes the campaign. Later stages must also delete its characters, maps and events here. */
+/** Deletes the campaign with its maps. Later stages must also delete characters and events here. */
 export async function deleteCampaign(db: Db, id: string): Promise<void> {
-  await db.execute("DELETE FROM campaigns WHERE id = ?", [id]);
+  const key = sqlLiteral(id);
+  await runScript(db, [
+    `DELETE FROM battlemaps WHERE campaign_id = ${key}`,
+    `DELETE FROM campaigns WHERE id = ${key}`,
+  ]);
 }
