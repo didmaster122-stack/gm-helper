@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { ru } from "../../shared/i18n/ru";
-import { Modal } from "../../shared/ui";
-import type { ImportItem } from "./domain/importPlan";
+import { ru } from "../i18n/ru";
+import { Button, Modal } from "../ui";
+import type { ImportItem } from "./importPlan";
 
 interface ImportDialogProps {
   items: ImportItem[];
@@ -26,32 +26,32 @@ export function ImportDialog({ items, onRun, onClose }: ImportDialogProps) {
 
   return (
     <Modal
-      title={ru.library.import.title}
+      title={ru.catalog.import.title}
       onClose={onClose}
       footer={
         <>
-          <button type="button" onClick={onClose} disabled={busy}>
+          <Button onClick={onClose} disabled={busy}>
             {ru.common.cancel}
-          </button>
-          <button type="button" onClick={() => void run(false)} disabled={busy}>
-            {ru.library.import.skipConflicts}
-          </button>
-          <button type="button" className="primary" onClick={() => void run(true)} disabled={busy}>
-            {ru.library.import.renameAll}
-          </button>
+          </Button>
+          <Button onClick={() => void run(false)} disabled={busy}>
+            {ru.catalog.import.skipConflicts}
+          </Button>
+          <Button variant="primary" onClick={() => void run(true)} disabled={busy}>
+            {ru.catalog.import.renameAll}
+          </Button>
         </>
       }
     >
-      <p>{ru.library.import.conflicts(conflicts.length)}</p>
+      <p>{ru.catalog.import.conflicts(conflicts.length)}</p>
       <ul className="import-list">
         {conflicts.slice(0, 12).map((i) => (
           <li key={i.source}>
             {i.fileName} → <strong>{i.targetName}</strong>
           </li>
         ))}
-        {conflicts.length > 12 && <li>{ru.library.andMore(conflicts.length - 12)}</li>}
+        {conflicts.length > 12 && <li>{ru.catalog.andMore(conflicts.length - 12)}</li>}
       </ul>
-      {unsupported > 0 && <p className="muted">{ru.library.import.unsupported(unsupported)}</p>}
+      {unsupported > 0 && <p className="muted">{ru.catalog.import.unsupported(unsupported)}</p>}
     </Modal>
   );
 }

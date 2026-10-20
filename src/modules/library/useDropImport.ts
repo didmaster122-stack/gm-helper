@@ -27,9 +27,9 @@ export function useDropImport() {
     const unsupported = items.filter((i) => i.unsupported).length;
     setNotice(
       [
-        ru.library.import.done(copied),
-        failed.length > 0 && ru.library.import.failed(failed.length),
-        unsupported > 0 && ru.library.import.unsupported(unsupported),
+        ru.catalog.import.done(copied),
+        failed.length > 0 && ru.catalog.import.failed(failed.length),
+        unsupported > 0 && ru.catalog.import.unsupported(unsupported),
       ]
         .filter(Boolean)
         .join(" · "),

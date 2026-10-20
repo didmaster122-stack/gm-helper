@@ -294,4 +294,30 @@ export const migrations: Migration[] = [
       CREATE INDEX timeline_markers_campaign ON timeline_markers (campaign_id);
     `,
   },
+  {
+    version: 10,
+    name: "music tracks",
+    sql: `
+      -- Index of the music folder (Category / Collection / file), like arts.
+      -- duration_ms is filled in after the first read of the file.
+      CREATE TABLE tracks (
+        id           TEXT PRIMARY KEY,
+        rel_path     TEXT NOT NULL UNIQUE,
+        category     TEXT,
+        collection   TEXT,
+        unsorted     INTEGER NOT NULL,
+        file_name    TEXT NOT NULL,
+        size         INTEGER NOT NULL,
+        mtime        INTEGER NOT NULL,
+        hash         TEXT,
+        duration_ms  INTEGER,
+        display_name TEXT,
+        tags         TEXT NOT NULL DEFAULT '[]',
+        missing      INTEGER NOT NULL DEFAULT 0,
+        created_at   TEXT NOT NULL,
+        updated_at   TEXT NOT NULL
+      );
+      CREATE INDEX tracks_hash ON tracks (hash);
+    `,
+  },
 ];

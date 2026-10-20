@@ -7,6 +7,7 @@ import { LibraryScreen } from "../modules/library";
 import { BattlemapScreen } from "../modules/battlemap";
 import { createCharacter, RelationsScreen, showCharacter } from "../modules/relations";
 import { CharacterEvents, showEvent, TimelineScreen } from "../modules/timeline";
+import { MusicScreen } from "../modules/music";
 import { SettingsScreen } from "../modules/settings";
 import { FirstRun } from "./FirstRun";
 import { ShortcutsDialog } from "./ShortcutsDialog";
@@ -18,6 +19,9 @@ function CurrentModule() {
   const module = useAppStore((s) => s.module);
   const libraryRoot = useAppStore((s) => s.libraryRoot);
   const setLibraryRoot = useAppStore((s) => s.setLibraryRoot);
+  const musicRoot = useAppStore((s) => s.musicRoot);
+  const musicRootMissing = useAppStore((s) => s.musicRootMissing);
+  const setMusicRoot = useAppStore((s) => s.setMusicRoot);
   const campaign = useActiveCampaign();
   const setModule = useAppStore((s) => s.setModule);
 
@@ -83,8 +87,23 @@ function CurrentModule() {
           )}
         </RequireCampaign>
       );
+    case "music":
+      return (
+        <MusicScreen
+          musicRoot={musicRoot}
+          rootMissing={musicRootMissing}
+          onMusicRootChange={setMusicRoot}
+        />
+      );
     case "settings":
-      return <SettingsScreen libraryRoot={libraryRoot} onLibraryRootChange={setLibraryRoot} />;
+      return (
+        <SettingsScreen
+          libraryRoot={libraryRoot}
+          onLibraryRootChange={setLibraryRoot}
+          musicRoot={musicRoot}
+          onMusicRootChange={setMusicRoot}
+        />
+      );
   }
 }
 

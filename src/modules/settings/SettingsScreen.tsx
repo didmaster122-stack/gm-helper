@@ -10,6 +10,8 @@ import { RelationTypesSettings } from "../relations";
 interface SettingsScreenProps {
   libraryRoot: string | null;
   onLibraryRootChange: (path: string) => Promise<void>;
+  musicRoot: string | null;
+  onMusicRootChange: (path: string) => Promise<void>;
 }
 
 function Section({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
@@ -24,13 +26,23 @@ function Section({ title, hint, children }: { title: string; hint: string; child
   );
 }
 
-export function SettingsScreen({ libraryRoot, onLibraryRootChange }: SettingsScreenProps) {
+export function SettingsScreen({
+  libraryRoot,
+  onLibraryRootChange,
+  musicRoot,
+  onMusicRootChange,
+}: SettingsScreenProps) {
   const preference = useThemeStore((s) => s.preference);
   const setPreference = useThemeStore((s) => s.setPreference);
 
   async function changeRoot() {
     const path = await pickDirectory(ru.firstRun.dialogTitle, libraryRoot ?? undefined);
     if (path) await onLibraryRootChange(path);
+  }
+
+  async function changeMusicRoot() {
+    const path = await pickDirectory(ru.music.rootDialogTitle, musicRoot ?? undefined);
+    if (path) await onMusicRootChange(path);
   }
 
   return (
@@ -54,6 +66,15 @@ export function SettingsScreen({ libraryRoot, onLibraryRootChange }: SettingsScr
         <div className="path-row">
           <code className="path">{libraryRoot}</code>
           <Button icon={FolderOpen} onClick={changeRoot}>
+            {ru.common.change}
+          </Button>
+        </div>
+      </Section>
+
+      <Section title={ru.settings.musicRoot} hint={ru.settings.musicRootHint}>
+        <div className="path-row">
+          <code className="path">{musicRoot ?? ru.settings.musicRootNone}</code>
+          <Button icon={FolderOpen} onClick={() => void changeMusicRoot()}>
             {ru.common.change}
           </Button>
         </div>

@@ -5,7 +5,7 @@ import { EmptyState, IconButton, SearchInput } from "../../shared/ui";
 import { ArtGrid } from "./ArtGrid";
 import { ArtPanel, type CharacterTarget } from "./ArtPanel";
 import { searchArts, type TokenFilter } from "./domain/search";
-import { ImportDialog } from "./ImportDialog";
+import { ImportDialog } from "../../shared/catalog/ImportDialog";
 import { LibraryTree } from "./LibraryTree";
 import { useLibraryStore, useSelectedArt } from "./store";
 import { useDropImport } from "./useDropImport";

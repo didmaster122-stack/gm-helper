@@ -331,7 +331,7 @@ function MoveDialog({ art, onClose }: { art: Art; onClose: () => void }) {
             {newGroup !== "" && newGroupError && <small className="error">{newGroupError}</small>}
           </label>
         )}
-        {conflict && <p className="error">{ru.library.nameErrors.exists}</p>}
+        {conflict && <p className="error">{ru.catalog.nameErrors.exists}</p>}
         {error && <p className="error">{error}</p>}
       </div>
     </Modal>

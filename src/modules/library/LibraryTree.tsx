@@ -93,13 +93,13 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
         <IconButton
           icon={Pencil}
           size="sm"
-          label={ru.library.renameFolder}
+          label={ru.catalog.renameFolder}
           onClick={() => setDialog({ kind: "rename", relPath, name })}
         />
         <IconButton
           icon={Trash}
           size="sm"
-          label={ru.library.deleteFolder}
+          label={ru.catalog.deleteFolder}
           onClick={() => setDialog({ kind: "delete", relPath, name })}
         />
       </span>
@@ -165,7 +165,7 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
       {dialog?.kind === "create" && (
         <PromptDialog
           title={dialog.parent === "" ? ru.library.newSystem : ru.library.newGroup}
-          label={ru.library.folderName}
+          label={ru.catalog.folderName}
           confirmLabel={ru.common.create}
           validate={(v) => nameError(v, siblingsOf(dialog.parent))}
           onSubmit={async (name) => {
@@ -183,8 +183,8 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
 
       {dialog?.kind === "rename" && (
         <PromptDialog
-          title={ru.library.renameFolder}
-          label={ru.library.folderName}
+          title={ru.catalog.renameFolder}
+          label={ru.catalog.folderName}
           initialValue={dialog.name}
           confirmLabel={ru.common.save}
           validate={(v) => {
@@ -229,15 +229,15 @@ function DeleteFolderDialog({
 
   const inside = artsInFolder(relPath, arts);
   const shown = inside.slice(0, 10).map((a) => `• ${artName(a)}`);
-  if (inside.length > shown.length) shown.push(ru.library.andMore(inside.length - shown.length));
+  if (inside.length > shown.length) shown.push(ru.catalog.andMore(inside.length - shown.length));
 
   return (
     <ConfirmDialog
-      title={ru.library.deleteFolder}
+      title={ru.catalog.deleteFolder}
       text={
         inside.length === 0
-          ? ru.library.deleteEmptyFolderText(name)
-          : ru.library.deleteFolderText(name, inside.length, shown.join("\n"))
+          ? ru.catalog.deleteEmptyFolderText(name)
+          : ru.catalog.deleteFolderText(name, inside.length, shown.join("\n"))
       }
       confirmLabel={ru.common.delete}
       danger

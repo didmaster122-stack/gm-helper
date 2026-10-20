@@ -57,7 +57,10 @@ describe("planScan", () => {
     const plan = planScan(existing, found);
 
     expect(plan.unchanged.map((a) => a.relPath)).toEqual(["S/G/same.png"]);
-    expect(plan.changed.map((c) => c.art.relPath)).toEqual(["S/G/edited.png", "S/G/unhashed.png"]);
+    expect(plan.changed.map((c) => c.entry.relPath)).toEqual([
+      "S/G/edited.png",
+      "S/G/unhashed.png",
+    ]);
     expect(plan.added.map((f) => f.relPath)).toEqual(["S/G/new.png"]);
     expect(plan.vanished.map((a) => a.relPath)).toEqual(["S/G/gone.png"]);
     expect(filesToInspect(plan).map((f) => f.relPath)).toEqual([

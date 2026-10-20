@@ -1,6 +1,6 @@
 import type { Db } from "./types";
 
-export type SettingKey = "libraryRoot" | "activeCampaignId";
+export type SettingKey = "libraryRoot" | "activeCampaignId" | "musicRoot";
 
 export async function getSetting(db: Db, key: SettingKey): Promise<string | null> {
   const rows = await db.select<{ value: string }>("SELECT value FROM settings WHERE key = ?", [

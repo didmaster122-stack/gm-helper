@@ -38,12 +38,7 @@ export interface Token {
   updatedAt: string;
 }
 
-/** A file seen on disk during a scan. */
-export interface FoundFile {
-  relPath: string;
-  size: number;
-  mtime: number;
-}
+export type { FoundFile } from "../../../shared/catalog/reconcile";
 
 export interface FileInspection {
   hash: string | null;

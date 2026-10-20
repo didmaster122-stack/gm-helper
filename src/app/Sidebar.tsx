@@ -4,12 +4,14 @@ import {
   Map as MapIcon,
   Monitor,
   Moon,
+  Music,
   ScrollText,
   Settings,
   Sun,
   Waypoints,
   type LucideIcon,
 } from "lucide-react";
+import { MiniPlayer } from "../modules/music";
 import { ru } from "../shared/i18n/ru";
 import { Segmented, useThemeStore, withShortcut, type ThemePreference } from "../shared/ui";
 import { MODULE_SHORTCUTS } from "./shortcuts";
@@ -26,6 +28,7 @@ const items: NavItem[] = [
   { id: "battlemaps", label: ru.nav.battlemaps, icon: MapIcon },
   { id: "relations", label: ru.nav.relations, icon: Waypoints },
   { id: "timeline", label: ru.nav.timeline, icon: ScrollText },
+  { id: "music", label: ru.nav.music, icon: Music },
 ];
 
 const themeOptions: { value: ThemePreference; label: string; icon: LucideIcon }[] = [
@@ -67,6 +70,7 @@ export function Sidebar() {
       </div>
       <div className="nav-list">{items.map(button)}</div>
       <div className="spacer" />
+      {current !== "music" && <MiniPlayer onOpen={() => setModule("music")} />}
       <div className="nav-list">
         {button({ id: "settings", label: ru.nav.settings, icon: Settings })}
       </div>
