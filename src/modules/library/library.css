@@ -217,7 +217,8 @@ button.spinning > svg {
 
 .art-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Two columns where the labels fit (token card), one in the narrow side panel. */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 6px;
 }
 
