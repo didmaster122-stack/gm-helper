@@ -83,6 +83,7 @@ describe("battlemap repo", () => {
         symbol: { kind: "letter", value: "Л" },
         blocksMove: true,
         blocksSight: false,
+        comment: "  2d6 огнём  ",
       },
       clock,
     );
@@ -97,6 +98,7 @@ describe("battlemap repo", () => {
       blocksSight: "no",
     });
     expect(lava?.symbol).toEqual({ kind: "letter", value: "Л" });
+    expect(lava?.comment).toBe("2d6 огнём");
     expect(all.find((t) => t.id === "water")?.color).toBe("#0000ff");
     // Overrides do not show up as custom types.
     expect(all.filter((t) => !t.builtin)).toHaveLength(1);
@@ -104,12 +106,23 @@ describe("battlemap repo", () => {
     await updateCustomType(
       db,
       id,
-      { name: "Лава", color: "#ff0000", symbol: null, blocksMove: true, blocksSight: true },
+      {
+        name: "Лава",
+        color: "#ff0000",
+        symbol: null,
+        blocksMove: true,
+        blocksSight: true,
+        comment: "",
+      },
       clock,
     );
     await setBuiltinColor(db, "water", null, clock);
     all = await listCellTypes(db);
-    expect(all.find((t) => t.id === id)).toMatchObject({ color: "#ff0000", blocksSight: "yes" });
+    expect(all.find((t) => t.id === id)).toMatchObject({
+      color: "#ff0000",
+      blocksSight: "yes",
+      comment: "",
+    });
     expect(all.find((t) => t.id === "water")?.color).not.toBe("#0000ff");
 
     await deleteCustomType(db, id);

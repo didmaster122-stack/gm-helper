@@ -46,6 +46,8 @@ export interface CellType {
   symbol: CellSymbol | null;
   blocksMove: boolean;
   blocksSight: SightBlock;
+  /** Free-text note of a custom type (rules, damage…); empty for built-ins. */
+  comment: string;
 }
 
 /** Built-in types without names (names live in i18n). */
@@ -58,6 +60,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: null,
     blocksMove: false,
     blocksSight: "no",
+    comment: "",
   },
   {
     id: "wall",
@@ -67,6 +70,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: null,
     blocksMove: true,
     blocksSight: "yes",
+    comment: "",
   },
   {
     id: "door",
@@ -76,6 +80,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: { kind: "icon", value: "door" },
     blocksMove: false,
     blocksSight: "no",
+    comment: "",
   },
   {
     id: "cover-half",
@@ -85,6 +90,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: null,
     blocksMove: false,
     blocksSight: "partial",
+    comment: "",
   },
   {
     id: "cover-full",
@@ -94,6 +100,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: null,
     blocksMove: true,
     blocksSight: "yes",
+    comment: "",
   },
   {
     id: "difficult",
@@ -103,6 +110,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: null,
     blocksMove: false,
     blocksSight: "no",
+    comment: "",
   },
   {
     id: "object",
@@ -112,6 +120,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: { kind: "icon", value: "square" },
     blocksMove: true,
     blocksSight: "no",
+    comment: "",
   },
   {
     id: "stairs",
@@ -121,6 +130,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: { kind: "icon", value: "stairs" },
     blocksMove: false,
     blocksSight: "no",
+    comment: "",
   },
   {
     id: "water",
@@ -130,6 +140,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: null,
     blocksMove: false,
     blocksSight: "no",
+    comment: "",
   },
   {
     id: "pit",
@@ -139,6 +150,7 @@ export const BUILTIN_TYPES: readonly Omit<CellType, "name">[] = [
     symbol: null,
     blocksMove: true,
     blocksSight: "no",
+    comment: "",
   },
 ];
 

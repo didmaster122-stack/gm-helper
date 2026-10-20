@@ -1206,3 +1206,28 @@ button.link {
 .type-form-head .field:nth-child(2) {
   flex: 1;
 }
+
+.checkbox-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+
+.export-dialog .subheading:first-child {
+  margin-top: 0;
+}
+
+.export-dialog > button {
+  align-self: flex-start;
+}
+
+.notice-text {
+  color: var(--accent);
+  word-break: break-all;
+}
+
+.type-comment {
+  margin-top: 2px;
+  font-size: 12px;
+  white-space: pre-line;
+}

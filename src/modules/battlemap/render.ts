@@ -270,42 +270,122 @@ function fillCells(
   ctx.fill();
 }
 
+type Range = ReturnType<typeof visibleCells>;
+
+/** Cell colours (scaled bitmap) and, on cells big enough to read them, patterns and symbols. */
+export function drawCells(
+  ctx: CanvasRenderingContext2D,
+  model: BattlemapModel,
+  lookup: Int32Array,
+  base: HTMLCanvasElement,
+  typeOf: TypeOf,
+  view: View,
+  range: Range,
+) {
+  const s = cellSize(view);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(base, view.x, view.y, model.width * s, model.height * s);
+  if (s < 8) return;
+
+  // Cells of one type are filled with a repeating tile in a single path: far faster
+  // than drawing every cell. Tiles use device pixels so they stay sharp on HiDPI.
+  const px = Math.max(1, Math.round(s * ctx.getTransform().a));
+  const byType = new Map<CellType, number[]>();
+  for (let y = range.y0; y <= range.y1; y++) {
+    for (let x = range.x0; x <= range.x1; x++) {
+      const type = typeOf(effectiveTypeAt(model, lookup, y * model.width + x));
+      if (type.pattern === "none" && !type.symbol) continue;
+      let cells = byType.get(type);
+      if (!cells) byType.set(type, (cells = []));
+      cells.push(y * model.width + x);
+    }
+  }
+  ctx.imageSmoothingEnabled = true;
+  for (const [type, cells] of byType) {
+    const pattern = ctx.createPattern(decorTile(type, px), "repeat");
+    if (!pattern) continue;
+    // One tile per cell, anchored at the map origin.
+    pattern.setTransform(new DOMMatrix([s / px, 0, 0, s / px, view.x, view.y]));
+    ctx.fillStyle = pattern;
+    fillCells(ctx, cells, model.width, view, s);
+  }
+}
+
+export function drawGrid(ctx: CanvasRenderingContext2D, view: View, range: Range, lineWidth = 1) {
+  const s = cellSize(view);
+  // Odd widths sit on half pixels to stay crisp.
+  const offset = lineWidth % 2 === 1 ? 0.5 : 0;
+  ctx.strokeStyle = COLORS.grid;
+  ctx.lineWidth = lineWidth;
+  ctx.beginPath();
+  const top = view.y + range.y0 * s;
+  const bottom = view.y + (range.y1 + 1) * s;
+  const left = view.x + range.x0 * s;
+  const right = view.x + (range.x1 + 1) * s;
+  for (let x = range.x0; x <= range.x1 + 1; x++) {
+    const px = Math.round(view.x + x * s) + offset;
+    line(ctx, px, top, px, bottom);
+  }
+  for (let y = range.y0; y <= range.y1 + 1; y++) {
+    const py = Math.round(view.y + y * s) + offset;
+    line(ctx, left, py, right, py);
+  }
+  ctx.stroke();
+}
+
+export function drawRegionOutlines(
+  ctx: CanvasRenderingContext2D,
+  regions: readonly RegionOverlay[],
+  view: View,
+  lineWidth: number,
+  activeId: string | null = null,
+) {
+  const s = cellSize(view);
+  ctx.lineCap = "round";
+  for (const r of regions) {
+    const active = r.id === activeId;
+    ctx.strokeStyle = active ? COLORS.regionActive : COLORS.region;
+    ctx.lineWidth = active ? lineWidth * 1.5 : lineWidth;
+    strokeSegments(ctx, r.segments, view, s);
+  }
+  ctx.lineCap = "butt";
+}
+
+export function drawRegionLabels(
+  ctx: CanvasRenderingContext2D,
+  regions: readonly RegionOverlay[],
+  mapWidth: number,
+  view: View,
+  fontSize: number,
+  bounds: { width: number; height: number },
+) {
+  const s = cellSize(view);
+  ctx.font = `600 ${fontSize}px "Segoe UI", sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (const r of regions) {
+    if (r.labelCell === null || r.name === "") continue;
+    const lx = view.x + ((r.labelCell % mapWidth) + 0.5) * s;
+    const ly = view.y + (Math.floor(r.labelCell / mapWidth) + 0.5) * s;
+    if (lx < -400 || ly < -100 || lx > bounds.width + 400 || ly > bounds.height + 100) continue;
+    const w = ctx.measureText(r.name).width + fontSize * 0.8;
+    ctx.fillStyle = COLORS.labelBg;
+    ctx.beginPath();
+    ctx.roundRect(lx - w / 2, ly - fontSize * 0.75, w, fontSize * 1.5, fontSize * 0.3);
+    ctx.fill();
+    ctx.fillStyle = COLORS.labelText;
+    ctx.fillText(r.name, lx, ly + fontSize * 0.07);
+  }
+}
+
 export function drawScene(ctx: CanvasRenderingContext2D, sc: Scene) {
   const { model, view } = sc;
   const s = cellSize(view);
   ctx.fillStyle = COLORS.background;
   ctx.fillRect(0, 0, sc.width, sc.height);
 
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(sc.base, view.x, view.y, model.width * s, model.height * s);
-
   const range = visibleCells(view, model, sc);
-
-  // Patterns and icons are unreadable on tiny cells.
-  if (s >= 8) {
-    // Cells of one type are filled with a repeating tile in a single path: far faster
-    // than drawing every cell. Tiles use device pixels so they stay sharp on HiDPI.
-    const px = Math.max(1, Math.round(s * ctx.getTransform().a));
-    const byType = new Map<CellType, number[]>();
-    for (let y = range.y0; y <= range.y1; y++) {
-      for (let x = range.x0; x <= range.x1; x++) {
-        const type = sc.typeOf(effectiveTypeAt(model, sc.lookup, y * model.width + x));
-        if (type.pattern === "none" && !type.symbol) continue;
-        let cells = byType.get(type);
-        if (!cells) byType.set(type, (cells = []));
-        cells.push(y * model.width + x);
-      }
-    }
-    ctx.imageSmoothingEnabled = true;
-    for (const [type, cells] of byType) {
-      const pattern = ctx.createPattern(decorTile(type, px), "repeat");
-      if (!pattern) continue;
-      // One tile per cell, anchored at the map origin.
-      pattern.setTransform(new DOMMatrix([s / px, 0, 0, s / px, view.x, view.y]));
-      ctx.fillStyle = pattern;
-      fillCells(ctx, cells, model.width, view, s);
-    }
-  }
+  drawCells(ctx, model, sc.lookup, sc.base, sc.typeOf, view, range);
 
   if (sc.preview) {
     ctx.fillStyle = sc.preview.color;
@@ -314,24 +394,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, sc: Scene) {
     ctx.globalAlpha = 1;
   }
 
-  if (s >= 6) {
-    ctx.strokeStyle = COLORS.grid;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    const top = view.y + range.y0 * s;
-    const bottom = view.y + (range.y1 + 1) * s;
-    const left = view.x + range.x0 * s;
-    const right = view.x + (range.x1 + 1) * s;
-    for (let x = range.x0; x <= range.x1 + 1; x++) {
-      const px = Math.round(view.x + x * s) + 0.5;
-      line(ctx, px, top, px, bottom);
-    }
-    for (let y = range.y0; y <= range.y1 + 1; y++) {
-      const py = Math.round(view.y + y * s) + 0.5;
-      line(ctx, left, py, right, py);
-    }
-    ctx.stroke();
-  }
+  if (s >= 6) drawGrid(ctx, view, range);
 
   if (sc.activeRegion) {
     ctx.fillStyle = COLORS.regionFill;
@@ -346,14 +409,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, sc: Scene) {
     strokeSegments(ctx, sc.selectionOutline, view, s);
   }
 
-  ctx.lineCap = "round";
-  for (const r of sc.regions) {
-    const active = r.id === sc.activeRegion?.id;
-    ctx.strokeStyle = active ? COLORS.regionActive : COLORS.region;
-    ctx.lineWidth = active ? 3 : 2;
-    strokeSegments(ctx, r.segments, view, s);
-  }
-  ctx.lineCap = "butt";
+  drawRegionOutlines(ctx, sc.regions, view, 2, sc.activeRegion?.id ?? null);
 
   if (sc.frame) {
     const f = sc.frame;
@@ -376,20 +432,5 @@ export function drawScene(ctx: CanvasRenderingContext2D, sc: Scene) {
   }
 
   const fontSize = Math.round(Math.min(14, Math.max(10, s * 0.5)));
-  ctx.font = `600 ${fontSize}px "Segoe UI", sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  for (const r of sc.regions) {
-    if (r.labelCell === null || r.name === "") continue;
-    const lx = view.x + ((r.labelCell % model.width) + 0.5) * s;
-    const ly = view.y + (Math.floor(r.labelCell / model.width) + 0.5) * s;
-    if (lx < -200 || ly < -50 || lx > sc.width + 200 || ly > sc.height + 50) continue;
-    const w = ctx.measureText(r.name).width + 10;
-    ctx.fillStyle = COLORS.labelBg;
-    ctx.beginPath();
-    ctx.roundRect(lx - w / 2, ly - fontSize * 0.75, w, fontSize * 1.5, 4);
-    ctx.fill();
-    ctx.fillStyle = COLORS.labelText;
-    ctx.fillText(r.name, lx, ly + 1);
-  }
+  drawRegionLabels(ctx, sc.regions, model.width, view, fontSize, sc);
 }

@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { getDb } from "../../shared/db";
 import { ru } from "../../shared/i18n/ru";
-import { isBuiltinTypeId, type CellType } from "./domain/cellTypes";
+import { decodeSymbol, isBuiltinTypeId, type CellType } from "./domain/cellTypes";
+import type { GmmapType } from "./domain/gmmapFile";
 import * as repo from "./repo";
 
 interface CellTypeState {
@@ -12,6 +13,8 @@ interface CellTypeState {
   update: (id: string, input: repo.CustomTypeInput) => Promise<void>;
   remove: (id: string) => Promise<void>;
   setBuiltinColor: (id: string, color: string | null) => Promise<void>;
+  /** Adds custom types from an imported map that this PC does not have yet (matched by id). */
+  importMissing: (types: readonly GmmapType[]) => Promise<void>;
 }
 
 function withNames(types: CellType[]): CellType[] {
@@ -19,7 +22,7 @@ function withNames(types: CellType[]): CellType[] {
 }
 
 /** Cell types are app-wide (shared by all campaigns). */
-export const useCellTypeStore = create<CellTypeState>((set) => {
+export const useCellTypeStore = create<CellTypeState>((set, get) => {
   async function refresh() {
     set({ types: withNames(await repo.listCellTypes(await getDb())) });
   }
@@ -45,6 +48,26 @@ export const useCellTypeStore = create<CellTypeState>((set) => {
 
     async setBuiltinColor(id, color) {
       await repo.setBuiltinColor(await getDb(), id, color);
+      await refresh();
+    },
+
+    async importMissing(types) {
+      if (get().types.length === 0) await refresh();
+      const known = new Set(get().types.map((t) => t.id));
+      const missing = types.filter((t) => !known.has(t.id));
+      if (missing.length === 0) return;
+      const db = await getDb();
+      for (const t of missing) {
+        const input = {
+          name: t.name,
+          color: t.color,
+          symbol: decodeSymbol(t.symbol),
+          blocksMove: t.blocksMove,
+          blocksSight: t.blocksSight,
+          comment: t.comment,
+        };
+        await repo.createCustomType(db, input, undefined, t.id);
+      }
       await refresh();
     },
   };

@@ -107,6 +107,7 @@ export function CellTypesSettings() {
               <div className="type-info">
                 <strong>{t.name}</strong>
                 <div className="muted">{flagsText(t)}</div>
+                {t.comment && <div className="type-comment">{t.comment}</div>}
               </div>
               <div className="row-actions">
                 <button type="button" onClick={() => setEditing(t)}>
@@ -155,6 +156,7 @@ function CellTypeForm({ type, onClose }: { type?: CellType; onClose: () => void 
   );
   const [blocksMove, setBlocksMove] = useState(type?.blocksMove ?? false);
   const [blocksSight, setBlocksSight] = useState(type ? type.blocksSight !== "no" : false);
+  const [comment, setComment] = useState(type?.comment ?? "");
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<string | null>(null);
@@ -171,6 +173,7 @@ function CellTypeForm({ type, onClose }: { type?: CellType; onClose: () => void 
           : null,
     blocksMove,
     blocksSight,
+    comment,
   };
   const preview: CellType = {
     id: "preview",
@@ -181,6 +184,7 @@ function CellTypeForm({ type, onClose }: { type?: CellType; onClose: () => void 
     symbol: input.symbol,
     blocksMove,
     blocksSight: blocksSight ? "yes" : "no",
+    comment,
   };
   const nameError = name.trim() === "";
 
@@ -292,6 +296,16 @@ function CellTypeForm({ type, onClose }: { type?: CellType; onClose: () => void 
             onChange={(e) => setBlocksSight(e.target.checked)}
           />
           {ru.cellTypes.blocksSight}
+        </label>
+        <label className="field">
+          <span>{ru.cellTypes.comment}</span>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={3}
+            maxLength={500}
+          />
+          <small className="hint">{ru.cellTypes.commentHint}</small>
         </label>
         {failure && <p className="error">{failure}</p>}
       </form>

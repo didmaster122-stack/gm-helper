@@ -104,4 +104,9 @@ export const migrations: Migration[] = [
       );
     `,
   },
+  {
+    version: 5,
+    name: "cell type comments",
+    sql: `ALTER TABLE cell_types ADD COLUMN comment TEXT NOT NULL DEFAULT '';`,
+  },
 ];

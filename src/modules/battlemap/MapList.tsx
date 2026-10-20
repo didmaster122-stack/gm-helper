@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { pickFile, readChosenFile } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
 import { ConfirmDialog, EmptyState } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
+import { useCellTypeStore } from "./cellTypeStore";
+import { parseGmmapFile } from "./domain/gmmapFile";
 import { MapForm } from "./MapForm";
 import type { BattlemapSummary } from "./repo";
 import { useEditorStore, useMapListStore } from "./store";
@@ -14,6 +17,8 @@ export function MapList({ campaign }: { campaign: Campaign }) {
   const load = useMapListStore((s) => s.load);
   const remove = useMapListStore((s) => s.remove);
   const openById = useEditorStore((s) => s.openById);
+  const create = useMapListStore((s) => s.create);
+  const importTypes = useCellTypeStore((s) => s.importMissing);
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<BattlemapSummary | null>(null);
   const [deleting, setDeleting] = useState<BattlemapSummary | null>(null);
@@ -33,14 +38,41 @@ export function MapList({ campaign }: { campaign: Campaign }) {
     }
   }
 
+  async function importFile() {
+    setError(null);
+    const path = await pickFile(ru.battlemap.import.title, [
+      { name: ru.battlemap.export.gmmapFilter, extensions: ["json"] },
+    ]);
+    if (!path) return;
+    try {
+      const content = parseGmmapFile(new TextDecoder().decode(await readChosenFile(path)));
+      await importTypes(content.customTypes);
+      const info = {
+        name: content.name || ru.battlemap.import.defaultName,
+        description: content.description,
+      };
+      const created = await create(campaign.id, info, content.model);
+      await open(created.id);
+    } catch (e) {
+      console.error(e);
+      setError(ru.battlemap.import.failed);
+    }
+  }
+
   const createButton = (
-    <button type="button" className="primary" onClick={() => setCreating(true)}>
-      {ru.battlemap.newMap}
-    </button>
+    <div className="row-actions">
+      <button type="button" onClick={() => void importFile()}>
+        {ru.battlemap.import.button}
+      </button>
+      <button type="button" className="primary" onClick={() => setCreating(true)}>
+        {ru.battlemap.newMap}
+      </button>
+    </div>
   );
 
   return (
     <div className="screen map-list-screen">
+      {error && <p className="error">{error}</p>}
       {maps.length === 0 ? (
         <EmptyState
           title={ru.battlemap.emptyTitle}
@@ -53,7 +85,6 @@ export function MapList({ campaign }: { campaign: Campaign }) {
             <h1>{ru.battlemap.title}</h1>
             {createButton}
           </div>
-          {error && <p className="error">{error}</p>}
           <ul className="map-list">
             {maps.map((m) => (
               <li key={m.id}>

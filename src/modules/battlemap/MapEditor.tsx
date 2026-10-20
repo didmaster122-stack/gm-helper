@@ -3,6 +3,7 @@ import { ru } from "../../shared/i18n/ru";
 import { FLOOR, type CellType } from "./domain/cellTypes";
 import { paintCells } from "./domain/grid";
 import { fitView, zoomAt, type View } from "./domain/view";
+import { ExportDialog } from "./ExportDialog";
 import { MapCanvas } from "./MapCanvas";
 import { ResizeDialog } from "./ResizeDialog";
 import { SidePanel } from "./SidePanel";
@@ -49,6 +50,7 @@ export function MapEditor({ types }: { types: CellType[] }) {
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [panMode, setPanMode] = useState(false);
   const [resizing, setResizing] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const model = history?.present ?? null;
 
@@ -166,6 +168,9 @@ export function MapEditor({ types }: { types: CellType[] }) {
         <button type="button" onClick={() => setResizing(true)}>
           {ru.battlemap.resize}
         </button>
+        <button type="button" onClick={() => setExporting(true)}>
+          {ru.battlemap.export.button}
+        </button>
         <span className="spacer" />
         <span className={saveState === "error" ? "error" : "muted"}>{SAVE_LABEL[saveState]}</span>
       </div>
@@ -179,6 +184,7 @@ export function MapEditor({ types }: { types: CellType[] }) {
                 <button
                   type="button"
                   className={t.id === typeId ? "palette-item active" : "palette-item"}
+                  title={t.comment || undefined}
                   onClick={() => {
                     setType(t.id);
                     if (tool === "eraser" || tool === "select") setTool("brush");
@@ -205,6 +211,15 @@ export function MapEditor({ types }: { types: CellType[] }) {
         <SidePanel model={model} types={types} />
       </div>
 
+      {exporting && (
+        <ExportDialog
+          name={map.name}
+          description={map.description}
+          model={model}
+          types={types}
+          onClose={() => setExporting(false)}
+        />
+      )}
       {resizing && (
         <ResizeDialog
           model={model}

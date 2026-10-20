@@ -168,6 +168,7 @@ export interface CustomTypeInput {
   symbol: CellType["symbol"];
   blocksMove: boolean;
   blocksSight: boolean;
+  comment: string;
 }
 
 interface TypeRow {
@@ -178,6 +179,7 @@ interface TypeRow {
   symbol: string;
   blocks_move: number;
   blocks_sight: string;
+  comment: string;
   created_at: string;
 }
 
@@ -204,6 +206,7 @@ export async function listCellTypes(db: Db): Promise<CellType[]> {
       symbol: decodeSymbol(r.symbol),
       blocksMove: r.blocks_move !== 0,
       blocksSight: (r.blocks_sight === "yes" ? "yes" : "no") satisfies SightBlock,
+      comment: r.comment,
     }));
   return [...builtins, ...custom];
 }
@@ -211,20 +214,21 @@ export async function listCellTypes(db: Db): Promise<CellType[]> {
 function normalizeType(input: CustomTypeInput): CustomTypeInput {
   const name = input.name.trim();
   if (name === "") throw new Error("Cell type name is required");
-  return { ...input, name };
+  return { ...input, name, comment: input.comment.trim() };
 }
 
+/** Creates a custom type; `id` is given when importing a map that uses it. */
 export async function createCustomType(
   db: Db,
   input: CustomTypeInput,
   clock: RepoClock = defaultClock,
+  id: string = clock.newId(),
 ): Promise<string> {
   const data = normalizeType(input);
-  const id = clock.newId();
   const now = clock.now().toISOString();
   await db.execute(
-    `INSERT INTO cell_types (id, builtin, name, color, symbol, blocks_move, blocks_sight, created_at, updated_at)
-     VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO cell_types (id, builtin, name, color, symbol, blocks_move, blocks_sight, comment, created_at, updated_at)
+     VALUES (?, 0, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       id,
       data.name,
@@ -232,6 +236,7 @@ export async function createCustomType(
       encodeSymbol(data.symbol),
       data.blocksMove ? 1 : 0,
       data.blocksSight ? "yes" : "no",
+      data.comment,
       now,
       now,
     ],
@@ -247,7 +252,7 @@ export async function updateCustomType(
 ): Promise<void> {
   const data = normalizeType(input);
   await db.execute(
-    `UPDATE cell_types SET name = ?, color = ?, symbol = ?, blocks_move = ?, blocks_sight = ?, updated_at = ?
+    `UPDATE cell_types SET name = ?, color = ?, symbol = ?, blocks_move = ?, blocks_sight = ?, comment = ?, updated_at = ?
      WHERE id = ? AND builtin = 0`,
     [
       data.name,
@@ -255,6 +260,7 @@ export async function updateCustomType(
       encodeSymbol(data.symbol),
       data.blocksMove ? 1 : 0,
       data.blocksSight ? "yes" : "no",
+      data.comment,
       clock.now().toISOString(),
       id,
     ],

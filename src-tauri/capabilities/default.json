@@ -13,6 +13,7 @@
     "sql:default",
     "sql:allow-execute",
     "dialog:allow-open",
+    "dialog:allow-save",
     {
       "identifier": "fs:allow-read-dir",
       "allow": [{ "path": "**" }]

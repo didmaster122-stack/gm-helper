@@ -2,12 +2,13 @@
 // Paths passed here are absolute; Windows accepts "/" as a separator.
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { appCacheDir, join } from "@tauri-apps/api/path";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import {
   copyFile,
   exists,
   mkdir,
   readDir,
+  readFile,
   remove,
   rename,
   watch,
@@ -21,6 +22,25 @@ export { isServiceName };
 
 export async function pickDirectory(title: string, defaultPath?: string): Promise<string | null> {
   const result = await open({ directory: true, multiple: false, title, defaultPath });
+  return typeof result === "string" ? result : null;
+}
+
+export interface FileFilter {
+  name: string;
+  extensions: string[];
+}
+
+/** "Save as" dialog; Windows itself asks before overwriting an existing file. */
+export async function pickSavePath(
+  title: string,
+  defaultPath: string,
+  filters: FileFilter[],
+): Promise<string | null> {
+  return (await save({ title, defaultPath, filters })) ?? null;
+}
+
+export async function pickFile(title: string, filters: FileFilter[]): Promise<string | null> {
+  const result = await open({ multiple: false, directory: false, title, filters });
   return typeof result === "string" ? result : null;
 }
 
@@ -125,10 +145,34 @@ export async function writeCacheFile(path: string, data: Uint8Array): Promise<vo
  * staged there and copied into place.
  */
 export async function writeOwnLibraryFile(path: string, data: Uint8Array): Promise<void> {
-  const staging = await join(await cacheDir("staging"), `${crypto.randomUUID()}.tmp`);
+  await writeViaStaging(path, data);
+}
+
+/** Writes an exported file to the path the user picked in {@link pickSavePath}. */
+export async function writeChosenFile(path: string, data: Uint8Array): Promise<void> {
+  await writeViaStaging(path, data);
+}
+
+async function stagingPath(): Promise<string> {
+  return join(await cacheDir("staging"), `${crypto.randomUUID()}.tmp`);
+}
+
+async function writeViaStaging(path: string, data: Uint8Array): Promise<void> {
+  const staging = await stagingPath();
   await writeFile(staging, data);
   try {
     await copyFile(staging, path);
+  } finally {
+    await remove(staging).catch(() => undefined);
+  }
+}
+
+/** Reads a file the user picked; reading is only allowed in the app cache, so it is copied there. */
+export async function readChosenFile(path: string): Promise<Uint8Array> {
+  const staging = await stagingPath();
+  await copyFile(path, staging);
+  try {
+    return await readFile(staging);
   } finally {
     await remove(staging).catch(() => undefined);
   }
