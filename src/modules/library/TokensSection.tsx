@@ -1,23 +1,19 @@
 import { useState } from "react";
-import { copyPngToClipboard, fileUrl, revealInExplorer } from "../../shared/fs";
+import { copyPngToClipboard, revealInExplorer } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
 import { ConfirmDialog, Modal } from "../../shared/ui";
 import { artName, toAbsolute } from "./domain/paths";
 import type { Art, Token } from "./domain/types";
 import { useArtTokens, useLibraryStore } from "./store";
 import { TokenEditor } from "./TokenEditor";
+import { tokenUrl } from "./tokenUrl";
 import { deleteToken } from "./tokenService";
 
 function tokenFileName(token: Token): string {
   return token.relPath.slice(token.relPath.lastIndexOf("/") + 1);
 }
 
-/** Image URL that changes when the token is re-rendered, so the webview does not show a stale file. */
-function tokenUrl(root: string, token: Token): string {
-  return `${fileUrl(toAbsolute(root, token.relPath))}?v=${encodeURIComponent(token.updatedAt)}`;
-}
-
-function TokenImage({ root, token }: { root: string; token: Token }) {
+export function TokenImage({ root, token }: { root: string; token: Token }) {
   const url = tokenUrl(root, token);
   const [failed, setFailed] = useState<string | null>(null);
   if (failed === url) return <span className="warning">{ru.library.token.fileMissing}</span>;

@@ -2,6 +2,7 @@ import { pickDirectory } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
 import { CellTypesSettings, ObjectsSettings } from "../battlemap";
 import { CampaignList } from "../campaigns";
+import { RelationTypesSettings } from "../relations";
 
 interface SettingsScreenProps {
   libraryRoot: string | null;
@@ -41,6 +42,11 @@ export function SettingsScreen({ libraryRoot, onLibraryRootChange }: SettingsScr
       <section className="card">
         <h2>{ru.objects.title}</h2>
         <ObjectsSettings libraryRoot={libraryRoot} />
+      </section>
+
+      <section className="card">
+        <h2>{ru.relations.types.title}</h2>
+        <RelationTypesSettings />
       </section>
     </div>
   );

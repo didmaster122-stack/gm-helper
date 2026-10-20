@@ -21,13 +21,23 @@ function same(a: LibrarySelection, b: LibrarySelection): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-export function LibraryTree() {
+interface LibraryTreeProps {
+  /**
+   * Browsing only (e.g. in the art picker): the selection is local to the caller
+   * and folders cannot be created, renamed or deleted.
+   */
+  browse?: { selection: LibrarySelection; onSelect: (selection: LibrarySelection) => void };
+}
+
+export function LibraryTree({ browse }: LibraryTreeProps = {}) {
   const root = useLibraryStore((s) => s.root);
   const tree = useLibraryStore((s) => s.tree);
   const arts = useLibraryStore((s) => s.arts);
   const tokens = useLibraryStore((s) => s.tokens);
-  const selection = useLibraryStore((s) => s.selection);
-  const setSelection = useLibraryStore((s) => s.setSelection);
+  const storeSelection = useLibraryStore((s) => s.selection);
+  const setStoreSelection = useLibraryStore((s) => s.setSelection);
+  const selection = browse?.selection ?? storeSelection;
+  const setSelection = browse?.onSelect ?? setStoreSelection;
   const sync = useLibraryStore((s) => s.sync);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
@@ -50,33 +60,34 @@ export function LibraryTree() {
     </button>
   );
 
-  const actions = (relPath: string, name: string, canAddGroup: boolean) => (
-    <span className="tree-actions">
-      {canAddGroup && (
+  const actions = (relPath: string, name: string, canAddGroup: boolean) =>
+    !browse && (
+      <span className="tree-actions">
+        {canAddGroup && (
+          <button
+            type="button"
+            title={ru.library.newGroup}
+            onClick={() => setDialog({ kind: "create", parent: relPath })}
+          >
+            +
+          </button>
+        )}
         <button
           type="button"
-          title={ru.library.newGroup}
-          onClick={() => setDialog({ kind: "create", parent: relPath })}
+          title={ru.library.renameFolder}
+          onClick={() => setDialog({ kind: "rename", relPath, name })}
         >
-          +
+          ✎
         </button>
-      )}
-      <button
-        type="button"
-        title={ru.library.renameFolder}
-        onClick={() => setDialog({ kind: "rename", relPath, name })}
-      >
-        ✎
-      </button>
-      <button
-        type="button"
-        title={ru.library.deleteFolder}
-        onClick={() => setDialog({ kind: "delete", relPath, name })}
-      >
-        ×
-      </button>
-    </span>
-  );
+        <button
+          type="button"
+          title={ru.library.deleteFolder}
+          onClick={() => setDialog({ kind: "delete", relPath, name })}
+        >
+          ×
+        </button>
+      </span>
+    );
 
   const toggle = (name: string) => {
     const next = new Set(collapsed);
@@ -94,13 +105,15 @@ export function LibraryTree() {
 
       <div className="tree-heading">
         <span>{ru.library.systems}</span>
-        <button
-          type="button"
-          title={ru.library.newSystem}
-          onClick={() => setDialog({ kind: "create", parent: "" })}
-        >
-          +
-        </button>
+        {!browse && (
+          <button
+            type="button"
+            title={ru.library.newSystem}
+            onClick={() => setDialog({ kind: "create", parent: "" })}
+          >
+            +
+          </button>
+        )}
       </div>
 
       {tree.systems.map((system) => (

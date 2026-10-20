@@ -93,6 +93,31 @@ describe("campaign repo", () => {
     const left = await db.select<{ id: string }>("SELECT id FROM battlemaps");
     expect(left.map((r) => r.id)).toEqual(["m2"]);
   });
+
+  it("deletes the campaign's relation graph with it", async () => {
+    const c = await createCampaign(db, { name: "К", system: "PF2e", description: "" }, clock);
+    const character = `INSERT INTO characters (id, campaign_id, name, kind, status, created_at, updated_at)
+      VALUES (?, ?, 'Имя', 'npc', 'alive', '', '')`;
+    await db.execute(character, ["c1", c.id]);
+    await db.execute(character, ["c2", "other"]);
+    await db.execute(
+      `INSERT INTO factions (id, campaign_id, name, color, created_at, updated_at)
+      VALUES ('f', ?, 'Ф', '#fff', '', '')`,
+      [c.id],
+    );
+    await db.execute(
+      `INSERT INTO relations (id, campaign_id, from_id, to_id, type_id, created_at, updated_at)
+      VALUES ('r', ?, 'a', 'b', 'love', '', '')`,
+      [c.id],
+    );
+    await deleteCampaign(db, c.id);
+    const count = async (table: string) =>
+      (await db.select<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table}`))[0]?.n;
+    const left = await db.select<{ id: string }>("SELECT id FROM characters");
+    expect(left.map((r) => r.id)).toEqual(["c2"]);
+    expect(await count("factions")).toBe(0);
+    expect(await count("relations")).toBe(0);
+  });
 });
 
 describe("validateCampaignInput", () => {

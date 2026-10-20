@@ -4,7 +4,7 @@ import { EmptyState } from "../shared/ui";
 import { CampaignSwitcher, RequireCampaign, useActiveCampaign } from "../modules/campaigns";
 import { LibraryScreen } from "../modules/library";
 import { BattlemapScreen } from "../modules/battlemap";
-import { RelationsScreen } from "../modules/relations";
+import { createCharacter, RelationsScreen } from "../modules/relations";
 import { TimelineScreen } from "../modules/timeline";
 import { SettingsScreen } from "../modules/settings";
 import { FirstRun } from "./FirstRun";
@@ -16,11 +16,26 @@ function CurrentModule() {
   const libraryRoot = useAppStore((s) => s.libraryRoot);
   const setLibraryRoot = useAppStore((s) => s.setLibraryRoot);
   const campaign = useActiveCampaign();
+  const setModule = useAppStore((s) => s.setModule);
 
   switch (module) {
     case "library":
       return libraryRoot ? (
-        <LibraryScreen libraryRoot={libraryRoot} preferredSystem={campaign?.system ?? null} />
+        <LibraryScreen
+          libraryRoot={libraryRoot}
+          preferredSystem={campaign?.system ?? null}
+          characterTarget={
+            campaign
+              ? {
+                  campaignName: campaign.name,
+                  async create(name, artId, tokenId) {
+                    await createCharacter(campaign.id, { name, kind: "npc", artId, tokenId });
+                    setModule("relations");
+                  },
+                }
+              : null
+          }
+        />
       ) : null;
     case "battlemaps":
       return (
@@ -31,7 +46,9 @@ function CurrentModule() {
     case "relations":
       return (
         <RequireCampaign libraryRoot={libraryRoot}>
-          {(campaign) => <RelationsScreen campaign={campaign} />}
+          {(campaign) =>
+            libraryRoot ? <RelationsScreen campaign={campaign} libraryRoot={libraryRoot} /> : null
+          }
         </RequireCampaign>
       );
     case "timeline":

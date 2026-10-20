@@ -17,7 +17,20 @@ function formatSize(bytes: number): string {
 
 type Dialog = "rename" | "move" | "delete" | "full" | null;
 
-export function ArtPanel({ art }: { art: Art }) {
+/** Campaign that receives characters made from arts ("Create character", spec §4.1). */
+export interface CharacterTarget {
+  campaignName: string;
+  /** `tokenId` is the art's first token, if any. */
+  create: (name: string, artId: string, tokenId: string | null) => Promise<void> | void;
+}
+
+export function ArtPanel({
+  art,
+  characterTarget,
+}: {
+  art: Art;
+  characterTarget: CharacterTarget | null;
+}) {
   const root = useLibraryStore((s) => s.root);
   const arts = useLibraryStore((s) => s.arts);
   const putArt = useLibraryStore((s) => s.putArt);
@@ -115,6 +128,20 @@ export function ArtPanel({ art }: { art: Art }) {
       {error && <p className="error">{error}</p>}
 
       <div className="art-actions">
+        {!art.missing && characterTarget && (
+          <button
+            type="button"
+            className="primary"
+            title={ru.relations.character.createFromArtHint(characterTarget.campaignName)}
+            onClick={() =>
+              void run(async () =>
+                characterTarget.create(artName(art), art.id, tokens[0]?.id ?? null),
+              )
+            }
+          >
+            {ru.relations.character.createFromArt}
+          </button>
+        )}
         {!art.missing && (
           <>
             <button type="button" onClick={() => setDialog("rename")}>

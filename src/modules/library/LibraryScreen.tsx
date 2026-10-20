@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { ru } from "../../shared/i18n/ru";
 import { EmptyState } from "../../shared/ui";
 import { ArtGrid } from "./ArtGrid";
-import { ArtPanel } from "./ArtPanel";
+import { ArtPanel, type CharacterTarget } from "./ArtPanel";
 import { searchArts, type TokenFilter } from "./domain/search";
 import { ImportDialog } from "./ImportDialog";
 import { LibraryTree } from "./LibraryTree";
@@ -15,9 +15,15 @@ interface LibraryScreenProps {
   libraryRoot: string;
   /** System of the active campaign: selected by default when it exists in the library. */
   preferredSystem: string | null;
+  /** Where "Create character" puts a character made from an art; hidden when null. */
+  characterTarget?: CharacterTarget | null;
 }
 
-export function LibraryScreen({ libraryRoot, preferredSystem }: LibraryScreenProps) {
+export function LibraryScreen({
+  libraryRoot,
+  preferredSystem,
+  characterTarget = null,
+}: LibraryScreenProps) {
   const open = useLibraryStore((s) => s.open);
   const root = useLibraryStore((s) => s.root);
   const entries = useLibraryStore((s) => s.entries);
@@ -150,7 +156,7 @@ export function LibraryScreen({ libraryRoot, preferredSystem }: LibraryScreenPro
         )}
       </section>
 
-      {selected && <ArtPanel art={selected} />}
+      {selected && <ArtPanel art={selected} characterTarget={characterTarget} />}
 
       {drop.pending && (
         <ImportDialog

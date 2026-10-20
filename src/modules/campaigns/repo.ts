@@ -100,11 +100,14 @@ export async function setCampaignArchived(
   ]);
 }
 
-/** Deletes the campaign with its maps. Later stages must also delete characters and events here. */
+/** Deletes the campaign with its maps and relation graph. Later stages must also delete events here. */
 export async function deleteCampaign(db: Db, id: string): Promise<void> {
   const key = sqlLiteral(id);
   await runScript(db, [
     `DELETE FROM battlemaps WHERE campaign_id = ${key}`,
+    `DELETE FROM relations WHERE campaign_id = ${key}`,
+    `DELETE FROM characters WHERE campaign_id = ${key}`,
+    `DELETE FROM factions WHERE campaign_id = ${key}`,
     `DELETE FROM campaigns WHERE id = ${key}`,
   ]);
 }

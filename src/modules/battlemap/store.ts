@@ -10,7 +10,7 @@ import {
   replacePresent,
   undo,
   type History,
-} from "./domain/history";
+} from "../../shared/history";
 import { nextRotation, type Rotation } from "./domain/objects";
 import { useObjectStore } from "./objectStore";
 import { renderPreview } from "./preview";

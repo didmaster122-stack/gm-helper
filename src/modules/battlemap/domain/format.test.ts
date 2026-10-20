@@ -3,7 +3,7 @@ import { decodeSymbol, encodeSymbol } from "./cellTypes";
 import { fromJson, toJson } from "./format";
 import { addRegion, cellTypeAt, createModel, paintCells } from "./grid";
 import { applySelection } from "./selection";
-import { initHistory, pushHistory, redo, replacePresent, undo } from "./history";
+import { initHistory, pushHistory, redo, replacePresent, undo } from "../../../shared/history";
 
 describe("battlemap JSON", () => {
   it("round-trips a map with regions", () => {

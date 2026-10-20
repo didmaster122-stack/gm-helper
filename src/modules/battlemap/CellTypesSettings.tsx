@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ru } from "../../shared/i18n/ru";
-import { ConfirmDialog } from "../../shared/ui";
+import { ColorInput, ConfirmDialog } from "../../shared/ui";
 import { useCellTypeStore } from "./cellTypeStore";
 import { CellTypeForm } from "./CellTypeForm";
 import { BUILTIN_TYPES, type CellType } from "./domain/cellTypes";
@@ -14,29 +14,6 @@ function flagsText(t: CellType): string {
   const sight =
     t.blocksSight === "partial" ? c.sightPartial : t.blocksSight === "yes" ? c.yes : c.no;
   return `${c.blocksMove}: ${t.blocksMove ? c.yes : c.no} · ${c.blocksSight}: ${sight}`;
-}
-
-/**
- * Colour picker that saves after the user stops dragging instead of on every change.
- * The parent keys it by the saved colour, so an outside change resets it.
- */
-function ColorInput({ value, onCommit }: { value: string; onCommit: (color: string) => void }) {
-  const [local, setLocal] = useState(value);
-  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
-  return (
-    <input
-      type="color"
-      className="color-input"
-      value={local}
-      onChange={(e) => {
-        const color = e.target.value;
-        setLocal(color);
-        clearTimeout(timer.current);
-        timer.current = setTimeout(() => onCommit(color), 300);
-      }}
-    />
-  );
 }
 
 /** Settings section: built-in cell types (colour only) and custom types (full CRUD). */
