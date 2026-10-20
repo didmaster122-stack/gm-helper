@@ -118,6 +118,38 @@ describe("campaign repo", () => {
     expect(await count("factions")).toBe(0);
     expect(await count("relations")).toBe(0);
   });
+
+  it("deletes the campaign's timeline with it", async () => {
+    const c = await createCampaign(db, { name: "К", system: "PF2e", description: "" }, clock);
+    await db.execute("INSERT INTO timelines (campaign_id, session_count) VALUES (?, 3)", [c.id]);
+    await db.execute(
+      `INSERT INTO timeline_lanes (id, campaign_id, kind, sort, created_at, updated_at)
+      VALUES ('l', ?, 'main', 0, '', '')`,
+      [c.id],
+    );
+    await db.execute(
+      `INSERT INTO timeline_events (id, campaign_id, lane_id, sort, title, importance, status,
+      created_at, updated_at) VALUES ('e', ?, 'l', 0, 'С', 'major', 'planned', '', '')`,
+      [c.id],
+    );
+    await db.execute(
+      `INSERT INTO timeline_links (id, campaign_id, from_id, to_id, created_at, updated_at)
+      VALUES ('k', ?, 'e', 'e', '', '')`,
+      [c.id],
+    );
+    await db.execute(
+      `INSERT INTO timeline_markers (id, campaign_id, label, level, sort, created_at, updated_at)
+      VALUES ('m', ?, 'Зима', 1, 0, '', '')`,
+      [c.id],
+    );
+    await deleteCampaign(db, c.id);
+    const count = async (table: string) =>
+      (await db.select<{ n: number }>(`SELECT COUNT(*) AS n FROM ${table}`))[0]?.n;
+    const tables = ["timelines", "timeline_lanes", "timeline_events", "timeline_links"];
+    for (const table of [...tables, "timeline_markers"]) {
+      expect(await count(table)).toBe(0);
+    }
+  });
 });
 
 describe("validateCampaignInput", () => {

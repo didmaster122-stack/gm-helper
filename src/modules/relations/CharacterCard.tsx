@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ru } from "../../shared/i18n/ru";
 import { CommitField, ConfirmDialog, TagEditor } from "../../shared/ui";
 import { PortraitField, RelationList } from "./cardParts";
@@ -22,6 +22,8 @@ interface CharacterCardProps {
   graph: RelationGraph;
   libraryRoot: string;
   preferredSystem: string;
+  /** Shown under the relations (events of the timeline). */
+  extras?: ReactNode;
 }
 
 export function CharacterCard({
@@ -29,6 +31,7 @@ export function CharacterCard({
   graph,
   libraryRoot,
   preferredSystem,
+  extras,
 }: CharacterCardProps) {
   const edit = useRelationsStore((s) => s.edit);
   const select = useRelationsStore((s) => s.select);
@@ -179,6 +182,7 @@ export function CharacterCard({
       />
 
       <RelationList graph={graph} nodeId={c.id} />
+      {extras}
 
       <div className="art-actions">
         <button type="button" className="danger" onClick={() => setDeleting(true)}>

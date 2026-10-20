@@ -5,7 +5,7 @@ import { ru } from "../../shared/i18n/ru";
 import { isFiltered, noFilter, searchGraph, visibleGraph, type GraphFilter } from "./domain/filter";
 import { moveNodes } from "./domain/graph";
 import { forceLayout } from "./domain/layout";
-import { renderGraphPng } from "./exportPng";
+import { renderFlowPng } from "../../shared/pngExport";
 import type { GraphNode, RelationEdge } from "./GraphNodes";
 import { useRelationTypeStore } from "./relationTypeStore";
 import { useGraph, useRelationsStore } from "./store";
@@ -51,7 +51,7 @@ export function GraphToolbar({
     }
     setBusy(true);
     try {
-      const bytes = await renderGraphPng(viewport, getNodesBounds(nodes), "#16171c");
+      const bytes = await renderFlowPng(viewport, getNodesBounds(nodes), "#16171c");
       const path = await pickSavePath(t.exportTitle, `${campaignName} — ${ru.nav.relations}.png`, [
         { name: t.exportFilter, extensions: ["png"] },
       ]);

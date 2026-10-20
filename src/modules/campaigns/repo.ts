@@ -100,7 +100,7 @@ export async function setCampaignArchived(
   ]);
 }
 
-/** Deletes the campaign with its maps and relation graph. Later stages must also delete events here. */
+/** Deletes the campaign with its maps, relation graph and timeline. */
 export async function deleteCampaign(db: Db, id: string): Promise<void> {
   const key = sqlLiteral(id);
   await runScript(db, [
@@ -108,6 +108,11 @@ export async function deleteCampaign(db: Db, id: string): Promise<void> {
     `DELETE FROM relations WHERE campaign_id = ${key}`,
     `DELETE FROM characters WHERE campaign_id = ${key}`,
     `DELETE FROM factions WHERE campaign_id = ${key}`,
+    `DELETE FROM timeline_links WHERE campaign_id = ${key}`,
+    `DELETE FROM timeline_markers WHERE campaign_id = ${key}`,
+    `DELETE FROM timeline_events WHERE campaign_id = ${key}`,
+    `DELETE FROM timeline_lanes WHERE campaign_id = ${key}`,
+    `DELETE FROM timelines WHERE campaign_id = ${key}`,
     `DELETE FROM campaigns WHERE id = ${key}`,
   ]);
 }

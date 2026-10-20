@@ -12,7 +12,7 @@
 ## Стек
 
 - Tauri 2 + React 19 + TypeScript (strict, `noUncheckedIndexedAccess`) + Vite.
-- Состояние: Zustand. Граф отношений и хронология: React Flow (`@xyflow/react`). Баттлмап: HTML Canvas 2D (без DOM-элемента на клетку).
+- Состояние: Zustand. Граф отношений: React Flow (`@xyflow/react`). Хронология: обычный HTML с вертикальной прокруткой и SVG-стрелками (`modules/timeline/TimelineBoard.tsx`, раскладка — чистая функция `domain/layout.ts`). Баттлмап: HTML Canvas 2D (без DOM-элемента на клетку).
 - Хранение: SQLite через `@tauri-apps/plugin-sql`. Файлы: `@tauri-apps/plugin-fs`, `@tauri-apps/plugin-dialog`.
 - Обработка изображений (миниатюры, токены, экспорт PNG): Canvas / OffscreenCanvas на стороне TS.
 - Rust: только подключение плагинов, разрешения и то, что нельзя сделать на TS (watcher файлов, перемещение в корзину, хэширование больших файлов при необходимости). Бизнес-логику в Rust не пиши.

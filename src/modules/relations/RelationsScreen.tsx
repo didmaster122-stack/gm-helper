@@ -1,6 +1,6 @@
 import "@xyflow/react/dist/style.css";
 import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { ru } from "../../shared/i18n/ru";
 import { EmptyState } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
@@ -20,9 +20,12 @@ import { useGraph, useRelationsStore } from "./store";
 interface RelationsScreenProps {
   campaign: Campaign;
   libraryRoot: string;
+  /** Extra section of a character card (the character's events on the timeline). */
+  characterExtras?: (characterId: string) => ReactNode;
 }
 
-export function RelationsScreen({ campaign, libraryRoot }: RelationsScreenProps) {
+export function RelationsScreen(props: RelationsScreenProps) {
+  const { campaign, libraryRoot } = props;
   const load = useRelationsStore((s) => s.load);
   const status = useRelationsStore((s) => s.status);
   const loadedFor = useRelationsStore((s) => s.campaignId);
@@ -57,7 +60,7 @@ export function RelationsScreen({ campaign, libraryRoot }: RelationsScreenProps)
 
   return (
     <ReactFlowProvider key={campaign.id}>
-      <RelationsView campaign={campaign} libraryRoot={libraryRoot} />
+      <RelationsView {...props} />
     </ReactFlowProvider>
   );
 }
@@ -76,7 +79,7 @@ type Dialog =
   | { kind: "relation"; from: string; to: string }
   | null;
 
-function RelationsView({ campaign, libraryRoot }: RelationsScreenProps) {
+function RelationsView({ campaign, libraryRoot, characterExtras }: RelationsScreenProps) {
   const graph = useGraph();
   const selection = useRelationsStore((s) => s.selection);
   const filter = useRelationsStore((s) => s.filter);
@@ -141,6 +144,7 @@ function RelationsView({ campaign, libraryRoot }: RelationsScreenProps) {
           graph={graph}
           libraryRoot={libraryRoot}
           preferredSystem={campaign.system}
+          extras={characterExtras?.(c.id)}
         />
       );
     }

@@ -14,10 +14,10 @@ function dataUrlToBytes(dataUrl: string): Uint8Array {
 }
 
 /**
- * Renders the part of the React Flow viewport inside `bounds` (graph units) to PNG,
- * at twice the graph scale while that fits.
+ * Renders the part of a React Flow viewport inside `bounds` (flow units) to PNG,
+ * at twice the flow scale while that fits.
  */
-export async function renderGraphPng(
+export async function renderFlowPng(
   viewportElement: HTMLElement,
   bounds: Rect,
   background: string,
@@ -37,5 +37,17 @@ export async function renderGraphPng(
       transform: `translate(${viewport.x}px, ${viewport.y}px) scale(${viewport.zoom})`,
     },
   });
+  return dataUrlToBytes(url);
+}
+
+/** Renders a whole element (`width` × `height` CSS pixels) to PNG, at twice the scale while that fits. */
+export async function renderElementPng(
+  element: HTMLElement,
+  width: number,
+  height: number,
+  background: string,
+): Promise<Uint8Array> {
+  const pixelRatio = Math.max(0.5, Math.min(2, MAX_SIDE / Math.max(width, height)));
+  const url = await toPng(element, { backgroundColor: background, width, height, pixelRatio });
   return dataUrlToBytes(url);
 }

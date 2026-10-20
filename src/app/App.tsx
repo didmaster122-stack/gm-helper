@@ -4,8 +4,8 @@ import { EmptyState } from "../shared/ui";
 import { CampaignSwitcher, RequireCampaign, useActiveCampaign } from "../modules/campaigns";
 import { LibraryScreen } from "../modules/library";
 import { BattlemapScreen } from "../modules/battlemap";
-import { createCharacter, RelationsScreen } from "../modules/relations";
-import { TimelineScreen } from "../modules/timeline";
+import { createCharacter, RelationsScreen, showCharacter } from "../modules/relations";
+import { CharacterEvents, showEvent, TimelineScreen } from "../modules/timeline";
 import { SettingsScreen } from "../modules/settings";
 import { FirstRun } from "./FirstRun";
 import { Sidebar } from "./Sidebar";
@@ -47,14 +47,37 @@ function CurrentModule() {
       return (
         <RequireCampaign libraryRoot={libraryRoot}>
           {(campaign) =>
-            libraryRoot ? <RelationsScreen campaign={campaign} libraryRoot={libraryRoot} /> : null
+            libraryRoot ? (
+              <RelationsScreen
+                campaign={campaign}
+                libraryRoot={libraryRoot}
+                characterExtras={(characterId) => (
+                  <CharacterEvents
+                    campaignId={campaign.id}
+                    characterId={characterId}
+                    onOpenEvent={(id) => {
+                      showEvent(id);
+                      setModule("timeline");
+                    }}
+                  />
+                )}
+              />
+            ) : null
           }
         </RequireCampaign>
       );
     case "timeline":
       return (
         <RequireCampaign libraryRoot={libraryRoot}>
-          {(campaign) => <TimelineScreen campaign={campaign} />}
+          {(campaign) => (
+            <TimelineScreen
+              campaign={campaign}
+              onOpenCharacter={(id) => {
+                showCharacter(id);
+                setModule("relations");
+              }}
+            />
+          )}
         </RequireCampaign>
       );
     case "settings":

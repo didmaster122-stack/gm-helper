@@ -165,3 +165,12 @@ export async function createCharacter(campaignId: string, input: NewCharacter): 
   useRelationsStore.setState({ selection: { kind: "character", id }, focusId: id });
   return id;
 }
+
+/** Selects a character and centres the graph on it when the graph is shown next. */
+export function showCharacter(id: string): void {
+  useRelationsStore.setState({
+    selection: { kind: "character", id },
+    focusId: id,
+    filter: noFilter,
+  });
+}

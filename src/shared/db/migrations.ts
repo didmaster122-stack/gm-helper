@@ -219,4 +219,79 @@ export const migrations: Migration[] = [
         ('unknown',    1, '#8a8c99', 'dashed', 10, '2026-10-20T00:00:00.000Z', '2026-10-20T00:00:00.000Z');
     `,
   },
+  {
+    version: 8,
+    name: "timeline",
+    sql: `
+      -- One row per campaign that has opened its timeline.
+      CREATE TABLE timelines (
+        campaign_id     TEXT PRIMARY KEY,
+        session_count   INTEGER NOT NULL,
+        current_session INTEGER
+      );
+
+      -- kind: main | personal | custom. Personal lanes belong to a player character.
+      CREATE TABLE timeline_lanes (
+        id           TEXT PRIMARY KEY,
+        campaign_id  TEXT NOT NULL,
+        kind         TEXT NOT NULL,
+        name         TEXT NOT NULL DEFAULT '',
+        character_id TEXT,
+        sort         INTEGER NOT NULL,
+        hidden       INTEGER NOT NULL DEFAULT 0,
+        created_at   TEXT NOT NULL,
+        updated_at   TEXT NOT NULL
+      );
+      CREATE INDEX timeline_lanes_campaign ON timeline_lanes (campaign_id);
+
+      -- session NULL means "Future".
+      CREATE TABLE timeline_events (
+        id          TEXT PRIMARY KEY,
+        campaign_id TEXT NOT NULL,
+        lane_id     TEXT NOT NULL,
+        session     INTEGER,
+        sort        INTEGER NOT NULL,
+        title       TEXT NOT NULL,
+        description TEXT NOT NULL DEFAULT '',
+        game_date   TEXT NOT NULL DEFAULT '',
+        importance  TEXT NOT NULL,
+        status      TEXT NOT NULL,
+        characters  TEXT NOT NULL DEFAULT '[]',
+        tags        TEXT NOT NULL DEFAULT '[]',
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX timeline_events_campaign ON timeline_events (campaign_id);
+
+      -- Cause -> consequence.
+      CREATE TABLE timeline_links (
+        id          TEXT PRIMARY KEY,
+        campaign_id TEXT NOT NULL,
+        from_id     TEXT NOT NULL,
+        to_id       TEXT NOT NULL,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX timeline_links_campaign ON timeline_links (campaign_id);
+    `,
+  },
+  {
+    version: 9,
+    name: "timeline time markers",
+    sql: `
+      -- In-game time marks on the right of the timeline. level: 1 (coarse) .. 3 (fine).
+      -- Markers share the order inside a session (sort) with the events.
+      CREATE TABLE timeline_markers (
+        id          TEXT PRIMARY KEY,
+        campaign_id TEXT NOT NULL,
+        label       TEXT NOT NULL,
+        level       INTEGER NOT NULL,
+        session     INTEGER,
+        sort        INTEGER NOT NULL,
+        created_at  TEXT NOT NULL,
+        updated_at  TEXT NOT NULL
+      );
+      CREATE INDEX timeline_markers_campaign ON timeline_markers (campaign_id);
+    `,
+  },
 ];
