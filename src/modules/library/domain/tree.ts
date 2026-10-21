@@ -28,3 +28,16 @@ export function buildTree(folders: readonly string[], arts: readonly Art[]): Lib
   );
   return { ...counts, systems: tops.map(({ subs, ...t }) => ({ ...t, groups: subs })) };
 }
+
+/**
+ * The campaign's system goes first; the rest are "other systems", shown on request.
+ * Without a matching preferred system every system counts as its own.
+ */
+export function splitSystems(
+  systems: readonly SystemNode[],
+  preferred: string | null,
+): { own: SystemNode[]; others: SystemNode[] } {
+  const own = systems.filter((s) => s.name === preferred);
+  if (own.length === 0) return { own: [...systems], others: [] };
+  return { own, others: systems.filter((s) => s.name !== preferred) };
+}

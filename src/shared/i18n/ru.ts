@@ -500,6 +500,35 @@ export const ru = {
     },
   },
   library: {
+    title: "Библиотека",
+    summary: (arts: number, withTokens: number, system: string | null) =>
+      [
+        `${arts} ${plural(arts, "арт", "арта", "артов")}`,
+        `${withTokens} с токенами`,
+        system && `система кампании: ${system}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    addArt: "Добавить арт",
+    addArtNeedGroup: "Чтобы добавить арты, выберите группу слева",
+    addArtDialogTitle: "Добавить арты в группу",
+    imageFilter: "Изображения",
+    otherSystems: (n: number) => `Другие системы (${n})`,
+    hideOtherSystems: "Скрыть другие системы",
+    sort: {
+      label: "Сортировка",
+      button: (by: string) => `Сортировка: ${by}`,
+      name: "по имени",
+      added: "по дате добавления",
+      tokens: "по числу токенов",
+      byRelevance: "При поиске арты идут по совпадению с запросом",
+    },
+    selected: {
+      tokens: (n: number) =>
+        n === 0 ? "без токенов" : `${n} ${plural(n, "токен", "токена", "токенов")}`,
+      open: "Открыть",
+      clear: "Снять выделение",
+    },
     all: "Все арты",
     unsorted: "Не разобрано",
     missing: "Файл отсутствует",
@@ -565,7 +594,7 @@ export const ru = {
     },
     filter: {
       label: "Токены",
-      any: "Все арты",
+      any: "Все",
       with: "С токенами",
       without: "Без токенов",
     },
@@ -757,6 +786,9 @@ export const ru = {
     },
     gallery: {
       tabs: { maps: "Карты кампании", templates: "Шаблоны" },
+      tabsLabel: "Что показать",
+      summary: (maps: number, templates: number) =>
+        `${maps} ${plural(maps, "карта", "карты", "карт")} · ${templates} ${plural(templates, "шаблон", "шаблона", "шаблонов")}`,
       search: "Поиск по названию и тегам",
       searchTag: "Найти карты с этим тегом",
       noResults: (q: string) => `Ничего не найдено по запросу «${q}».`,
@@ -1190,7 +1222,20 @@ export const ru = {
     noOpenText: "Выберите заметку в списке или создайте новую.",
     kind: { text: "Текст", pdf: "PDF" },
     untaggedBadge: "без тега",
-    sort: { label: "Сортировка", updated: "Сначала изменённые", title: "По названию" },
+    sort: {
+      label: "Сортировка",
+      button: (by: string) => `Сортировка: ${by}`,
+      updated: "сначала изменённые",
+      title: "по названию",
+    },
+    summary: (notes: number, pdfs: number, shown: number) =>
+      [
+        `${notes} ${plural(notes, "заметка", "заметки", "заметок")}`,
+        pdfs > 0 && `из них PDF: ${pdfs}`,
+        shown < notes && `показано: ${shown}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
     filter: {
       button: "Теги",
       title: "Показывать заметки с тегами",

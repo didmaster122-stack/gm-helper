@@ -40,6 +40,25 @@ function byName(a: Art, b: Art): number {
   return artName(a).localeCompare(artName(b), "ru", { sensitivity: "base", numeric: true });
 }
 
+export type ArtSort = "name" | "added" | "tokens";
+
+/** Orders arts for browsing: by name, newest first, or most tokens first (ties by name). */
+export function sortArts(
+  arts: readonly Art[],
+  sort: ArtSort,
+  tokenCount: (artId: string) => number,
+): Art[] {
+  const list = [...arts];
+  switch (sort) {
+    case "name":
+      return list.sort(byName);
+    case "added":
+      return list.sort((a, b) => b.createdAt.localeCompare(a.createdAt) || byName(a, b));
+    case "tokens":
+      return list.sort((a, b) => tokenCount(b.id) - tokenCount(a.id) || byName(a, b));
+  }
+}
+
 export type TokenFilter = "any" | "with" | "without";
 
 export interface TokenFilterInput {

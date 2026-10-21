@@ -127,7 +127,10 @@ export function ArtPicker({
         <span className="muted">{ru.library.count(results.length)}</span>
       </div>
       <div className="picker-body">
-        <LibraryTree browse={{ selection: current, onSelect: setSelection }} />
+        <LibraryTree
+          browse={{ selection: current, onSelect: setSelection }}
+          preferredSystem={preferredSystem}
+        />
         <div className="picker-grid">
           {results.length > 0 ? (
             <ArtGrid

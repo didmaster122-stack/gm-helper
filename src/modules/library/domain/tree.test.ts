@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { classifyPath } from "./paths";
-import { buildTree } from "./tree";
+import { buildTree, splitSystems } from "./tree";
 import type { Art } from "./types";
 
 function art(relPath: string, missing = false): Art {
@@ -53,5 +53,25 @@ describe("buildTree", () => {
         { name: "PF2e", count: 0, groups: [] },
       ],
     });
+  });
+});
+
+describe("splitSystems", () => {
+  const systems = ["D&D 5e", "PF2e", "Savage Worlds"].map((name) => ({
+    name,
+    count: 0,
+    groups: [],
+  }));
+  const names = (list: { name: string }[]) => list.map((s) => s.name);
+
+  it("puts the preferred system first and hides the rest", () => {
+    const { own, others } = splitSystems(systems, "PF2e");
+    expect(names(own)).toEqual(["PF2e"]);
+    expect(names(others)).toEqual(["D&D 5e", "Savage Worlds"]);
+  });
+
+  it("shows every system when the preferred one is not in the library", () => {
+    expect(splitSystems(systems, "Fate").others).toEqual([]);
+    expect(names(splitSystems(systems, null).own)).toHaveLength(3);
   });
 });

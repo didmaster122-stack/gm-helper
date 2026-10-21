@@ -15,6 +15,7 @@ import { ru } from "../../shared/i18n/ru";
 import { ConfirmDialog, IconButton, PromptDialog } from "../../shared/ui";
 import { BatchTokensDialog } from "./BatchTokensDialog";
 import { artName, joinRel } from "./domain/paths";
+import { splitSystems, type SystemNode } from "./domain/tree";
 import type { LibrarySelection } from "./domain/types";
 import { nameError } from "./nameError";
 import {
@@ -41,9 +42,11 @@ interface LibraryTreeProps {
    * and folders cannot be created, renamed or deleted.
    */
   browse?: { selection: LibrarySelection; onSelect: (selection: LibrarySelection) => void };
+  /** The campaign's system: listed first, the others behind "Other systems (N)". */
+  preferredSystem?: string | null;
 }
 
-export function LibraryTree({ browse }: LibraryTreeProps = {}) {
+export function LibraryTree({ browse, preferredSystem = null }: LibraryTreeProps = {}) {
   const root = useLibraryStore((s) => s.root);
   const tree = useLibraryStore((s) => s.tree);
   const arts = useLibraryStore((s) => s.arts);
@@ -55,8 +58,15 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
   const sync = useLibraryStore((s) => s.sync);
   const [dialog, setDialog] = useState<Dialog | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [showOthers, setShowOthers] = useState(false);
 
   if (!root) return null;
+
+  const { own, others } = splitSystems(tree.systems, preferredSystem);
+  const selectedSystem =
+    selection.kind === "system" || selection.kind === "group" ? selection.system : null;
+  // A selection inside another system keeps that system visible.
+  const othersShown = showOthers || others.some((s) => s.name === selectedSystem);
 
   const siblingsOf = (parent: string): string[] =>
     parent === ""
@@ -128,6 +138,39 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
     setCollapsed(next);
   };
 
+  const systemNode = (system: SystemNode, other: boolean) => (
+    <div key={system.name} className={other ? "tree-system other" : "tree-system"}>
+      <div className="tree-row">
+        <button
+          type="button"
+          className="tree-toggle"
+          onClick={() => toggle(system.name)}
+          aria-expanded={!collapsed.has(system.name)}
+          aria-label={system.name}
+        >
+          <ChevronRight aria-hidden />
+        </button>
+        {item(system.name, system.count, { kind: "system", system: system.name }, null)}
+        {actions(system.name, system.name, true)}
+      </div>
+      {!collapsed.has(system.name) &&
+        system.groups.map((group) => (
+          <div key={group.name} className="tree-row tree-group">
+            {item(
+              group.name,
+              group.count,
+              { kind: "group", system: system.name, group: group.name },
+              Folder,
+            )}
+            {actions(joinRel(system.name, group.name), group.name, false, {
+              system: system.name,
+              group: group.name,
+            })}
+          </div>
+        ))}
+    </div>
+  );
+
   return (
     <aside className="library-tree">
       {item(ru.library.all, tree.total, { kind: "all" }, Images)}
@@ -148,38 +191,18 @@ export function LibraryTree({ browse }: LibraryTreeProps = {}) {
         )}
       </div>
 
-      {tree.systems.map((system) => (
-        <div key={system.name} className="tree-system">
-          <div className="tree-row">
-            <button
-              type="button"
-              className="tree-toggle"
-              onClick={() => toggle(system.name)}
-              aria-expanded={!collapsed.has(system.name)}
-              aria-label={system.name}
-            >
-              <ChevronRight aria-hidden />
-            </button>
-            {item(system.name, system.count, { kind: "system", system: system.name }, null)}
-            {actions(system.name, system.name, true)}
-          </div>
-          {!collapsed.has(system.name) &&
-            system.groups.map((group) => (
-              <div key={group.name} className="tree-row tree-group">
-                {item(
-                  group.name,
-                  group.count,
-                  { kind: "group", system: system.name, group: group.name },
-                  Folder,
-                )}
-                {actions(joinRel(system.name, group.name), group.name, false, {
-                  system: system.name,
-                  group: group.name,
-                })}
-              </div>
-            ))}
-        </div>
-      ))}
+      {own.map((s) => systemNode(s, false))}
+      {othersShown && others.map((s) => systemNode(s, true))}
+      {others.length > 0 && (
+        <button
+          type="button"
+          className="tree-more"
+          aria-expanded={othersShown}
+          onClick={() => setShowOthers(!othersShown)}
+        >
+          {othersShown ? ru.library.hideOtherSystems : ru.library.otherSystems(others.length)}
+        </button>
+      )}
 
       {dialog?.kind === "create" && (
         <PromptDialog

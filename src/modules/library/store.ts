@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { watchTree } from "../../shared/fs";
-import { buildEntry, type SearchEntry, type TokenFilter } from "./domain/search";
+import { buildEntry, type ArtSort, type SearchEntry, type TokenFilter } from "./domain/search";
 import { buildTree, type LibraryTree } from "./domain/tree";
 import type { Art, LibrarySelection, Token } from "./domain/types";
 import { syncLibrary } from "./service";
@@ -23,7 +23,10 @@ interface LibraryState {
   selection: LibrarySelection;
   query: string;
   tokenFilter: TokenFilter;
+  sort: ArtSort;
   selectedArtId: string | null;
+  /** The details panel of the selected art is shown. */
+  panelOpen: boolean;
 
   /** Opens the library at `root` (no-op if already open) and keeps it in sync with the disk. */
   open: (root: string) => Promise<void>;
@@ -31,7 +34,12 @@ interface LibraryState {
   setSelection: (selection: LibrarySelection) => void;
   setQuery: (query: string) => void;
   setTokenFilter: (filter: TokenFilter) => void;
+  setSort: (sort: ArtSort) => void;
+  /** Selects an art; an open details panel follows the selection. */
   selectArt: (id: string | null) => void;
+  /** Selects an art and shows its details panel. */
+  openArt: (id: string) => void;
+  closePanel: () => void;
   /** Shows the art in the grid: opens its folder, clears the search and selects it. */
   revealArt: (id: string) => void;
   /** Replaces one art after an app-side change, without a full sync. */
@@ -114,13 +122,22 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
     selection: { kind: "all" },
     query: "",
     tokenFilter: "any",
+    sort: "name",
     selectedArtId: null,
+    panelOpen: false,
 
     async open(root) {
       if (get().root === root) return;
       unwatch?.();
       unwatch = null;
-      set({ root, selectedArtId: null, selection: { kind: "all" }, query: "", tokenFilter: "any" });
+      set({
+        root,
+        selectedArtId: null,
+        panelOpen: false,
+        selection: { kind: "all" },
+        query: "",
+        tokenFilter: "any",
+      });
       setArts([], []);
       setTokens([]);
       await get().sync();
@@ -151,7 +168,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
     },
 
     setSelection(selection) {
-      set({ selection, selectedArtId: null });
+      set({ selection, selectedArtId: null, panelOpen: false });
     },
 
     setQuery(query) {
@@ -162,14 +179,32 @@ export const useLibraryStore = create<LibraryState>((set, get) => {
       set({ tokenFilter });
     },
 
+    setSort(sort) {
+      set({ sort });
+    },
+
     selectArt(id) {
-      set({ selectedArtId: id });
+      set(id === null ? { selectedArtId: null, panelOpen: false } : { selectedArtId: id });
+    },
+
+    openArt(id) {
+      set({ selectedArtId: id, panelOpen: true });
+    },
+
+    closePanel() {
+      set({ panelOpen: false });
     },
 
     revealArt(id) {
       const art = get().arts.find((a) => a.id === id);
       if (!art) return;
-      set({ selection: selectionOf(art), query: "", tokenFilter: "any", selectedArtId: id });
+      set({
+        selection: selectionOf(art),
+        query: "",
+        tokenFilter: "any",
+        selectedArtId: id,
+        panelOpen: true,
+      });
     },
 
     putArt(art) {
