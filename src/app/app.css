@@ -582,20 +582,45 @@
 
 /* ---- Settings ---- */
 
-.settings-section + .settings-section {
-  margin-top: 16px;
+.settings-group + .settings-group {
+  margin-top: 36px;
 }
 
-.settings-section > header {
-  margin-bottom: 16px;
+.settings-group > h2 {
+  margin: 0 0 4px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
 }
 
-.settings-section > header h2 {
-  margin-bottom: 2px;
+/* Title and hint on the left, the control on the right; narrow windows stack them. */
+.settings-section {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: 8px 32px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-section:last-child {
+  border-bottom: none;
+}
+
+.settings-section > header h3 {
+  margin: 0 0 4px;
 }
 
 .settings-section > header p {
   margin: 0;
+}
+
+.settings-control {
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .settings-section {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .path-row {

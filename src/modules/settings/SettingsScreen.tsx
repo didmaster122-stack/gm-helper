@@ -17,13 +17,22 @@ interface SettingsScreenProps {
 
 function Section({ title, hint, children }: { title: string; hint: string; children: ReactNode }) {
   return (
-    <section className="card settings-section">
+    <section className="settings-section">
       <header>
-        <h2>{title}</h2>
+        <h3>{title}</h3>
         <p className="hint">{hint}</p>
       </header>
-      {children}
+      <div className="settings-control">{children}</div>
     </section>
+  );
+}
+
+function Group({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="settings-group">
+      <h2>{title}</h2>
+      {children}
+    </div>
   );
 }
 
@@ -48,58 +57,64 @@ export function SettingsScreen({
 
   return (
     <div className="screen settings">
-      <ScreenHeader title={ru.settings.title} />
+      <ScreenHeader title={ru.settings.title} summary={ru.settings.summary} />
 
-      <Section title={ru.settings.appearance} hint={ru.settings.appearanceHint}>
-        <Segmented
-          label={ru.theme.label}
-          value={preference}
-          onChange={setPreference}
-          options={[
-            { value: "system", label: ru.theme.system, icon: Monitor },
-            { value: "light", label: ru.theme.light, icon: Sun },
-            { value: "dark", label: ru.theme.dark, icon: Moon },
-          ]}
-        />
-      </Section>
+      <Group title={ru.settings.groups.general}>
+        <Section title={ru.settings.appearance} hint={ru.settings.appearanceHint}>
+          <Segmented
+            label={ru.theme.label}
+            value={preference}
+            onChange={setPreference}
+            options={[
+              { value: "system", label: ru.theme.system, icon: Monitor },
+              { value: "light", label: ru.theme.light, icon: Sun },
+              { value: "dark", label: ru.theme.dark, icon: Moon },
+            ]}
+          />
+        </Section>
 
-      <Section title={ru.settings.libraryRoot} hint={ru.settings.libraryRootHint}>
-        <div className="path-row">
-          <code className="path">{libraryRoot}</code>
-          <Button icon={FolderOpen} onClick={changeRoot}>
-            {ru.common.change}
-          </Button>
-        </div>
-      </Section>
+        <Section title={ru.settings.libraryRoot} hint={ru.settings.libraryRootHint}>
+          <div className="path-row">
+            <code className="path">{libraryRoot}</code>
+            <Button icon={FolderOpen} onClick={changeRoot}>
+              {ru.common.change}
+            </Button>
+          </div>
+        </Section>
 
-      <Section title={ru.settings.musicRoot} hint={ru.settings.musicRootHint}>
-        <div className="path-row">
-          <code className="path">{musicRoot ?? ru.settings.musicRootNone}</code>
-          <Button icon={FolderOpen} onClick={() => void changeMusicRoot()}>
-            {ru.common.change}
-          </Button>
-        </div>
-      </Section>
+        <Section title={ru.settings.musicRoot} hint={ru.settings.musicRootHint}>
+          <div className="path-row">
+            <code className="path">{musicRoot ?? ru.settings.musicRootNone}</code>
+            <Button icon={FolderOpen} onClick={() => void changeMusicRoot()}>
+              {ru.common.change}
+            </Button>
+          </div>
+        </Section>
+      </Group>
 
-      <Section title={ru.settings.campaigns} hint={ru.settings.campaignsHint}>
-        <CampaignList libraryRoot={libraryRoot} />
-      </Section>
+      <Group title={ru.settings.groups.data}>
+        <Section title={ru.settings.campaigns} hint={ru.settings.campaignsHint}>
+          <CampaignList libraryRoot={libraryRoot} />
+        </Section>
 
-      <Section title={ru.settings.backup} hint={ru.settings.backupHint}>
-        <BackupSettings libraryRoot={libraryRoot} />
-      </Section>
+        <Section title={ru.settings.backup} hint={ru.settings.backupHint}>
+          <BackupSettings libraryRoot={libraryRoot} />
+        </Section>
+      </Group>
 
-      <Section title={ru.cellTypes.title} hint={ru.settings.cellTypesHint}>
-        <CellTypesSettings libraryRoot={libraryRoot} />
-      </Section>
+      <Group title={ru.settings.groups.references}>
+        <Section title={ru.cellTypes.title} hint={ru.settings.cellTypesHint}>
+          <CellTypesSettings libraryRoot={libraryRoot} />
+        </Section>
 
-      <Section title={ru.objects.title} hint={ru.settings.objectsHint}>
-        <ObjectsSettings libraryRoot={libraryRoot} />
-      </Section>
+        <Section title={ru.objects.title} hint={ru.settings.objectsHint}>
+          <ObjectsSettings libraryRoot={libraryRoot} />
+        </Section>
 
-      <Section title={ru.relations.types.title} hint={ru.settings.relationTypesHint}>
-        <RelationTypesSettings />
-      </Section>
+        <Section title={ru.relations.types.title} hint={ru.settings.relationTypesHint}>
+          <RelationTypesSettings />
+        </Section>
+      </Group>
     </div>
   );
 }
