@@ -26,6 +26,7 @@ export function FactionCard({ faction: f, graph, libraryRoot, preferredSystem }:
   return (
     <div className="graph-card" key={f.id}>
       <CommitField
+        className="card-title-field"
         label={t.name}
         value={f.name}
         required

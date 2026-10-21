@@ -1,10 +1,10 @@
 import "@xyflow/react/dist/style.css";
 import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { CircleAlert, Funnel, Waypoints, X } from "lucide-react";
+import { CircleAlert, Funnel, Shield, UserPlus, Waypoints, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
 import { useRememberOpened } from "../../shared/recent";
-import { EmptyState, IconButton } from "../../shared/ui";
+import { Button, EmptyState, IconButton, ScreenHeader } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { useLibraryStore } from "../library";
 import { CharacterCard } from "./CharacterCard";
@@ -13,7 +13,7 @@ import { visibleGraph } from "./domain/filter";
 import { CHARACTER_H, CHARACTER_W } from "./domain/geometry";
 import { FactionCard } from "./FactionCard";
 import { GraphCanvas } from "./GraphCanvas";
-import { GraphToolbar } from "./GraphToolbar";
+import { GraphSearch, GraphTools } from "./GraphToolbar";
 import { RelationCard } from "./RelationCard";
 import { NewCharacterDialog, NewFactionDialog, NewRelationDialog } from "./RelationDialogs";
 import { useRelationTypeStore } from "./relationTypeStore";
@@ -53,17 +53,19 @@ export function RelationsScreen(props: RelationsScreenProps) {
   if (status === "error") {
     return (
       <EmptyState
+        icon={CircleAlert}
+        tone="error"
         title={ru.relations.loadFailed}
-        action={
-          <button type="button" onClick={() => void load(campaign.id, true)}>
-            {ru.common.retry}
-          </button>
-        }
+        action={<Button onClick={() => void load(campaign.id, true)}>{ru.common.retry}</Button>}
       />
     );
   }
   if (status !== "ready" || loadedFor !== campaign.id) {
-    return <div className="center muted">{ru.common.loading}</div>;
+    return (
+      <div className="center">
+        <div className="spinner" role="status" aria-label={ru.common.loading} />
+      </div>
+    );
   }
 
   return (
@@ -175,12 +177,33 @@ function RelationsView({ campaign, libraryRoot, characterExtras }: RelationsScre
 
   return (
     <div className="relations">
-      <GraphToolbar
-        campaignName={campaign.name}
-        onNewCharacter={() => setDialog({ kind: "character" })}
-        onNewFaction={() => setDialog({ kind: "faction" })}
-        canvas={() => canvasRef.current}
-      />
+      <div className="screen-head">
+        <ScreenHeader
+          title={ru.nav.relations}
+          path={[campaign.name]}
+          summary={ru.relations.summary(
+            graph.characters.length,
+            graph.factions.length,
+            graph.relations.length,
+          )}
+          actions={
+            <>
+              <GraphSearch />
+              <Button icon={Shield} onClick={() => setDialog({ kind: "faction" })}>
+                {ru.relations.newFaction}
+              </Button>
+              <Button
+                variant="primary"
+                icon={UserPlus}
+                onClick={() => setDialog({ kind: "character" })}
+              >
+                {ru.relations.newCharacter}
+              </Button>
+            </>
+          }
+        />
+        <GraphTools campaignName={campaign.name} canvas={() => canvasRef.current} />
+      </div>
       {saveError && (
         <div className="notice error">
           <CircleAlert aria-hidden />

@@ -63,6 +63,7 @@ export function CharacterCard({
       />
 
       <CommitField
+        className="card-title-field"
         label={t.name}
         value={c.name}
         required
