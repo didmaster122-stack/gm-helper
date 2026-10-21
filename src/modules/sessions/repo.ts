@@ -39,17 +39,27 @@ export async function listSessions(db: Db, campaignId: string): Promise<Session[
     list.push({ id: i.id, text: i.text, done: i.done !== 0 });
     bySession.set(i.session_id, list);
   }
-  return rows.map((r) => ({
+  return rows.map((r) => toSession(r, bySession.get(r.id) ?? []));
+}
+
+/** Sessions of every campaign, without their checklists (for summaries of campaigns). */
+export async function listAllSessions(db: Db): Promise<Session[]> {
+  const rows = await db.select<SessionRow>("SELECT * FROM sessions ORDER BY number");
+  return rows.map((r) => toSession(r, []));
+}
+
+function toSession(r: SessionRow, items: PrepItem[]): Session {
+  return {
     id: r.id,
     campaignId: r.campaign_id,
     number: r.number,
     date: r.date,
     played: r.played !== 0,
     planNoteId: r.plan_note_id,
-    items: bySession.get(r.id) ?? [],
+    items,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
-  }));
+  };
 }
 
 /** Writes the session with its checklist, replacing what was stored. */

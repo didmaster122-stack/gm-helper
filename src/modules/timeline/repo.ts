@@ -275,3 +275,13 @@ export async function saveTimelineChange(
   const statements = timelineDiffStatements(campaignId, prev, next);
   if (statements.length > 0) await runScript(db, statements);
 }
+
+/** Event titles by id; ids that are not found are left out. */
+export async function eventTitles(db: Db, ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db.select<{ id: string; title: string }>(
+    `SELECT id, title AS title FROM timeline_events WHERE id IN (${ids.map(() => "?").join(", ")})`,
+    ids,
+  );
+  return new Map(rows.map((r) => [r.id, r.title]));
+}

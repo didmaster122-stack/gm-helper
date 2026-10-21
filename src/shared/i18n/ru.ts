@@ -1,4 +1,5 @@
 // All user-facing strings. Components must not contain literal UI text.
+import type { RecentKind } from "../db/recentRepo";
 import type { CampaignInputError } from "../../modules/campaigns/types";
 import type {
   BuiltinRelationTypeId,
@@ -139,16 +140,65 @@ export const ru = {
   firstRun: {
     title: "Добро пожаловать в GM Helper",
     text: "Выберите папку библиотеки артов. Внутри неё будут папки систем, в них — группы существ и фракций, а в группах — арты.",
-    structureHint: "Система / Группа / арт.png",
+    eyebrow: "Первый запуск",
+    missingEyebrow: "Библиотека",
+    structureTitle: "Как устроена библиотека",
+    structureExample: [
+      "Библиотека/",
+      "  D&D 5e/",
+      "    Нежить/",
+      "      лич.png",
+      "      скелет-лучник.webp",
+      "      _tokens/        токены, их делает приложение",
+      "    Гильдия воров/",
+      "  Pathfinder 2e/",
+    ].join("\n"),
+    structureNote: "Система / Группа / арт. Арты остаются обычными файлами на диске.",
     pick: "Выбрать папку…",
     missingTitle: "Папка библиотеки не найдена",
     missingText: (path: string) =>
       `Папка «${path}» недоступна. Возможно, её переместили или отключили диск. Выберите папку заново.`,
     dialogTitle: "Папка библиотеки артов",
   },
+  welcome: {
+    continue: "Продолжить",
+    open: "Открыть кампанию",
+    recent: "Недавнее в кампании",
+    recentEmpty:
+      "Здесь появятся баттлмапы, заметки, арты, события и персонажи, которые вы открывали.",
+    openFailed: "Не удалось открыть: возможно, объект удалён",
+    kinds: {
+      battlemap: "Баттлмап",
+      note: "Заметка",
+      art: "Арт",
+      event: "Событие",
+      character: "Персонаж",
+    } satisfies Record<RecentKind, string>,
+    helpHint: "Горячие клавиши",
+    others: "Другие кампании",
+    campaigns: "Кампании",
+    newCampaignText: "Выбрать систему и начать",
+    lastWas: (n: number, when: string) => `сессия ${n} была ${when}`,
+    lastNumber: (n: number) => `сессия ${n}`,
+    nextIn: (when: string) => `следующая ${when}`,
+    nextOn: (day: string) => `следующая — ${day}`,
+    nextNoDate: "следующая без даты",
+    noSessions: "сессий ещё не было",
+    firstTitle: "Первая кампания",
+    firstText:
+      "Кампания объединяет баттлмапы, заметки, персонажей, хронологию и сессии. Библиотека артов общая для всех кампаний.",
+    firstCreate: "Создать кампанию",
+    allDoneTitle: "Все кампании завершены",
+    allDoneText: "Верните кампанию из архива или начните новую.",
+    rightEmpty: "Здесь появятся ближайшая сессия и другие кампании.",
+    restoreTitle: "Вернуть кампанию из архива?",
+    restoreText: (name: string) => `Кампания «${name}» снова станет активной.`,
+    restore: "Вернуть",
+  },
   campaign: {
     switcherLabel: "Кампания",
     none: "Нет кампании",
+    all: "Все кампании",
     new: "Новая кампания",
     edit: "Редактировать кампанию",
     name: "Название",

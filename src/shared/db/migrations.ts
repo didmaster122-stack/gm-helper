@@ -398,4 +398,21 @@ export const migrations: Migration[] = [
       CREATE INDEX session_prep_items_session ON session_prep_items (session_id);
     `,
   },
+  {
+    version: 14,
+    name: "recently opened objects",
+    sql: `
+      -- What was opened lately in each campaign, for the welcome screen. Local only, not backed up.
+      -- kind: battlemap | note | art | event | character. Rows of deleted objects are dropped when
+      -- the welcome screen notices them.
+      CREATE TABLE recent_items (
+        campaign_id TEXT NOT NULL,
+        kind        TEXT NOT NULL,
+        object_id   TEXT NOT NULL,
+        opened_at   TEXT NOT NULL,
+        PRIMARY KEY (campaign_id, kind, object_id)
+      );
+      CREATE INDEX recent_items_opened ON recent_items (campaign_id, opened_at);
+    `,
+  },
 ];

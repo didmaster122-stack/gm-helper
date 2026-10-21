@@ -8,7 +8,7 @@ import {
   Settings,
   Sun,
 } from "lucide-react";
-import { CampaignSwitcher, useActiveCampaign } from "../modules/campaigns";
+import { CampaignBlock, useActiveCampaign } from "../modules/campaigns";
 import { MiniPlayer } from "../modules/music";
 import { lastPlayed, NextSessionCard, nextSession, useSessionsStore } from "../modules/sessions";
 import { formatDistance, localDay } from "../shared/dates";
@@ -24,7 +24,7 @@ import { useAppStore } from "./store";
 export function Sidebar({ onOpenHelp }: { onOpenHelp: () => void }) {
   const current = useAppStore((s) => s.module);
   const setModule = useAppStore((s) => s.setModule);
-  const libraryRoot = useAppStore((s) => s.libraryRoot);
+  const openWelcome = useAppStore((s) => s.openWelcome);
   const collapsed = useAppStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const theme = useThemeStore((s) => s.theme);
@@ -72,10 +72,10 @@ export function Sidebar({ onOpenHelp }: { onOpenHelp: () => void }) {
   return (
     <>
       <nav className={collapsed ? "spine collapsed" : "spine"} aria-label={ru.nav.sections}>
-        <CampaignSwitcher
-          libraryRoot={libraryRoot}
+        <CampaignBlock
           collapsed={collapsed}
           detail={last ? ru.sessions.spineLast(last.number) : null}
+          onOpen={openWelcome}
         />
         {campaign && (
           <button

@@ -15,6 +15,7 @@ import { ShortcutsDialog } from "./ShortcutsDialog";
 import { useGlobalShortcuts } from "./shortcuts";
 import { Sidebar } from "./Sidebar";
 import { useAppStore } from "./store";
+import { Welcome } from "./Welcome";
 
 function CurrentModule() {
   const module = useAppStore((s) => s.module);
@@ -32,6 +33,7 @@ function CurrentModule() {
         <LibraryScreen
           libraryRoot={libraryRoot}
           preferredSystem={campaign?.system ?? null}
+          campaignId={campaign?.id ?? null}
           characterTarget={
             campaign
               ? {
@@ -64,7 +66,7 @@ function CurrentModule() {
                     campaignId={campaign.id}
                     characterId={characterId}
                     onOpenEvent={(id) => {
-                      showEvent(id);
+                      showEvent(campaign.id, id);
                       setModule("timeline");
                     }}
                   />
@@ -81,7 +83,7 @@ function CurrentModule() {
             <TimelineScreen
               campaign={campaign}
               onOpenCharacter={(id) => {
-                showCharacter(id);
+                showCharacter(campaign.id, id);
                 setModule("relations");
               }}
             />
@@ -123,6 +125,7 @@ export function App() {
   const init = useAppStore((s) => s.init);
   const setModule = useAppStore((s) => s.setModule);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+  const welcome = useAppStore((s) => s.welcome);
   const [help, setHelp] = useState(false);
   const openHelp = useCallback(() => setHelp(true), []);
   useGlobalShortcuts({ setModule, openHelp, toggleSidebar });
@@ -152,12 +155,18 @@ export function App() {
   if (!libraryRoot || missing) return <FirstRun />;
 
   return (
-    <div className="layout">
-      <Sidebar onOpenHelp={openHelp} />
-      <main className="content">
-        <CurrentModule />
-      </main>
+    <>
+      {welcome ? (
+        <Welcome onOpenHelp={openHelp} />
+      ) : (
+        <div className="layout">
+          <Sidebar onOpenHelp={openHelp} />
+          <main className="content">
+            <CurrentModule />
+          </main>
+        </div>
+      )}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
-    </div>
+    </>
   );
 }

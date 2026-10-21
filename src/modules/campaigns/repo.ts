@@ -143,6 +143,7 @@ export async function deleteCampaign(db: Db, id: string): Promise<void> {
     `DELETE FROM timeline_events WHERE campaign_id = ${key}`,
     `DELETE FROM timeline_lanes WHERE campaign_id = ${key}`,
     `DELETE FROM timelines WHERE campaign_id = ${key}`,
+    `DELETE FROM recent_items WHERE campaign_id = ${key}`,
     `DELETE FROM campaigns WHERE id = ${key}`,
   ]);
 }

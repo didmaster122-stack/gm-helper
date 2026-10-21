@@ -333,3 +333,16 @@ export async function countRelationsOfType(db: Db, id: string): Promise<number> 
   );
   return rows[0]?.n ?? 0;
 }
+
+/** Character names by id; ids that are not found are left out. */
+export async function characterTitles(
+  db: Db,
+  ids: readonly string[],
+): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db.select<{ id: string; title: string }>(
+    `SELECT id, name AS title FROM characters WHERE id IN (${ids.map(() => "?").join(", ")})`,
+    ids,
+  );
+  return new Map(rows.map((r) => [r.id, r.title]));
+}

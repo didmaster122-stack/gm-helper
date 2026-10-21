@@ -221,3 +221,13 @@ export async function deleteTag(db: Db, id: string): Promise<void> {
     `DELETE FROM note_tags WHERE id = ${key}`,
   ]);
 }
+
+/** Note titles by id; ids that are not found are left out. */
+export async function noteTitles(db: Db, ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db.select<{ id: string; title: string }>(
+    `SELECT id, title AS title FROM notes WHERE id IN (${ids.map(() => "?").join(", ")})`,
+    ids,
+  );
+  return new Map(rows.map((r) => [r.id, r.title]));
+}

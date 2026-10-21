@@ -1,6 +1,6 @@
 import { runScript, sqlLiteral as lit } from "../../shared/db/script";
 import type { Db } from "../../shared/db/types";
-import { classifyPath } from "./domain/paths";
+import { artName, classifyPath } from "./domain/paths";
 import type { ScanChanges } from "./domain/reconcile";
 import {
   DEFAULT_CREATURE_SIZE,
@@ -245,4 +245,16 @@ export async function saveTokens(db: Db, tokens: readonly Token[]): Promise<void
 export async function deleteTokens(db: Db, ids: readonly string[]): Promise<void> {
   if (ids.length === 0) return;
   await db.execute(`DELETE FROM tokens WHERE id IN (${ids.map(() => "?").join(", ")})`, ids);
+}
+
+/** Shown names of arts by id; missing files and unknown ids are left out. */
+export async function artTitles(db: Db, ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db.select<{ id: string; file_name: string; display_name: string | null }>(
+    `SELECT id, file_name, display_name FROM arts WHERE missing = 0 AND id IN (${ids.map(() => "?").join(", ")})`,
+    ids,
+  );
+  return new Map(
+    rows.map((r) => [r.id, artName({ fileName: r.file_name, displayName: r.display_name })]),
+  );
 }

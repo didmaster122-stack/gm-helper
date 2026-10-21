@@ -267,3 +267,14 @@ export function showNote(note: Note, tag: NoteTag | null): void {
     filter: noFilter,
   });
 }
+
+/** Opens a note by id in the notes section: now if its campaign is loaded, otherwise after loading. */
+export function showNoteById(campaignId: string, id: string): void {
+  const state = useNotesStore.getState();
+  if (state.campaignId !== campaignId || state.status !== "ready") {
+    useNotesStore.setState({ requestedId: id });
+    return;
+  }
+  if (state.notes.some((n) => n.id === id))
+    useNotesStore.setState({ openId: id, filter: noFilter });
+}

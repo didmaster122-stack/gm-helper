@@ -4,6 +4,7 @@ import { Check, CircleAlert, Copy, FileText, Trash, X } from "lucide-react";
 import { toAbsolute } from "../../shared/catalog/paths";
 import { pickFiles, pickSavePath } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
+import { useRememberOpened } from "../../shared/recent";
 import { Button, ConfirmDialog, EmptyState, IconButton, PromptDialog } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { archiveFileName } from "./domain/archive";
@@ -32,6 +33,7 @@ export function NotesScreen({ campaign, libraryRoot }: NotesScreenProps) {
   const notes = useNotesStore((s) => s.notes);
   const tags = useNotesStore((s) => s.tags);
   const openId = useNotesStore((s) => s.openId);
+  useRememberOpened(campaign.id, "note", loadedFor === campaign.id ? openId : null);
   const checked = useNotesStore((s) => s.checked);
   const createText = useNotesStore((s) => s.createText);
   const addPdfs = useNotesStore((s) => s.addPdfs);

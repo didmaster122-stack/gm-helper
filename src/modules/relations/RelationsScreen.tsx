@@ -3,6 +3,7 @@ import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { CircleAlert, Funnel, Waypoints, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { useRememberOpened } from "../../shared/recent";
 import { EmptyState, IconButton } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { useLibraryStore } from "../library";
@@ -32,6 +33,12 @@ export function RelationsScreen(props: RelationsScreenProps) {
   const loadedFor = useRelationsStore((s) => s.campaignId);
   const loadTypes = useRelationTypeStore((s) => s.load);
   const openLibrary = useLibraryStore((s) => s.open);
+  const selection = useRelationsStore((s) => s.selection);
+  useRememberOpened(
+    campaign.id,
+    "character",
+    loadedFor === campaign.id && selection?.kind === "character" ? selection.id : null,
+  );
 
   useEffect(() => {
     void load(campaign.id);

@@ -62,10 +62,17 @@ function selectionOf(art: Art): LibrarySelection {
 let unwatch: (() => void) | null = null;
 let syncRunning: Promise<void> | null = null;
 let syncAgain = false;
+/** An art to reveal once the library is loaded (see `showArt`). */
+let requestedArtId: string | null = null;
 
 export const useLibraryStore = create<LibraryState>((set, get) => {
   function setArts(arts: Art[], folders = get().folders) {
     set({ arts, folders, entries: arts.map(buildEntry), tree: buildTree(folders, arts) });
+    if (requestedArtId && arts.some((a) => a.id === requestedArtId)) {
+      const id = requestedArtId;
+      requestedArtId = null;
+      get().revealArt(id);
+    }
   }
 
   function setTokens(tokens: Token[]) {
@@ -190,4 +197,15 @@ const NO_TOKENS: Token[] = [];
 
 export function useArtTokens(artId: string): Token[] {
   return useLibraryStore((s) => s.tokensByArt.get(artId) ?? NO_TOKENS);
+}
+
+/** Reveals the art in the library grid, now or once the library is loaded. */
+export function showArt(id: string): void {
+  const state = useLibraryStore.getState();
+  if (state.arts.some((a) => a.id === id)) {
+    requestedArtId = null;
+    state.revealArt(id);
+  } else {
+    requestedArtId = id;
+  }
 }

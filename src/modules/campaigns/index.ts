@@ -4,7 +4,7 @@ export { useCampaignStore, useActiveCampaign } from "./store";
 export { validateCampaignInput } from "./validation";
 export { campaignInsertStatement } from "./repo";
 export { CAMPAIGN_NAME_MAX } from "./types";
-export { CampaignSwitcher } from "./CampaignSwitcher";
+export { CampaignBlock } from "./CampaignBlock";
 export { CampaignForm } from "./CampaignForm";
 export { CampaignList } from "./CampaignList";
 export { RequireCampaign } from "./RequireCampaign";

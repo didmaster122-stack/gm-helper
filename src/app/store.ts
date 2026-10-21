@@ -28,11 +28,15 @@ interface AppState {
   musicRoot: string | null;
   musicRootMissing: boolean;
   module: ModuleId;
+  /** The welcome screen is shown instead of the current section (on start and from the spine). */
+  welcome: boolean;
   sidebarCollapsed: boolean;
   init: () => Promise<void>;
   setLibraryRoot: (path: string) => Promise<void>;
   setMusicRoot: (path: string) => Promise<void>;
+  /** Shows the section, leaving the welcome screen. */
   setModule: (module: ModuleId) => void;
+  openWelcome: () => void;
   toggleSidebar: () => void;
 }
 
@@ -47,6 +51,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   musicRoot: null,
   musicRootMissing: false,
   module: "library",
+  welcome: true,
   sidebarCollapsed: readSidebarCollapsed(),
 
   async init() {
@@ -81,7 +86,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   },
 
   setModule(module) {
-    set({ module });
+    set({ module, welcome: false });
+  },
+
+  openWelcome() {
+    set({ welcome: true });
   },
 
   toggleSidebar() {

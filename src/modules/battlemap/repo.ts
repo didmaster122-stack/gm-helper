@@ -513,3 +513,13 @@ export async function updateObjectDef(
 export async function deleteObjectDef(db: Db, id: string): Promise<void> {
   await db.execute("DELETE FROM map_objects WHERE id = ?", [id]);
 }
+
+/** Names of campaign maps by id (not templates); ids that are not found are left out. */
+export async function mapTitles(db: Db, ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db.select<{ id: string; title: string }>(
+    `SELECT id, name AS title FROM battlemaps WHERE is_template = 0 AND id IN (${ids.map(() => "?").join(", ")})`,
+    ids,
+  );
+  return new Map(rows.map((r) => [r.id, r.title]));
+}

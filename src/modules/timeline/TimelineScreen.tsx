@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CircleAlert, Funnel, Info, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { useRememberOpened } from "../../shared/recent";
 import { Button, EmptyState, IconButton } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { useGraph, useRelationsStore } from "../relations";
@@ -35,6 +36,12 @@ export function TimelineScreen({ campaign, onOpenCharacter }: TimelineScreenProp
   const loadRelations = useRelationsStore((s) => s.load);
   const relationsStatus = useRelationsStore((s) => s.status);
   const relationsFor = useRelationsStore((s) => s.campaignId);
+  const selection = useTimelineStore((s) => s.selection);
+  useRememberOpened(
+    campaign.id,
+    "event",
+    loadedFor === campaign.id && selection?.kind === "event" ? selection.id : null,
+  );
 
   useEffect(() => {
     void load(campaign.id);

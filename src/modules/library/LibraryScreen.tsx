@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { CircleAlert, Download, ImageOff, Info, RefreshCw, SearchX, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { useRememberOpened } from "../../shared/recent";
 import { EmptyState, IconButton, SearchInput } from "../../shared/ui";
 import { ArtGrid } from "./ArtGrid";
 import { ArtPanel, type CharacterTarget } from "./ArtPanel";
@@ -20,12 +21,15 @@ interface LibraryScreenProps {
   preferredSystem: string | null;
   /** Where "Create character" puts a character made from an art; hidden when null. */
   characterTarget?: CharacterTarget | null;
+  /** Active campaign: an art looked at goes to its "recent" list. */
+  campaignId?: string | null;
 }
 
 export function LibraryScreen({
   libraryRoot,
   preferredSystem,
   characterTarget = null,
+  campaignId = null,
 }: LibraryScreenProps) {
   const open = useLibraryStore((s) => s.open);
   const root = useLibraryStore((s) => s.root);
@@ -47,6 +51,7 @@ export function LibraryScreen({
   const arts = useLibraryStore((s) => s.arts);
   const selected = useSelectedArt();
   const drop = useDropImport();
+  useRememberOpened(campaignId, "art", selected?.id ?? null);
 
   useEffect(() => {
     void open(libraryRoot);
