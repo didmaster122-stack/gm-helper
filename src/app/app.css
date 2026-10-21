@@ -1,118 +1,168 @@
-/* App shell: sidebar, top bar, first run, settings. */
+/* App shell: spine, first run, settings. */
 
 .layout {
   display: flex;
   height: 100vh;
 }
 
-/* ---- Sidebar ---- */
+/* ---- Spine: the dark sidebar, in both themes ---- */
 
-.sidebar {
+.spine {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: var(--sidebar-w);
+  flex: none;
+  padding: 16px 0 12px 12px;
+  background: var(--spine);
+  color: var(--spine-fg);
+}
+
+.spine.collapsed {
+  width: var(--sidebar-w-collapsed);
+  align-items: stretch;
+}
+
+.spine :where(button):focus-visible {
+  outline-color: var(--spine-fg);
+}
+
+/* Shared controls (mini player, icon buttons) read the spine colours instead of the page ones. */
+.spine-tools {
+  --text: var(--spine-fg);
+  --text-muted: var(--spine-muted);
+  --text-subtle: var(--spine-muted);
+  --surface: var(--spine);
+  --surface-2: var(--spine-hover);
+  --surface-3: var(--spine-line);
+  --border: var(--spine-line);
+  --border-strong: var(--spine-line);
+  --accent: var(--spine-fg);
+  --accent-fg: var(--spine);
+  --accent-hover: var(--spine-muted);
+  --accent-text: var(--spine-fg);
   display: flex;
   flex-direction: column;
   gap: 4px;
-  width: var(--sidebar-w);
-  flex: none;
-  padding: 12px 10px;
-  background: var(--surface);
-  border-right: 1px solid var(--border);
+  margin-right: 12px;
+  color: var(--text);
 }
 
-.brand {
-  display: flex;
+.spine-foot {
+  flex-direction: row;
   align-items: center;
-  gap: 10px;
-  height: 36px;
-  margin-bottom: 12px;
-  padding: 0 6px;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  color: var(--accent-fg);
-  background: var(--accent);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+.spine.collapsed .spine-tools {
+  align-items: center;
 }
 
-.brand-mark > svg {
-  width: 17px;
-  height: 17px;
-}
-
-.nav-list {
-  display: flex;
+.spine.collapsed .spine-foot {
   flex-direction: column;
-  gap: 2px;
 }
 
-.nav-item {
+.spine-group {
+  display: grid;
+  gap: 1px;
+}
+
+.spine-group > h4 {
+  margin: 0 0 4px 12px;
+  font-family: var(--font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--spine-muted);
+}
+
+/* Folded: a thin rule instead of the group titles. */
+.spine.collapsed .spine-group + .spine-group::before {
+  content: "";
+  height: 1px;
+  margin: 0 12px 8px 0;
+  background: var(--spine-line);
+}
+
+.spine-nav {
+  position: relative;
   justify-content: flex-start;
-  gap: 10px;
-  width: 100%;
-  min-height: 34px;
-  padding: 0 10px;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 12px;
   border: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: transparent;
   box-shadow: none;
-  color: var(--text-muted);
+  color: var(--spine-muted);
+  font-size: var(--text-base);
   font-weight: 500;
   text-align: left;
+  /* The cut-out corners appear at once, so the tab must not fade in after them. */
+  transition: none;
 }
 
-.nav-item:hover:not(:disabled) {
-  background: var(--surface-2);
+.spine.collapsed .spine-nav {
+  padding: 0 0 0 15px;
+}
+
+.spine-nav > svg {
+  width: 20px;
+  height: 20px;
+}
+
+.spine-nav > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.spine-nav:hover:not(:disabled),
+.spine-nav:active:not(:disabled) {
+  background: var(--spine-hover);
+  color: var(--spine-fg);
+}
+
+/* The active section is cut out of the spine and joins the page. */
+.spine-nav.active,
+.spine-nav.active:hover:not(:disabled),
+.spine-nav.active:active:not(:disabled) {
+  /* Above the neighbours, so their hover does not cover the corners. */
+  z-index: 1;
+  background: var(--bg);
   color: var(--text);
+  font-weight: 700;
 }
 
-.nav-item.active,
-.nav-item.active:hover:not(:disabled) {
-  background: var(--accent-soft);
-  color: var(--text);
-}
-
-.nav-item > .nav-icon {
-  width: 18px;
-  height: 18px;
-}
-
-.nav-item.active > .nav-icon {
+.spine-nav.active > svg {
   color: var(--accent-text);
 }
 
-.theme-switch {
-  margin-top: 8px;
+.spine-nav.active::before,
+.spine-nav.active::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  background: transparent;
+  pointer-events: none;
 }
 
-/* ---- Main area ---- */
-
-.main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+.spine-nav.active::before {
+  top: -12px;
+  border-bottom-right-radius: 12px;
+  box-shadow: 4px 4px 0 4px var(--bg);
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  height: 52px;
-  flex: none;
-  padding: 0 12px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
+.spine-nav.active::after {
+  bottom: -12px;
+  border-top-right-radius: 12px;
+  box-shadow: 4px -4px 0 4px var(--bg);
 }
 
 .content {
   flex: 1;
-  min-height: 0;
+  min-width: 0;
   overflow: auto;
 }
 
@@ -135,73 +185,93 @@
 
 .campaign-switcher {
   position: relative;
+  margin-right: 12px;
 }
 
 .campaign-trigger {
-  justify-content: flex-start;
-  gap: 10px;
-  min-width: 280px;
-  max-width: 440px;
-  height: 40px;
-  padding: 0 10px 0 4px;
-  border-color: transparent;
-  background: transparent;
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 2px;
+  width: 100%;
+  min-height: 0;
+  padding: 12px 36px 12px 12px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--spine-hover);
   box-shadow: none;
+  color: var(--spine-fg);
+  white-space: normal;
   text-align: left;
 }
 
 .campaign-trigger:hover:not(:disabled),
+.campaign-trigger:active:not(:disabled),
 .campaign-trigger[aria-expanded="true"] {
-  background: var(--surface-2);
-}
-
-.campaign-mark {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  flex: none;
-  color: var(--accent-text);
-  background: var(--accent-soft);
-  border-radius: var(--radius-md);
-}
-
-.campaign-mark > svg {
-  width: 17px;
-  height: 17px;
-}
-
-.campaign-trigger-text {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  line-height: 1.2;
+  background: var(--spine-line);
 }
 
 .campaign-trigger-label {
-  font-size: var(--text-xs);
-  font-weight: 500;
-  color: var(--text-subtle);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--spine-muted);
 }
 
 .campaign-trigger-name {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 600;
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
-.campaign-trigger-name .muted {
-  font-weight: 400;
+.campaign-trigger-system {
+  font-size: var(--text-sm);
+  color: var(--spine-muted);
 }
 
 .campaign-trigger > .campaign-trigger-chevron {
-  color: var(--text-subtle);
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  color: var(--spine-muted);
+}
+
+.campaign-trigger:hover > .campaign-trigger-chevron {
+  color: var(--spine-fg);
+}
+
+.campaign-switcher.collapsed .campaign-trigger {
+  place-items: center;
+  height: 40px;
+  padding: 0;
+}
+
+.campaign-monogram {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.campaign-monogram > svg {
+  width: 18px;
+  height: 18px;
+}
+
+.campaign-switcher.collapsed > .campaign-menu {
+  top: 0;
+  left: calc(100% + 8px);
 }
 
 .campaign-menu {
   width: 340px;
+  /* Lives inside the spine but is a page surface. */
+  color: var(--text);
 }
 
 .campaign-menu .menu-list button {

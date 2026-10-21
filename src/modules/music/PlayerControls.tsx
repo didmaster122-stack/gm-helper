@@ -21,7 +21,7 @@ import { usePlayerStore } from "./player";
 const t = ru.music.player;
 const NEXT_REPEAT: Record<RepeatMode, RepeatMode> = { off: "all", all: "one", one: "off" };
 
-function SeekBar({ compact = false }: { compact?: boolean }) {
+function SeekBar({ variant = "full" }: { variant?: "full" | "mini" }) {
   const position = usePlayerStore((s) => s.position);
   const duration = usePlayerStore((s) => s.duration);
   const seek = usePlayerStore((s) => s.seek);
@@ -51,7 +51,17 @@ function SeekBar({ compact = false }: { compact?: boolean }) {
       }}
     />
   );
-  if (compact) return range;
+  if (variant === "mini") {
+    return (
+      <div className="mini-seek">
+        {range}
+        <div className="mini-times">
+          <span>{formatDuration(shown * 1000)}</span>
+          <span>{formatDuration(duration > 0 ? duration * 1000 : null)}</span>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="seek">
       <span className="seek-time">{formatDuration(shown * 1000)}</span>
@@ -61,17 +71,24 @@ function SeekBar({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function PlayButton({ size = "md" }: { size?: "md" | "sm" }) {
+function PlayButton({
+  size = "md",
+  withTitle = false,
+}: {
+  size?: "md" | "sm";
+  withTitle?: boolean;
+}) {
   const playing = usePlayerStore((s) => s.playing);
   const current = usePlayerStore((s) => s.current);
   const toggle = usePlayerStore((s) => s.toggle);
+  const label = playing ? t.pause : t.play;
   return (
     <IconButton
       icon={playing ? Pause : Play}
       variant="primary"
       size={size}
       className="play-button"
-      label={playing ? t.pause : t.play}
+      label={withTitle && current ? `${label}: ${current.title}` : label}
       onClick={toggle}
       disabled={!current}
     />
@@ -192,17 +209,24 @@ export function PlayerBar() {
   );
 }
 
-/** Compact player under the navigation, on every screen except "Музыка" itself. */
-export function MiniPlayer({ onOpen }: { onOpen: () => void }) {
+interface MiniPlayerProps {
+  onOpen: () => void;
+  /** Folded spine: a single play / pause button. */
+  collapsed?: boolean;
+}
+
+/** Compact player in the spine, on every screen except "Музыка" itself. */
+export function MiniPlayer({ onOpen, collapsed = false }: MiniPlayerProps) {
   const current = usePlayerStore((s) => s.current);
   if (!current) return null;
+  if (collapsed) return <PlayButton size="sm" withTitle />;
   return (
     <div className="mini-player">
       <button type="button" className="mini-title" title={t.openMusic} onClick={onOpen}>
         <Music aria-hidden />
         <span>{current.title}</span>
       </button>
-      <SeekBar compact />
+      <SeekBar variant="mini" />
       <div className="mini-controls">
         <Transport size="sm" />
         <VolumeControl compact />

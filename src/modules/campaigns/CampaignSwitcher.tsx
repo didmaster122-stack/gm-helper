@@ -5,7 +5,24 @@ import { useDismiss } from "../../shared/ui";
 import { CampaignForm } from "./CampaignForm";
 import { useCampaignStore } from "./store";
 
-export function CampaignSwitcher({ libraryRoot }: { libraryRoot: string | null }) {
+/** Up to two initials for the folded spine: "Проклятие Страда" → "ПС". */
+function monogram(name: string): string {
+  const words = name.split(/\s+/).filter(Boolean);
+  return words
+    .slice(0, 2)
+    .map((w) => w[0] ?? "")
+    .join("")
+    .toUpperCase();
+}
+
+interface CampaignSwitcherProps {
+  libraryRoot: string | null;
+  /** Folded spine: only the initials, the name goes to the tooltip. */
+  collapsed?: boolean;
+}
+
+/** Active campaign block at the top of the spine; opens the list of campaigns. */
+export function CampaignSwitcher({ libraryRoot, collapsed = false }: CampaignSwitcherProps) {
   const campaigns = useCampaignStore((s) => s.campaigns);
   const activeId = useCampaignStore((s) => s.activeId);
   const setActive = useCampaignStore((s) => s.setActive);
@@ -17,28 +34,33 @@ export function CampaignSwitcher({ libraryRoot }: { libraryRoot: string | null }
 
   const available = campaigns.filter((c) => !c.archived);
   const current = available.find((c) => c.id === activeId) ?? null;
+  const summary = current ? `${current.name} · ${current.system}` : ru.campaign.none;
 
   return (
-    <div className="campaign-switcher" ref={ref}>
+    <div className={collapsed ? "campaign-switcher collapsed" : "campaign-switcher"} ref={ref}>
       <button
         type="button"
         className="campaign-trigger"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={ru.campaign.switcherLabel}
+        aria-label={`${ru.campaign.switcherLabel}: ${summary}`}
+        title={collapsed ? `${ru.campaign.switcherLabel}: ${summary}` : undefined}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="campaign-mark" aria-hidden>
-          <Swords />
-        </span>
-        <span className="campaign-trigger-text">
-          <span className="campaign-trigger-label">{ru.campaign.switcherLabel}</span>
-          <span className="campaign-trigger-name">
-            {current ? current.name : ru.campaign.none}
-            {current && <span className="muted"> · {current.system}</span>}
+        {collapsed ? (
+          <span className="campaign-monogram" aria-hidden>
+            {current ? monogram(current.name) : <Swords />}
           </span>
-        </span>
-        <ChevronsUpDown className="campaign-trigger-chevron" aria-hidden />
+        ) : (
+          <>
+            <span className="campaign-trigger-label">{ru.campaign.switcherLabel}</span>
+            <span className="campaign-trigger-name">
+              {current ? current.name : ru.campaign.none}
+            </span>
+            {current && <span className="campaign-trigger-system">{current.system}</span>}
+            <ChevronsUpDown className="campaign-trigger-chevron" aria-hidden />
+          </>
+        )}
       </button>
       {open && (
         <div className="popover campaign-menu">

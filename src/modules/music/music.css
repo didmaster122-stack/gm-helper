@@ -373,16 +373,14 @@ button.play-button {
   width: 96px;
 }
 
-/* ---- Mini player in the sidebar ---- */
+/* ---- Mini player in the spine (colours come from the spine's scope) ---- */
 
 .mini-player {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-  padding: 8px;
+  gap: 2px;
+  padding: 10px;
   background: var(--surface-2);
-  border: 1px solid var(--border);
   border-radius: var(--radius-md);
 }
 
@@ -394,19 +392,19 @@ button.play-button {
   border: none;
   background: transparent;
   box-shadow: none;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 .mini-title:hover:not(:disabled) {
   background: transparent;
-  color: var(--accent-text);
+  text-decoration: underline;
 }
 
 .mini-title > svg {
   width: 14px;
   height: 14px;
-  color: var(--accent-text);
+  color: var(--text-muted);
 }
 
 .mini-title > span {
@@ -414,8 +412,18 @@ button.play-button {
   text-overflow: ellipsis;
 }
 
-.mini-player .seek-bar {
+.mini-seek .seek-bar {
+  display: block;
   width: 100%;
+}
+
+.mini-times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -2px;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 
 .mini-controls {

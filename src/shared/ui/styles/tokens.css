@@ -27,7 +27,8 @@
   --control-h: 36px;
   --control-h-sm: 30px;
 
-  --sidebar-w: 216px;
+  --sidebar-w: 252px;
+  --sidebar-w-collapsed: 64px;
   --panel-w: 320px;
 
   --ease: cubic-bezier(0.2, 0, 0, 1);
@@ -65,6 +66,7 @@
   --spine-fg: #eef0fb;
   --spine-muted: #a2abd4;
   --spine-hover: #262e58;
+  --spine-line: #3a4475;
 
   --danger: #c4372b;
   --danger-hover: #ab2d22;
@@ -116,6 +118,7 @@
   --spine-fg: #e3e6f5;
   --spine-muted: #7d86ad;
   --spine-hover: #151a30;
+  --spine-line: #2a3152;
 
   --danger: #e2675d;
   --danger-hover: #ec7e75;

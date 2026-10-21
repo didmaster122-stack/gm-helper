@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Keyboard, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import { ru } from "../shared/i18n/ru";
-import { Button, EmptyState, IconButton } from "../shared/ui";
-import { CampaignSwitcher, RequireCampaign, useActiveCampaign } from "../modules/campaigns";
+import { Button, EmptyState } from "../shared/ui";
+import { RequireCampaign, useActiveCampaign } from "../modules/campaigns";
 import { LibraryScreen } from "../modules/library";
 import { BattlemapScreen } from "../modules/battlemap";
 import { createCharacter, RelationsScreen, showCharacter } from "../modules/relations";
@@ -122,9 +122,10 @@ export function App() {
   const missing = useAppStore((s) => s.libraryRootMissing);
   const init = useAppStore((s) => s.init);
   const setModule = useAppStore((s) => s.setModule);
+  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const [help, setHelp] = useState(false);
   const openHelp = useCallback(() => setHelp(true), []);
-  useGlobalShortcuts(setModule, openHelp);
+  useGlobalShortcuts({ setModule, openHelp, toggleSidebar });
 
   useEffect(() => {
     void init();
@@ -152,17 +153,10 @@ export function App() {
 
   return (
     <div className="layout">
-      <Sidebar />
-      <div className="main">
-        <header className="topbar">
-          <CampaignSwitcher libraryRoot={libraryRoot} />
-          <div className="spacer" />
-          <IconButton icon={Keyboard} label={ru.shortcuts.open} shortcut="F1" onClick={openHelp} />
-        </header>
-        <main className="content">
-          <CurrentModule />
-        </main>
-      </div>
+      <Sidebar onOpenHelp={openHelp} />
+      <main className="content">
+        <CurrentModule />
+      </main>
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
     </div>
   );

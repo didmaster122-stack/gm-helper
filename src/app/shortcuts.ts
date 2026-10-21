@@ -1,31 +1,19 @@
 import { useEffect } from "react";
 import { SCREEN_SEARCH_SELECTOR } from "../shared/ui";
+import { MODULE_ORDER } from "./nav";
 import type { ModuleId } from "./store";
 
-const MODULE_ORDER: ModuleId[] = [
-  "library",
-  "battlemaps",
-  "relations",
-  "timeline",
-  "notes",
-  "music",
-];
-
-export const MODULE_SHORTCUTS: Record<ModuleId, string> = {
-  library: "Ctrl+1",
-  battlemaps: "Ctrl+2",
-  relations: "Ctrl+3",
-  timeline: "Ctrl+4",
-  notes: "Ctrl+5",
-  music: "Ctrl+6",
-  settings: "Ctrl+,",
-};
+interface GlobalActions {
+  setModule: (m: ModuleId) => void;
+  openHelp: () => void;
+  toggleSidebar: () => void;
+}
 
 /**
- * App-wide keys: Ctrl+1…6 and Ctrl+, switch sections, Ctrl+F focuses the screen's search,
- * F1 opens the shortcut list. Editors handle their own keys (undo, delete, tools).
+ * App-wide keys: Ctrl+1…6 and Ctrl+, switch sections, Ctrl+\ folds the spine, Ctrl+F focuses
+ * the screen's search, F1 opens the shortcut list. Editors handle their own keys (undo, tools).
  */
-export function useGlobalShortcuts(setModule: (m: ModuleId) => void, openHelp: () => void) {
+export function useGlobalShortcuts({ setModule, openHelp, toggleSidebar }: GlobalActions) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       // Nothing switches under an open dialog.
@@ -44,6 +32,9 @@ export function useGlobalShortcuts(setModule: (m: ModuleId) => void, openHelp: (
       } else if (e.code === "Comma") {
         e.preventDefault();
         setModule("settings");
+      } else if (e.code === "Backslash") {
+        e.preventDefault();
+        toggleSidebar();
       } else if (e.code === "KeyF") {
         const search = document.querySelector<HTMLInputElement>(SCREEN_SEARCH_SELECTOR);
         if (!search) return;
@@ -54,5 +45,5 @@ export function useGlobalShortcuts(setModule: (m: ModuleId) => void, openHelp: (
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [setModule, openHelp]);
+  }, [setModule, openHelp, toggleSidebar]);
 }
