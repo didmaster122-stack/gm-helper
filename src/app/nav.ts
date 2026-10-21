@@ -55,3 +55,4 @@ export const MODULE_SHORTCUTS: Record<ModuleId, string> = {
 };
 
 export const SIDEBAR_SHORTCUT = "Ctrl+\\";
+export const SEARCH_SHORTCUT = "Ctrl+K";

@@ -1,6 +1,6 @@
 import { ru } from "../shared/i18n/ru";
 import { Modal } from "../shared/ui";
-import { SIDEBAR_SHORTCUT } from "./nav";
+import { SEARCH_SHORTCUT, SIDEBAR_SHORTCUT } from "./nav";
 
 const k = ru.shortcuts.keys;
 
@@ -11,6 +11,7 @@ const sections: { title: string; rows: [string[], string][] }[] = [
       [["Ctrl+1", "…", "Ctrl+6"], k.modules],
       [["Ctrl+,"], k.settings],
       [[SIDEBAR_SHORTCUT], k.sidebar],
+      [[SEARCH_SHORTCUT], k.globalSearch],
       [["Ctrl+F"], k.search],
       [["F1"], k.help],
       [["Space"], k.playPause],

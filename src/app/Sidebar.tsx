@@ -5,6 +5,7 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
+  Search,
   Settings,
   Sun,
 } from "lucide-react";
@@ -14,14 +15,25 @@ import { lastPlayed, NextSessionCard, nextSession, useSessionsStore } from "../m
 import { formatDistance, localDay } from "../shared/dates";
 import { ru } from "../shared/i18n/ru";
 import { IconButton, Modal, useThemeStore, withShortcut } from "../shared/ui";
-import { MODULE_SHORTCUTS, NAV_GROUPS, SIDEBAR_SHORTCUT, type NavItem } from "./nav";
+import {
+  MODULE_SHORTCUTS,
+  NAV_GROUPS,
+  SEARCH_SHORTCUT,
+  SIDEBAR_SHORTCUT,
+  type NavItem,
+} from "./nav";
 import { useAppStore } from "./store";
 
 /**
  * The spine: a dark strip in both themes with the campaign on top, sections by group,
  * the mini player and the footer. The active section joins the page.
  */
-export function Sidebar({ onOpenHelp }: { onOpenHelp: () => void }) {
+interface SidebarProps {
+  onOpenHelp: () => void;
+  onOpenSearch: () => void;
+}
+
+export function Sidebar({ onOpenHelp, onOpenSearch }: SidebarProps) {
   const current = useAppStore((s) => s.module);
   const setModule = useAppStore((s) => s.setModule);
   const openWelcome = useAppStore((s) => s.openWelcome);
@@ -105,6 +117,12 @@ export function Sidebar({ onOpenHelp }: { onOpenHelp: () => void }) {
           {navButton({ id: "settings", label: ru.nav.settings, icon: Settings })}
         </div>
         <div className="spine-tools spine-foot">
+          <IconButton
+            icon={Search}
+            label={ru.search.open}
+            shortcut={SEARCH_SHORTCUT}
+            onClick={onOpenSearch}
+          />
           <IconButton
             icon={Keyboard}
             label={ru.shortcuts.open}

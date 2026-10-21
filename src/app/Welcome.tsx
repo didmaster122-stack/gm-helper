@@ -33,7 +33,7 @@ import { formatMoment, localDay } from "../shared/dates";
 import { getDb, type RecentKind } from "../shared/db";
 import { ru } from "../shared/i18n/ru";
 import { Button, ConfirmDialog, IconButton, useThemeStore } from "../shared/ui";
-import { MODULE_SHORTCUTS } from "./nav";
+import { MODULE_SHORTCUTS, SEARCH_SHORTCUT } from "./nav";
 import { loadRecent, RECENT_SECTIONS, showRecent } from "./recent";
 import { useAppStore } from "./store";
 import {
@@ -53,7 +53,12 @@ const KIND_ICONS: Record<RecentKind, LucideIcon> = {
 };
 
 /** Start screen: the campaign to continue, its recent objects and next session, other campaigns. */
-export function Welcome({ onOpenHelp }: { onOpenHelp: () => void }) {
+interface WelcomeProps {
+  onOpenHelp: () => void;
+  onOpenSearch: () => void;
+}
+
+export function Welcome({ onOpenHelp, onOpenSearch }: WelcomeProps) {
   const campaigns = useCampaignStore((s) => s.campaigns);
   const campaign = useActiveCampaign();
   const libraryRoot = useAppStore((s) => s.libraryRoot);
@@ -113,6 +118,10 @@ export function Welcome({ onOpenHelp }: { onOpenHelp: () => void }) {
           </div>
         )}
         <div className="welcome-hints">
+          <button type="button" onClick={onOpenSearch}>
+            <kbd>{SEARCH_SHORTCUT}</kbd>
+            {ru.search.open}
+          </button>
           <button type="button" onClick={onOpenHelp}>
             <kbd>F1</kbd>
             {ru.welcome.helpHint}

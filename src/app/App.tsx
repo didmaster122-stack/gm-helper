@@ -11,6 +11,7 @@ import { MusicScreen } from "../modules/music";
 import { NotesScreen } from "../modules/notes";
 import { SettingsScreen } from "../modules/settings";
 import { FirstRun } from "./FirstRun";
+import { SearchDialog } from "./SearchDialog";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { useGlobalShortcuts } from "./shortcuts";
 import { Sidebar } from "./Sidebar";
@@ -127,8 +128,10 @@ export function App() {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const welcome = useAppStore((s) => s.welcome);
   const [help, setHelp] = useState(false);
+  const [search, setSearch] = useState(false);
   const openHelp = useCallback(() => setHelp(true), []);
-  useGlobalShortcuts({ setModule, openHelp, toggleSidebar });
+  const openSearch = useCallback(() => setSearch(true), []);
+  useGlobalShortcuts({ setModule, openHelp, openSearch, toggleSidebar });
 
   useEffect(() => {
     void init();
@@ -157,15 +160,16 @@ export function App() {
   return (
     <>
       {welcome ? (
-        <Welcome onOpenHelp={openHelp} />
+        <Welcome onOpenHelp={openHelp} onOpenSearch={openSearch} />
       ) : (
         <div className="layout">
-          <Sidebar onOpenHelp={openHelp} />
+          <Sidebar onOpenHelp={openHelp} onOpenSearch={openSearch} />
           <main className="content">
             <CurrentModule />
           </main>
         </div>
       )}
+      {search && <SearchDialog onClose={() => setSearch(false)} onOpenHelp={openHelp} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
     </>
   );

@@ -1,5 +1,6 @@
 // All user-facing strings. Components must not contain literal UI text.
 import type { RecentKind } from "../db/recentRepo";
+import type { SearchKind } from "../search/global";
 import type { CampaignInputError } from "../../modules/campaigns/types";
 import type {
   BuiltinRelationTypeId,
@@ -61,6 +62,7 @@ export const ru = {
       playPause: "Музыка: пауза / воспроизведение (в разделе «Музыка»)",
       settings: "Настройки",
       search: "Поиск на экране",
+      globalSearch: "Общий поиск: разделы, команды и объекты всех кампаний",
       help: "Список горячих клавиш",
       undo: "Отменить",
       redo: "Повторить",
@@ -76,6 +78,35 @@ export const ru = {
       duplicate: "Дублировать клип",
       copyPaste: "Копировать клип / вставить на выбранную дорожку",
       home: "Курсор в начало / в конец",
+    },
+  },
+  search: {
+    open: "Общий поиск",
+    placeholder: "Разделы, команды, персонажи, заметки, события, арты…",
+    recent: "Недавнее в кампании",
+    recentEmpty: "Начните вводить — найдутся разделы, команды и объекты всех кампаний.",
+    nothing: "Ничего не найдено",
+    loadFailed: "Не удалось загрузить данные для поиска",
+    openFailed: "Не удалось открыть: возможно, объект удалён",
+    more: (n: number) => `ещё ${n}`,
+    hint: "↑ ↓ — выбрать, Enter — открыть, Esc — закрыть",
+    groups: {
+      command: "Разделы и команды",
+      character: "Персонажи",
+      faction: "Фракции",
+      event: "События",
+      note: "Заметки",
+      battlemap: "Баттлмапы",
+      art: "Арты",
+    } satisfies Record<SearchKind, string>,
+    section: "Раздел",
+    command: "Команда",
+    commands: {
+      welcome: "Приветственный экран",
+      newNote: "Новая заметка",
+      help: "Горячие клавиши",
+      theme: "Сменить тему оформления",
+      sidebar: "Свернуть / развернуть боковую панель",
     },
   },
   nav: {

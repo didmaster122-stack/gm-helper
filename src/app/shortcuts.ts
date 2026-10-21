@@ -6,14 +6,20 @@ import type { ModuleId } from "./store";
 interface GlobalActions {
   setModule: (m: ModuleId) => void;
   openHelp: () => void;
+  openSearch: () => void;
   toggleSidebar: () => void;
 }
 
 /**
  * App-wide keys: Ctrl+1…6 and Ctrl+, switch sections, Ctrl+\ folds the spine, Ctrl+F focuses
- * the screen's search, F1 opens the shortcut list. Editors handle their own keys (undo, tools).
+ * the screen's search, Ctrl+K opens the app-wide search, F1 opens the shortcut list. Editors handle their own keys (undo, tools).
  */
-export function useGlobalShortcuts({ setModule, openHelp, toggleSidebar }: GlobalActions) {
+export function useGlobalShortcuts({
+  setModule,
+  openHelp,
+  openSearch,
+  toggleSidebar,
+}: GlobalActions) {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       // Nothing switches under an open dialog.
@@ -35,6 +41,9 @@ export function useGlobalShortcuts({ setModule, openHelp, toggleSidebar }: Globa
       } else if (e.code === "Backslash") {
         e.preventDefault();
         toggleSidebar();
+      } else if (e.code === "KeyK") {
+        e.preventDefault();
+        openSearch();
       } else if (e.code === "KeyF") {
         const search = document.querySelector<HTMLInputElement>(SCREEN_SEARCH_SELECTOR);
         if (!search) return;
@@ -45,5 +54,5 @@ export function useGlobalShortcuts({ setModule, openHelp, toggleSidebar }: Globa
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [setModule, openHelp, toggleSidebar]);
+  }, [setModule, openHelp, openSearch, toggleSidebar]);
 }
