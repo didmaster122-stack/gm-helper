@@ -1,8 +1,19 @@
-import { Keyboard, Moon, PanelLeftClose, PanelLeftOpen, Settings, Sun } from "lucide-react";
-import { CampaignSwitcher } from "../modules/campaigns";
+import { useEffect, useState } from "react";
+import {
+  CalendarDays,
+  Keyboard,
+  Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Settings,
+  Sun,
+} from "lucide-react";
+import { CampaignSwitcher, useActiveCampaign } from "../modules/campaigns";
 import { MiniPlayer } from "../modules/music";
+import { lastPlayed, NextSessionCard, nextSession, useSessionsStore } from "../modules/sessions";
+import { formatDistance, localDay } from "../shared/dates";
 import { ru } from "../shared/i18n/ru";
-import { IconButton, useThemeStore, withShortcut } from "../shared/ui";
+import { IconButton, Modal, useThemeStore, withShortcut } from "../shared/ui";
 import { MODULE_SHORTCUTS, NAV_GROUPS, SIDEBAR_SHORTCUT, type NavItem } from "./nav";
 import { useAppStore } from "./store";
 
@@ -18,6 +29,26 @@ export function Sidebar({ onOpenHelp }: { onOpenHelp: () => void }) {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
   const theme = useThemeStore((s) => s.theme);
   const setPreference = useThemeStore((s) => s.setPreference);
+  const campaign = useActiveCampaign();
+  const loadSessions = useSessionsStore((s) => s.load);
+  const sessions = useSessionsStore((s) => s.sessions);
+  const sessionsFor = useSessionsStore((s) => s.campaignId);
+  const [sessionOpen, setSessionOpen] = useState(false);
+  const campaignId = campaign?.id ?? null;
+
+  useEffect(() => {
+    void loadSessions(campaignId);
+  }, [loadSessions, campaignId]);
+
+  const own = campaign && sessionsFor === campaign.id ? sessions : [];
+  const last = lastPlayed(own);
+  const next = nextSession(own);
+  const sessionLabel = next
+    ? ru.sessions.spineNext(
+        next.number,
+        next.date ? formatDistance(next.date, localDay(new Date())) : null,
+      )
+    : ru.sessions.spineSchedule;
 
   const navButton = (item: NavItem) => {
     const Icon = item.icon;
@@ -39,38 +70,71 @@ export function Sidebar({ onOpenHelp }: { onOpenHelp: () => void }) {
   };
 
   return (
-    <nav className={collapsed ? "spine collapsed" : "spine"} aria-label={ru.nav.sections}>
-      <CampaignSwitcher libraryRoot={libraryRoot} collapsed={collapsed} />
-      {NAV_GROUPS.map((group) => (
-        <div key={group.title} className="spine-group" role="group" aria-label={group.title}>
-          {!collapsed && <h4 aria-hidden>{group.title}</h4>}
-          {group.items.map(navButton)}
-        </div>
-      ))}
-      <div className="spacer" />
-      <div className="spine-tools">
-        {current !== "music" && (
-          <MiniPlayer onOpen={() => setModule("music")} collapsed={collapsed} />
+    <>
+      <nav className={collapsed ? "spine collapsed" : "spine"} aria-label={ru.nav.sections}>
+        <CampaignSwitcher
+          libraryRoot={libraryRoot}
+          collapsed={collapsed}
+          detail={last ? ru.sessions.spineLast(last.number) : null}
+        />
+        {campaign && (
+          <button
+            type="button"
+            className="spine-nav spine-session"
+            onClick={() => setSessionOpen(true)}
+            aria-label={collapsed ? sessionLabel : undefined}
+            title={sessionLabel}
+          >
+            <CalendarDays aria-hidden />
+            {!collapsed && <span>{sessionLabel}</span>}
+          </button>
         )}
-      </div>
-      <div className="spine-group">
-        {navButton({ id: "settings", label: ru.nav.settings, icon: Settings })}
-      </div>
-      <div className="spine-tools spine-foot">
-        <IconButton icon={Keyboard} label={ru.shortcuts.open} shortcut="F1" onClick={onOpenHelp} />
-        <IconButton
-          icon={theme === "dark" ? Sun : Moon}
-          label={theme === "dark" ? ru.theme.toLight : ru.theme.toDark}
-          onClick={() => setPreference(theme === "dark" ? "light" : "dark")}
-        />
+        {NAV_GROUPS.map((group) => (
+          <div key={group.title} className="spine-group" role="group" aria-label={group.title}>
+            {!collapsed && <h4 aria-hidden>{group.title}</h4>}
+            {group.items.map(navButton)}
+          </div>
+        ))}
         <div className="spacer" />
-        <IconButton
-          icon={collapsed ? PanelLeftOpen : PanelLeftClose}
-          label={collapsed ? ru.nav.expand : ru.nav.collapse}
-          shortcut={SIDEBAR_SHORTCUT}
-          onClick={toggleSidebar}
-        />
-      </div>
-    </nav>
+        <div className="spine-tools">
+          {current !== "music" && (
+            <MiniPlayer onOpen={() => setModule("music")} collapsed={collapsed} />
+          )}
+        </div>
+        <div className="spine-group">
+          {navButton({ id: "settings", label: ru.nav.settings, icon: Settings })}
+        </div>
+        <div className="spine-tools spine-foot">
+          <IconButton
+            icon={Keyboard}
+            label={ru.shortcuts.open}
+            shortcut="F1"
+            onClick={onOpenHelp}
+          />
+          <IconButton
+            icon={theme === "dark" ? Sun : Moon}
+            label={theme === "dark" ? ru.theme.toLight : ru.theme.toDark}
+            onClick={() => setPreference(theme === "dark" ? "light" : "dark")}
+          />
+          <div className="spacer" />
+          <IconButton
+            icon={collapsed ? PanelLeftOpen : PanelLeftClose}
+            label={collapsed ? ru.nav.expand : ru.nav.collapse}
+            shortcut={SIDEBAR_SHORTCUT}
+            onClick={toggleSidebar}
+          />
+        </div>
+      </nav>
+      {sessionOpen && campaign && (
+        <Modal title={ru.sessions.next} onClose={() => setSessionOpen(false)}>
+          <NextSessionCard
+            onOpenNotes={() => {
+              setSessionOpen(false);
+              setModule("notes");
+            }}
+          />
+        </Modal>
+      )}
+    </>
   );
 }

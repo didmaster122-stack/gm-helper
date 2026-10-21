@@ -1,0 +1,169 @@
+/* Sessions: the next-session card with its checklist, and the list of all sessions. */
+
+.next-session {
+  display: grid;
+  gap: 14px;
+}
+
+.next-session-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.next-session-head > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.next-session-date {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.next-session-date::first-letter {
+  text-transform: uppercase;
+}
+
+.next-session-sub {
+  margin-top: 2px;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.next-session-progress {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.next-session-day {
+  max-width: 220px;
+}
+
+.next-session-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---- Checklist ---- */
+
+.prep {
+  display: grid;
+  gap: 4px;
+}
+
+.prep-empty {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.prep-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.prep-list li,
+.prep-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--control-h-sm);
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+}
+
+.prep-list li:hover,
+.prep-list li:focus-within {
+  background: var(--surface-2);
+}
+
+.prep-list input[type="checkbox"] {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.prep .prep-text,
+.prep-add input {
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--text-md);
+}
+
+.prep .prep-text:focus,
+.prep-add input:focus {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+
+.prep-list li.done .prep-text {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.prep-tools {
+  display: flex;
+  gap: 2px;
+  visibility: hidden;
+}
+
+.prep-list li:hover .prep-tools,
+.prep-list li:focus-within .prep-tools {
+  visibility: visible;
+}
+
+.prep-add > svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--text-subtle);
+}
+
+/* ---- All sessions ---- */
+
+.sessions-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.sessions-table th {
+  padding: 0 8px 6px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: left;
+}
+
+.sessions-table td {
+  padding: 4px 8px;
+  border-top: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+.sessions-table tr.played td {
+  color: var(--text-muted);
+}
+
+.sessions-number {
+  width: 72px;
+}
+
+.sessions-table small.error {
+  display: block;
+}

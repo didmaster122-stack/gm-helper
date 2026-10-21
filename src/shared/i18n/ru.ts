@@ -14,6 +14,17 @@ import type {
 
 const CREATURE_NAMES = ["Средний", "Большой", "Огромный", "Громадный"];
 
+/** Russian plural: `plural(3, "день", "дня", "дней")` → "дня". */
+function plural(n: number, one: string, few: string, many: string): string {
+  const n10 = Math.abs(n) % 10;
+  const n100 = Math.abs(n) % 100;
+  if (n10 === 1 && n100 !== 11) return one;
+  if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return few;
+  return many;
+}
+
+const days = (n: number) => `${n} ${plural(n, "день", "дня", "дней")}`;
+
 export const ru = {
   appName: "GM Helper",
   common: {
@@ -83,6 +94,45 @@ export const ru = {
     collapse: "Свернуть панель",
     expand: "Развернуть панель",
   },
+  dates: {
+    today: "сегодня",
+    yesterday: "вчера",
+    tomorrow: "завтра",
+    todayAt: (time: string) => `сегодня, ${time}`,
+    /** Genitive, for "19 окт". */
+    monthsShort: [
+      "янв",
+      "фев",
+      "мар",
+      "апр",
+      "мая",
+      "июн",
+      "июл",
+      "авг",
+      "сен",
+      "окт",
+      "ноя",
+      "дек",
+    ],
+    /** Nominative, for "май 2025". */
+    months: [
+      "январь",
+      "февраль",
+      "март",
+      "апрель",
+      "май",
+      "июнь",
+      "июль",
+      "август",
+      "сентябрь",
+      "октябрь",
+      "ноябрь",
+      "декабрь",
+    ],
+    weekdays: ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"],
+    inDays: (n: number) => `через ${days(n)}`,
+    daysAgo: (n: number) => `${days(n)} назад`,
+  },
   startup: {
     errorTitle: "Не удалось запустить приложение",
   },
@@ -106,6 +156,10 @@ export const ru = {
     systemHint:
       "Папка верхнего уровня в библиотеке. Можно ввести новую — папка будет создана позже.",
     description: "Описание",
+    cover: "Обложка",
+    coverPick: "Выбрать арт…",
+    coverRemove: "Убрать обложку",
+    coverHint: "Без арта обложка — цветной градиент по названию.",
     archived: "В архиве",
     active: "Активная",
     archive: "В архив",
@@ -123,6 +177,47 @@ export const ru = {
       systemInvalid:
         'Недопустимое имя папки: нельзя использовать < > : " / \\ | ? * и начинать с «_» или «.»',
     } satisfies Record<CampaignInputError, string>,
+  },
+  sessions: {
+    session: (n: number) => `Сессия ${n}`,
+    spineLast: (n: number) => `сессия ${n}`,
+    spineNext: (n: number, when: string | null) =>
+      when ? `Сессия ${n} · ${when}` : `Сессия ${n} · без даты`,
+    spineSchedule: "Запланировать сессию",
+    next: "Ближайшая сессия",
+    noDate: "Дата не назначена",
+    date: "Дата сессии",
+    clearDate: "Убрать дату",
+    lastPlayed: (n: number) => `Сыграно сессий: ${n}`,
+    noneYet: "Сессий пока нет",
+    schedule: (n: number) => `Запланировать сессию ${n}`,
+    played: "Сессия сыграна",
+    playedLabel: "Сыграна",
+    plan: (n: number) => `План сессии ${n}`,
+    planTitle: (n: number) => `План сессии ${n}`,
+    planTag: (n: number) => `Сессия ${n}`,
+    planFailed: "Не удалось открыть план сессии",
+    saveFailed: "Не удалось сохранить изменения сессии",
+    loadFailed: "Не удалось загрузить сессии",
+    all: "Все сессии",
+    allTitle: "Сессии кампании",
+    number: "Номер",
+    numberTaken: "Такой номер уже есть",
+    numberInvalid: "Номер — целое число от 1",
+    deleteTitle: "Удалить сессию?",
+    deleteText: (n: number) =>
+      `Сессия ${n} и её чек-лист будут удалены. Заметка с планом останется в разделе «Заметки».`,
+    status: { prep: "Подготовка", running: "Идёт", finished: "Завершена" },
+    prep: {
+      title: "Подготовка",
+      progress: (done: number, total: number) => `${done} из ${total} готово`,
+      add: "Добавить пункт…",
+      item: "Пункт чек-листа",
+      up: "Выше",
+      down: "Ниже",
+      remove: "Удалить пункт",
+      empty: "Список пуст. Что нужно подготовить?",
+    },
   },
   music: {
     title: "Музыка",
@@ -293,7 +388,7 @@ export const ru = {
     musicRootNone: "Не выбрана",
     backup: "Резервные копии",
     backupHint:
-      "Кампания целиком в одном файле: персонажи, фракции, связи, хронология, карты и заметки. Арты и вложения заметок в файл не входят — они найдутся в библиотеке по пути или по содержимому.",
+      "Кампания целиком в одном файле: сессии с чек-листами, персонажи, фракции, связи, хронология, карты и заметки. Арты и вложения заметок в файл не входят — они найдутся в библиотеке по пути или по содержимому.",
   },
   backup: {
     campaign: "Кампания",
@@ -306,8 +401,14 @@ export const ru = {
     exportFailed: "Не удалось сохранить резервную копию.",
     importedSuffix: "импорт",
     imported: (name: string) => `Кампания «${name}» импортирована и выбрана активной.`,
-    importSummary: (characters: number, events: number, maps: number, notes: number) =>
-      `Персонажей: ${characters}, событий: ${events}, карт: ${maps}, заметок: ${notes}.`,
+    importSummary: (
+      sessions: number,
+      characters: number,
+      events: number,
+      maps: number,
+      notes: number,
+    ) =>
+      `Сессий: ${sessions}, персонажей: ${characters}, событий: ${events}, карт: ${maps}, заметок: ${notes}.`,
     artsFound: (found: number, total: number, byHash: number) =>
       `Арты найдены: ${found} из ${total}` +
       (byHash > 0 ? ` (по содержимому после переименования: ${byHash})` : "") +

@@ -106,6 +106,19 @@
   padding: 0 0 0 15px;
 }
 
+/* The next session under the campaign block: a plain button, not a section tab. */
+.spine-nav.spine-session {
+  min-height: 34px;
+  margin-right: 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+}
+
+.spine-nav.spine-session > svg {
+  width: 18px;
+  height: 18px;
+}
+
 .spine-nav > svg {
   width: 20px;
   height: 20px;
