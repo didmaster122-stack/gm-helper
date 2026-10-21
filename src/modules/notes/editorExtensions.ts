@@ -6,6 +6,7 @@ import StarterKit from "@tiptap/starter-kit";
 import { toAbsolute } from "../../shared/catalog/paths";
 import { fileUrl } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
+import { MentionNode } from "../../shared/mentions";
 import { isLibraryPath } from "./domain/doc";
 
 /**
@@ -55,5 +56,6 @@ export function noteExtensions(libraryRoot: string): Extensions {
     }),
     TableKit.configure({ table: { resizable: false } }),
     Placeholder.configure({ placeholder: ru.notes.editor.placeholder }),
+    MentionNode,
   ];
 }

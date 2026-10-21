@@ -313,6 +313,14 @@ input.note-title:focus {
   margin: 0 auto;
 }
 
+.note-mentioned {
+  max-width: 820px;
+  margin: 40px auto 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  cursor: default;
+}
+
 .note-editor-content .tiptap {
   outline: none;
   font-size: var(--text-base);

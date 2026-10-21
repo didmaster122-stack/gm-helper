@@ -17,6 +17,13 @@ export {
   listRelationTypes,
   loadGraph,
   relationSearchRecords,
+  relationsMentioning,
 } from "./repo";
-export { parseGraphBackup, remapGraph, toGraphBackup, type GraphBackup } from "./domain/backup";
+export {
+  parseGraphBackup,
+  remapGraph,
+  remapGraphMentions,
+  toGraphBackup,
+  type GraphBackup,
+} from "./domain/backup";
 export { restoreRelationTypes } from "./relationTypeStore";

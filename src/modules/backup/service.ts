@@ -25,6 +25,7 @@ import {
   listTags,
   noteInsertStatements,
   parseNotesBackup,
+  remapNoteMentions,
   remapNotes,
   tagInsertStatement,
   toNotesBackup,
@@ -36,6 +37,7 @@ import {
   loadGraph,
   parseGraphBackup,
   remapGraph,
+  remapGraphMentions,
   restoreRelationTypes,
   toGraphBackup,
 } from "../relations";
@@ -51,6 +53,7 @@ import {
   loadTimeline,
   parseTimelineBackup,
   remapTimeline,
+  remapTimelineMentions,
   timelineDiffStatements,
 } from "../timeline";
 import {
@@ -163,16 +166,30 @@ export async function importCampaign(
     createdAt: envelope.campaign.createdAt,
     updatedAt: now,
   };
-  const { graph, characterIds } = remapGraph(
+  const remappedGraph = remapGraph(
     graphIn,
     campaign.id,
     newId,
     (link) => resolvePictureLink(link, library.resolution),
     typeIds,
   );
-  const timeline = remapTimeline(timelineIn, campaign.id, newId, characterIds);
-  const notes = remapNotes(notesIn, campaign.id, newId, ru.notes.untitled);
-  const sessions = remapSessions(sessionsIn, campaign.id, newId, notes.noteIds);
+  const { characterIds, factionIds } = remappedGraph;
+  const remappedTimeline = remapTimeline(timelineIn, campaign.id, newId, characterIds);
+  const remappedNotes = remapNotes(notesIn, campaign.id, newId, ru.notes.untitled);
+  const sessions = remapSessions(sessionsIn, campaign.id, newId, remappedNotes.noteIds);
+  const maps = mapsIn.maps.map((m) => ({ ...m, newId: newId() }));
+
+  // Mentions point to objects by id: move them to the new ids of this copy.
+  const mentionIds = new Map([
+    ...characterIds,
+    ...factionIds,
+    ...remappedTimeline.eventIds,
+    ...remappedNotes.noteIds,
+    ...maps.flatMap((m): [string, string][] => (m.id ? [[m.id, m.newId]] : [])),
+  ]);
+  const graph = remapGraphMentions(remappedGraph.graph, mentionIds);
+  const timeline = remapTimelineMentions(remappedTimeline.timeline, mentionIds);
+  const notes = { ...remappedNotes, notes: remapNoteMentions(remappedNotes.notes, mentionIds) };
 
   await runScript(
     db,
@@ -181,8 +198,8 @@ export async function importCampaign(
       ...library.statements,
       ...graphDiffStatements(emptyGraph, graph),
       ...timelineDiffStatements(campaign.id, emptyTimeline, timeline),
-      ...mapsIn.maps.map((m) =>
-        mapInsertStatement(newId(), campaign.id, {
+      ...maps.map(({ newId: id, ...m }) =>
+        mapInsertStatement(id, campaign.id, {
           ...m,
           name: m.name || ru.battlemap.import.defaultName,
         }),

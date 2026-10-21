@@ -262,7 +262,12 @@ export function MapEditor({ types, objectDefs }: MapEditorProps) {
           panMode={panMode}
         />
 
-        <SidePanel model={model} types={types} objectDefs={objectDefs} />
+        <SidePanel
+          mapId={map.isTemplate ? null : map.id}
+          model={model}
+          types={types}
+          objectDefs={objectDefs}
+        />
       </div>
 
       {exporting && (

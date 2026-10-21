@@ -13,6 +13,7 @@ import {
   writeOwnLibraryFile,
 } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
+import { mentionName } from "../../shared/mentions";
 import { planArchive } from "./domain/archive";
 import { attachmentPath, extensionOf, NOTES_FOLDER, unusedAttachments } from "./domain/attachments";
 import type { Note, NoteTag } from "./domain/types";
@@ -104,7 +105,7 @@ export async function writeArchive(
   tags: readonly NoteTag[],
   targetPath: string,
 ): Promise<ArchiveReport> {
-  const entries = planArchive(name, notes, tags, ru.notes.archive.labels);
+  const entries = planArchive(name, notes, tags, ru.notes.archive.labels, mentionName);
   const files: Zippable = {};
   const missing: string[] = [];
   const encoder = new TextEncoder();

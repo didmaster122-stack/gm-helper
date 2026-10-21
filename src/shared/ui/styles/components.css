@@ -1262,3 +1262,149 @@ label.check {
   margin: 0 0 12px;
   padding-left: 20px;
 }
+
+/* ---- Mentions ---- */
+
+.mention {
+  padding: 0 3px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-softer);
+  color: var(--accent-text);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.mention:hover {
+  background: var(--accent-soft);
+}
+
+.mention.missing {
+  background: none;
+  color: var(--text-subtle);
+  text-decoration: line-through;
+  cursor: default;
+}
+
+.ProseMirror-selectednode.mention,
+.ProseMirror-selectednode > .mention {
+  outline: 2px solid var(--focus-ring);
+}
+
+.mention-field .mention-input {
+  min-height: calc(3 * 1.45em + 12px);
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 5px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  line-height: 1.45;
+  white-space: pre-wrap;
+  cursor: text;
+  transition:
+    border-color var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
+}
+
+.mention-field .mention-input:hover:not(:focus) {
+  border-color: var(--text-subtle);
+}
+
+.mention-field .mention-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.mention-field .mention-input.tiptap p {
+  margin: 0;
+}
+
+.mention-field .mention-input p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+
+.mention-menu {
+  position: fixed;
+  z-index: 200;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+
+.mention-option {
+  width: 100%;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: calc(var(--radius) - 2px);
+  background: transparent;
+  box-shadow: none;
+  font-weight: 400;
+  text-align: left;
+}
+
+.mention-option.active,
+.mention-option:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.mention-option-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mention-option-kind,
+.mention-menu-empty {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.mention-menu-empty {
+  padding: 6px 10px;
+}
+
+.mentioned-list {
+  list-style: none;
+  margin: 0 0 8px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mentioned-row {
+  justify-content: space-between;
+  width: 100%;
+  min-height: 30px;
+  gap: 8px;
+  padding: 0 8px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 400;
+  text-align: left;
+}
+
+.mentioned-row:hover:not(:disabled) {
+  background: var(--surface-2);
+}
+
+.mentioned-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

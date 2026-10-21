@@ -9,7 +9,7 @@ import {
   readString,
   readStrings,
 } from "../../../shared/parse";
-import { docPlainText, parseDoc } from "./doc";
+import { docPlainText, parseDoc, remapDocMentions, serializeDoc } from "./doc";
 import { NOTE_KINDS, type Note, type NoteKind, type NoteTag } from "./types";
 
 export interface NoteTagBackup {
@@ -115,4 +115,16 @@ export function remapNotes(
     };
   });
   return { tags, notes, noteIds };
+}
+
+/** Points the mentions in the texts to the new ids of a restored campaign. */
+export function remapNoteMentions(
+  notes: readonly Note[],
+  ids: ReadonlyMap<string, string>,
+): Note[] {
+  return notes.map((n) =>
+    n.kind === "text" && n.content.includes('"mention"')
+      ? { ...n, content: serializeDoc(remapDocMentions(parseDoc(n.content), ids)) }
+      : n,
+  );
 }

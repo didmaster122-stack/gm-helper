@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { TriangleAlert } from "lucide-react";
 import { ru } from "../shared/i18n/ru";
+import { MentionMenu } from "../shared/mentions";
 import { Button, EmptyState, ErrorBoundary } from "../shared/ui";
 import { RequireCampaign, useActiveCampaign } from "../modules/campaigns";
 import { LibraryScreen } from "../modules/library";
@@ -11,6 +12,7 @@ import { MusicScreen } from "../modules/music";
 import { NotesScreen } from "../modules/notes";
 import { SettingsScreen } from "../modules/settings";
 import { FirstRun } from "./FirstRun";
+import { useMentions } from "./mentions";
 import { SearchDialog } from "./SearchDialog";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { useGlobalShortcuts } from "./shortcuts";
@@ -133,6 +135,7 @@ export function App() {
   const openHelp = useCallback(() => setHelp(true), []);
   const openSearch = useCallback(() => setSearch(true), []);
   useGlobalShortcuts({ setModule, openHelp, openSearch, toggleSidebar });
+  useMentions();
 
   useEffect(() => {
     void init();
@@ -174,6 +177,7 @@ export function App() {
       )}
       {search && <SearchDialog onClose={() => setSearch(false)} onOpenHelp={openHelp} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
+      <MentionMenu />
     </>
   );
 }

@@ -1,5 +1,6 @@
 // All user-facing strings. Components must not contain literal UI text.
 import type { RecentKind } from "../db/recentRepo";
+import type { MentionKind } from "../mentions/domain";
 import type { SearchKind } from "../search/global";
 import type { CampaignInputError } from "../../modules/campaigns/types";
 import type {
@@ -108,6 +109,22 @@ export const ru = {
       theme: "Сменить тему оформления",
       sidebar: "Свернуть / развернуть боковую панель",
     },
+  },
+  mentions: {
+    kinds: {
+      character: "Персонаж",
+      faction: "Фракция",
+      event: "Событие",
+      note: "Заметка",
+      battlemap: "Баттлмап",
+    } satisfies Record<MentionKind, string>,
+    nothing: "Никого не нашлось",
+    hint: "@ — упомянуть персонажа, фракцию, событие, карту или заметку",
+    missing: "Объект удалён",
+    open: "Открыть",
+    mentionedIn: "Где упоминается",
+    nowhere: "Пока нигде не упоминается.",
+    loadFailed: "Не удалось загрузить упоминания",
   },
   nav: {
     library: "Библиотека",
@@ -1377,7 +1394,7 @@ export const ru = {
       },
     },
     editor: {
-      placeholder: "Начните писать…",
+      placeholder: "Начните писать… @ — упомянуть персонажа, событие, карту или заметку",
       paragraph: "Обычный текст",
       heading: (level: number) => `Заголовок ${level}`,
       bold: "Жирный",

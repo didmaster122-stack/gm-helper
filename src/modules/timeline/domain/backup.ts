@@ -21,6 +21,7 @@ import {
   type Timeline,
   type TimelineEvent,
 } from "./types";
+import { remapMentionText } from "../../../shared/mentions/domain";
 
 /** The timeline section of a campaign backup is the stored timeline itself. */
 export type TimelineBackup = Timeline;
@@ -138,7 +139,7 @@ export function remapTimeline(
   campaignId: string,
   newId: () => string,
   characterIds: ReadonlyMap<string, string>,
-): Timeline {
+): { timeline: Timeline; eventIds: ReadonlyMap<string, string> } {
   const laneIds = new Map(backup.lanes.map((l) => [l.id, newId()]));
   const eventIds = new Map(backup.events.map((e) => [e.id, newId()]));
   const lanes = backup.lanes.map((l) => ({
@@ -168,11 +169,28 @@ export function remapTimeline(
   });
   const markers = backup.markers.map((m) => ({ ...m, id: newId(), campaignId }));
   return {
-    sessionCount: backup.sessionCount,
-    currentSession: backup.currentSession,
-    lanes,
-    events,
-    links,
-    markers,
+    timeline: {
+      sessionCount: backup.sessionCount,
+      currentSession: backup.currentSession,
+      lanes,
+      events,
+      links,
+      markers,
+    },
+    eventIds,
+  };
+}
+
+/** Points the mentions in the descriptions to the new ids of a restored campaign. */
+export function remapTimelineMentions(
+  timeline: Timeline,
+  ids: ReadonlyMap<string, string>,
+): Timeline {
+  return {
+    ...timeline,
+    events: timeline.events.map((e) => ({
+      ...e,
+      description: remapMentionText(e.description, ids),
+    })),
   };
 }
