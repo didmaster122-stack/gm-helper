@@ -34,7 +34,13 @@ import {
 } from "./domain/objects";
 import { applySelection, selectModeFor, type SelectMode } from "./domain/selection";
 import { screenToCell, zoomAt, type View } from "./domain/view";
-import { buildBaseLayer, drawScene, type RegionOverlay, type Scene } from "./render";
+import {
+  buildBaseLayer,
+  drawScene,
+  type RegionColors,
+  type RegionOverlay,
+  type Scene,
+} from "./render";
 import { useEditorStore } from "./store";
 
 const WHEEL_STEP = 1.2;
@@ -76,6 +82,13 @@ export function MapCanvas({
   panMode,
 }: MapCanvasProps) {
   const background = useThemeColor("--canvas");
+  const regionLine = useThemeColor("--map-region");
+  const regionActive = useThemeColor("--map-region-active");
+  const regionFill = useThemeColor("--map-region-fill");
+  const regionColors = useMemo<RegionColors>(
+    () => ({ line: regionLine, active: regionActive, fill: regionFill }),
+    [regionLine, regionActive, regionFill],
+  );
   const tool = useEditorStore((s) => s.tool);
   const typeId = useEditorStore((s) => s.typeId);
   const selection = useEditorStore((s) => s.selection);
@@ -199,6 +212,7 @@ export function MapCanvas({
         width: size.width,
         height: size.height,
         background,
+        regionColors,
         regions: overlays,
         activeRegion,
         selection,
@@ -215,6 +229,7 @@ export function MapCanvas({
     return () => cancelAnimationFrame(frameId);
   }, [
     background,
+    regionColors,
     model,
     lookup,
     base,

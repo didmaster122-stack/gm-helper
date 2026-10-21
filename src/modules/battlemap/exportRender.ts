@@ -12,7 +12,7 @@ import type { ObjectDef } from "./domain/objects";
 import { CELL_PX, type View } from "./domain/view";
 import {
   buildBaseLayer,
-  COLORS,
+  CANVAS_FONT,
   drawCell,
   drawCells,
   drawGrid,
@@ -20,6 +20,7 @@ import {
   drawObjectSwatch,
   drawRegionLabels,
   drawRegionOutlines,
+  EXPORT_REGION_COLORS,
   type ObjectDefOf,
   type RegionOverlay,
 } from "./render";
@@ -36,7 +37,7 @@ const LEGEND = {
   background: "#f4f1ea",
   text: "#1a1a1e",
   muted: "#5a5a64",
-  font: '"Segoe UI", sans-serif',
+  font: CANVAS_FONT,
 };
 
 function context(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
@@ -67,7 +68,7 @@ const cellSwatch =
 
 /** Swatch of a region without its own type: just the outline colour used on the map. */
 const areaSwatch: LegendRow["swatch"] = (ctx, x, y, size) => {
-  ctx.strokeStyle = COLORS.region;
+  ctx.strokeStyle = EXPORT_REGION_COLORS.line;
   ctx.lineWidth = Math.max(2, size / 10);
   const inset = ctx.lineWidth / 2;
   ctx.strokeRect(x + inset, y + inset, size - inset * 2, size - inset * 2);
@@ -199,7 +200,8 @@ function drawMap(
     segments: options.outlines ? outlineSegments(r.cells, model.width) : [],
     labelCell: options.labels && r.labelVisible ? labelCell(r.cells, model.width) : null,
   }));
-  if (options.outlines) drawRegionOutlines(ctx, overlays, view, Math.round(px / 24) + 1);
+  if (options.outlines)
+    drawRegionOutlines(ctx, overlays, view, Math.round(px / 24) + 1, EXPORT_REGION_COLORS);
   if (options.labels) {
     const bounds = { width: model.width * px, height: model.height * px };
     drawRegionLabels(ctx, overlays, model.width, view, Math.max(11, Math.round(px * 0.32)), bounds);

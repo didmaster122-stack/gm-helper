@@ -56,7 +56,7 @@ table { border-collapse: collapse; margin: 12px 0; }
 th, td { border: 1px solid #bbb; padding: 4px 8px; vertical-align: top; text-align: left; }
 th { background: #f1f1f4; }
 th p, td p { margin: 0; }
-blockquote { margin: 12px 0; padding-left: 12px; border-left: 3px solid #c9a24a; color: #555; }
+blockquote { margin: 12px 0; padding-left: 12px; border-left: 3px solid #2c4db0; color: #555; }
 pre { background: #f1f1f4; padding: 8px 12px; overflow: auto; }
 .tags { color: #61636f; font-size: 13px; margin: 0 0 20px; }
 .tag { display: inline-block; padding: 0 8px; margin-left: 4px; border-radius: 10px; background: #e6e6eb; font-size: 12px; }

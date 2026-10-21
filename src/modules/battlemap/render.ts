@@ -10,17 +10,31 @@ import { getImage } from "./imageCache";
 
 export const COLORS = {
   grid: "rgba(0, 0, 0, 0.28)",
-  region: "#c9a24a",
-  regionActive: "#ffd36b",
-  regionFill: "rgba(255, 211, 107, 0.28)",
   selection: "rgba(77, 156, 255, 0.38)",
   selectionLine: "#e8f1ff",
   hover: "rgba(255, 255, 255, 0.8)",
   labelBg: "rgba(22, 23, 28, 0.82)",
-  labelText: "#f0e6cc",
+  labelText: "#eef0fb",
   objectBorder: "rgba(0, 0, 0, 0.55)",
   objectSelected: "#4d9cff",
   missingObject: "#8a8a90",
+};
+
+/** Text on the map: the app's text font, falling back to the system one until it loads. */
+export const CANVAS_FONT = '"Golos Text", "Segoe UI", sans-serif';
+
+/** Region outlines and the active region's fill. The editor takes them from the theme. */
+export interface RegionColors {
+  line: string;
+  active: string;
+  fill: string;
+}
+
+/** Exported images do not depend on the app theme. */
+export const EXPORT_REGION_COLORS: RegionColors = {
+  line: "#2c4db0",
+  active: "#6f8cf0",
+  fill: "rgba(111, 140, 240, 0.28)",
 };
 
 type TypeOf = (id: string) => CellType;
@@ -209,7 +223,7 @@ function drawSymbol(
       drawIcon(ctx, symbol.value, x, y, s);
       return;
     case "letter":
-      ctx.font = `600 ${Math.round(s * 0.6)}px "Segoe UI", sans-serif`;
+      ctx.font = `600 ${Math.round(s * 0.6)}px ${CANVAS_FONT}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(symbol.value, x + s / 2, y + s / 2 + s * 0.03);
@@ -351,6 +365,7 @@ export interface Scene {
   height: number;
   /** Fill around the map; follows the app theme. */
   background: string;
+  regionColors: RegionColors;
   regions: readonly RegionOverlay[];
   activeRegion: { id: string; cells: readonly number[] } | null;
   selection: ReadonlySet<number>;
@@ -462,13 +477,14 @@ export function drawRegionOutlines(
   regions: readonly RegionOverlay[],
   view: View,
   lineWidth: number,
+  colors: RegionColors,
   activeId: string | null = null,
 ) {
   const s = cellSize(view);
   ctx.lineCap = "round";
   for (const r of regions) {
     const active = r.id === activeId;
-    ctx.strokeStyle = active ? COLORS.regionActive : COLORS.region;
+    ctx.strokeStyle = active ? colors.active : colors.line;
     ctx.lineWidth = active ? lineWidth * 1.5 : lineWidth;
     strokeSegments(ctx, r.segments, view, s);
   }
@@ -484,7 +500,7 @@ export function drawRegionLabels(
   bounds: { width: number; height: number },
 ) {
   const s = cellSize(view);
-  ctx.font = `600 ${fontSize}px "Segoe UI", sans-serif`;
+  ctx.font = `600 ${fontSize}px ${CANVAS_FONT}`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   for (const r of regions) {
@@ -521,7 +537,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, sc: Scene) {
   if (s >= 6) drawGrid(ctx, view, range);
 
   if (sc.activeRegion) {
-    ctx.fillStyle = COLORS.regionFill;
+    ctx.fillStyle = sc.regionColors.fill;
     fillCells(ctx, sc.activeRegion.cells, model.width, view, s);
   }
 
@@ -535,7 +551,7 @@ export function drawScene(ctx: CanvasRenderingContext2D, sc: Scene) {
     strokeSegments(ctx, sc.selectionOutline, view, s);
   }
 
-  drawRegionOutlines(ctx, sc.regions, view, 2, sc.activeRegion?.id ?? null);
+  drawRegionOutlines(ctx, sc.regions, view, 2, sc.regionColors, sc.activeRegion?.id ?? null);
 
   if (sc.selectedObjects.size > 0) {
     ctx.strokeStyle = COLORS.objectSelected;
