@@ -1,5 +1,7 @@
 import { runScript, sqlLiteral } from "../../shared/db/script";
+import { placeholders } from "../../shared/db/placeholders";
 import type { Db } from "../../shared/db/types";
+import type { SearchRecord } from "../../shared/search/global";
 import {
   CHARACTER_KINDS,
   CHARACTER_STATUSES,
@@ -345,4 +347,51 @@ export async function characterTitles(
     ids,
   );
   return new Map(rows.map((r) => [r.id, r.title]));
+}
+
+/** Characters and factions of the campaigns for the app-wide search. */
+export async function relationSearchRecords(
+  db: Db,
+  campaignIds: readonly string[],
+): Promise<SearchRecord[]> {
+  if (campaignIds.length === 0) return [];
+  const where = `campaign_id IN (${placeholders(campaignIds)})`;
+  const characters = await db.select<{
+    id: string;
+    campaign_id: string;
+    name: string;
+    player: string;
+    role: string;
+    description: string;
+    motivation: string;
+    secrets: string;
+    tags: string;
+  }>(
+    `SELECT id, campaign_id, name, player, role, description, motivation, secrets, tags
+     FROM characters WHERE ${where}`,
+    campaignIds,
+  );
+  const factions = await db.select<{
+    id: string;
+    campaign_id: string;
+    name: string;
+    description: string;
+  }>(`SELECT id, campaign_id, name, description FROM factions WHERE ${where}`, campaignIds);
+  return [
+    ...characters.map((r): SearchRecord => ({
+      kind: "character",
+      id: r.id,
+      campaignId: r.campaign_id,
+      title: r.name,
+      detail: r.role,
+      body: [r.player, r.role, r.description, r.motivation, r.secrets, ...parseStrings(r.tags)],
+    })),
+    ...factions.map((r): SearchRecord => ({
+      kind: "faction",
+      id: r.id,
+      campaignId: r.campaign_id,
+      title: r.name,
+      body: [r.description],
+    })),
+  ];
 }

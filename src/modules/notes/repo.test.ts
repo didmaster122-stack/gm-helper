@@ -11,6 +11,7 @@ import {
   listNoteFileRefs,
   listNotes,
   listTags,
+  noteSearchRecords,
   renameNote,
   renameTag,
   setNoteTags,
@@ -95,5 +96,22 @@ describe("notes repo", () => {
     expect(await listNoteFileRefs(db)).toEqual([
       { kind: "pdf", content: "", filePath: "_notes/c2/m.pdf" },
     ]);
+  });
+
+  it("gives notes of the asked campaigns for the app-wide search", async () => {
+    const tag = await createTag(db, "c1", "Сессия 3", clock);
+    const a = await createNote(db, { ...textNote("c1", "Замок"), tagIds: [tag.id] }, clock);
+    await updateNoteContent(db, a.id, "{}", "Страд ждёт", clock);
+    await createNote(db, textNote("c2", "Чужая"), clock);
+    await createNote(db, textNote("c3", "Архив"), clock);
+
+    const records = await noteSearchRecords(db, ["c1", "c2"]);
+    expect(records.map((r) => r.title).sort()).toEqual(["Замок", "Чужая"]);
+    expect(records.find((r) => r.id === a.id)).toMatchObject({
+      kind: "note",
+      campaignId: "c1",
+      body: ["Страд ждёт", "Сессия 3"],
+    });
+    expect(await noteSearchRecords(db, [])).toEqual([]);
   });
 });

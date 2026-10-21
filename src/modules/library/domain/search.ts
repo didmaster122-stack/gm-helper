@@ -1,3 +1,4 @@
+import type { SearchRecord } from "../../../shared/search/global";
 import { buildSearchText, scoreText, tokenize, type SearchText } from "../../../shared/search/text";
 import { artName, splitExtension } from "./paths";
 import type { Art, LibrarySelection } from "./types";
@@ -14,6 +15,20 @@ export function buildEntry(art: Art): SearchEntry {
     art,
     ...buildSearchText([artName(art), splitExtension(art.fileName).base, ...art.tags]),
   };
+}
+
+/** Arts on disk for the app-wide search, with the folder as a hint. */
+export function artSearchRecords(arts: readonly Art[]): SearchRecord[] {
+  return arts
+    .filter((art) => !art.missing)
+    .map((art) => ({
+      kind: "art",
+      id: art.id,
+      campaignId: null,
+      title: artName(art),
+      detail: [art.system, art.group].filter((p) => p !== null).join(" / "),
+      body: [splitExtension(art.fileName).base, ...art.tags],
+    }));
 }
 
 export function matchesSelection(art: Art, selection: LibrarySelection): boolean {

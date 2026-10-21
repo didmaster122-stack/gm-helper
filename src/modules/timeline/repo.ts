@@ -1,5 +1,7 @@
 import { runScript, sqlLiteral } from "../../shared/db/script";
+import { placeholders } from "../../shared/db/placeholders";
 import type { Db } from "../../shared/db/types";
+import type { SearchRecord } from "../../shared/search/global";
 import {
   EVENT_IMPORTANCES,
   EVENT_STATUSES,
@@ -284,4 +286,34 @@ export async function eventTitles(db: Db, ids: readonly string[]): Promise<Map<s
     ids,
   );
   return new Map(rows.map((r) => [r.id, r.title]));
+}
+
+/** Events of the campaigns for the app-wide search; their characters also find them. */
+export async function eventSearchRecords(
+  db: Db,
+  campaignIds: readonly string[],
+): Promise<SearchRecord[]> {
+  if (campaignIds.length === 0) return [];
+  const rows = await db.select<{
+    id: string;
+    campaign_id: string;
+    title: string;
+    description: string;
+    game_date: string;
+    characters: string;
+    tags: string;
+  }>(
+    `SELECT id, campaign_id, title, description, game_date, characters, tags
+     FROM timeline_events WHERE campaign_id IN (${placeholders(campaignIds)})`,
+    campaignIds,
+  );
+  return rows.map((r) => ({
+    kind: "event",
+    id: r.id,
+    campaignId: r.campaign_id,
+    title: r.title,
+    detail: r.game_date,
+    body: [r.description, r.game_date, ...parseStrings(r.tags)],
+    refs: parseStrings(r.characters),
+  }));
 }

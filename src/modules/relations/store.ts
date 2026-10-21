@@ -40,11 +40,13 @@ interface RelationsState {
 /** Saves run one after another, in the order of the edits. */
 let saving: Promise<void> = Promise.resolve();
 
-/** A character to show once its campaign is loaded (see `showCharacter`). */
-let requested: { campaignId: string; id: string } | null = null;
+type Shown = "character" | "faction";
 
-function shown(id: string) {
-  return { selection: { kind: "character" as const, id }, focusId: id, filter: noFilter };
+/** A character or faction to show once its campaign is loaded (see `showCharacter`). */
+let requested: { campaignId: string; kind: Shown; id: string } | null = null;
+
+function shown(id: string, kind: Shown = "character") {
+  return { selection: { kind, id }, focusId: id, filter: noFilter };
 }
 
 export const useRelationsStore = create<RelationsState>((set, get) => {
@@ -97,7 +99,7 @@ export const useRelationsStore = create<RelationsState>((set, get) => {
         if (get().campaignId !== campaignId) return;
         set({ history: initHistory(graph), status: "ready" });
         if (requested?.campaignId === campaignId) {
-          set(shown(requested.id));
+          set(shown(requested.id, requested.kind));
           requested = null;
         }
       } catch (error) {
@@ -182,11 +184,15 @@ export async function createCharacter(campaignId: string, input: NewCharacter): 
  * Selects a character and centres the view on it when it is shown next. A character of a campaign
  * that is not loaded yet is selected after loading.
  */
-export function showCharacter(campaignId: string, id: string): void {
+export function showCharacter(campaignId: string, id: string, kind: Shown = "character"): void {
   if (useRelationsStore.getState().campaignId === campaignId) {
     requested = null;
-    useRelationsStore.setState(shown(id));
+    useRelationsStore.setState(shown(id, kind));
   } else {
-    requested = { campaignId, id };
+    requested = { campaignId, kind, id };
   }
+}
+
+export function showFaction(campaignId: string, id: string): void {
+  showCharacter(campaignId, id, "faction");
 }

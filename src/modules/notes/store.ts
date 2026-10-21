@@ -278,3 +278,28 @@ export function showNoteById(campaignId: string, id: string): void {
   if (state.notes.some((n) => n.id === id))
     useNotesStore.setState({ openId: id, filter: noFilter });
 }
+
+/** Creates an empty text note of the campaign and opens it when the notes section is shown. */
+export async function createTextNote(campaignId: string): Promise<void> {
+  const state = useNotesStore.getState();
+  if (state.campaignId === campaignId && state.status === "ready") {
+    await state.createText();
+    return;
+  }
+  const note = await repo.createNote(await getDb(), {
+    campaignId,
+    kind: "text",
+    title: ru.notes.untitled,
+    content: serializeDoc(emptyDoc()),
+    plainText: "",
+    filePath: null,
+    tagIds: [],
+  });
+  // A list loaded before the note existed is read again by the section.
+  useNotesStore.setState({
+    requestedId: note.id,
+    ...(useNotesStore.getState().campaignId === campaignId
+      ? { campaignId: null, status: "idle" }
+      : {}),
+  });
+}

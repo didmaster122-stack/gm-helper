@@ -1,5 +1,7 @@
 import { sqlLiteral as L } from "../../shared/db/script";
+import { placeholders } from "../../shared/db/placeholders";
 import type { Db } from "../../shared/db/types";
+import type { SearchRecord } from "../../shared/search/global";
 import type { MapEntry } from "./domain/backup";
 import {
   BUILTIN_TYPES,
@@ -522,4 +524,30 @@ export async function mapTitles(db: Db, ids: readonly string[]): Promise<Map<str
     ids,
   );
   return new Map(rows.map((r) => [r.id, r.title]));
+}
+
+/** Battlemaps of the campaigns (not templates) for the app-wide search. */
+export async function mapSearchRecords(
+  db: Db,
+  campaignIds: readonly string[],
+): Promise<SearchRecord[]> {
+  if (campaignIds.length === 0) return [];
+  const rows = await db.select<{
+    id: string;
+    campaign_id: string;
+    name: string;
+    description: string;
+    tags: string;
+  }>(
+    `SELECT id, campaign_id, name, description, tags FROM battlemaps
+     WHERE is_template = 0 AND campaign_id IN (${placeholders(campaignIds)})`,
+    campaignIds,
+  );
+  return rows.map((r) => ({
+    kind: "battlemap",
+    id: r.id,
+    campaignId: r.campaign_id,
+    title: r.name,
+    body: [r.description, ...parseTags(r.tags)],
+  }));
 }
