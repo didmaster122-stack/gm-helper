@@ -60,26 +60,36 @@ export function buildSearchText(parts: readonly string[]): SearchText {
 
 const SCORE = { exact: 4, prefix: 3, substring: 2, fuzzy: 1 } as const;
 
+/** How well one query word matches one word of an item; 0 when it does not. */
+export function scoreWord(token: string, word: string, typos = allowedTypos(token.length)): number {
+  if (word === token) return SCORE.exact;
+  if (word.startsWith(token)) return SCORE.prefix;
+  if (word.includes(token)) return SCORE.substring;
+  if (typos === 0) return 0;
+  // Compare with the whole word and with its prefix, so typos work while typing.
+  if (editDistance(token, word, typos) <= typos) return SCORE.fuzzy;
+  if (
+    word.length > token.length &&
+    editDistance(token, word.slice(0, token.length), typos) <= typos
+  )
+    return SCORE.fuzzy;
+  return 0;
+}
+
+/** Multi-word names: "черный дракон" should match "черныйдракон" and vice versa. */
+export function compactScore(token: string, compactText: string): number {
+  return compactText.includes(token) ? SCORE.substring : 0;
+}
+
 function scoreToken(token: string, entry: SearchText): number {
   let best = 0;
   const typos = allowedTypos(token.length);
   for (const word of entry.words) {
     if (word === token) return SCORE.exact;
-    if (word.startsWith(token)) best = Math.max(best, SCORE.prefix);
-    else if (word.includes(token)) best = Math.max(best, SCORE.substring);
-    else if (best < SCORE.fuzzy && typos > 0) {
-      // Compare with the whole word and with its prefix, so typos work while typing.
-      const prefix = word.slice(0, token.length);
-      if (
-        editDistance(token, word, typos) <= typos ||
-        (word.length > token.length && editDistance(token, prefix, typos) <= typos)
-      ) {
-        best = SCORE.fuzzy;
-      }
-    }
+    // A typo match is the weakest one: once there is any match, skip the costly comparison.
+    if (best === 0 || word.includes(token)) best = Math.max(best, scoreWord(token, word, typos));
   }
-  // Multi-word names: "черный дракон" should match "черныйдракон" and vice versa.
-  if (best === 0 && entry.text.replace(/ /g, "").includes(token)) best = SCORE.substring;
+  if (best === 0) best = compactScore(token, entry.text.replace(/ /g, ""));
   return best;
 }
 
