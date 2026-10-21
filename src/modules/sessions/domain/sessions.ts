@@ -1,6 +1,7 @@
 // Sessions of one campaign: which one is next, what "played" does, numbering.
 import {
   PREP_ITEM_MAX,
+  RECAP_MAX,
   type CampaignStatus,
   type ChangeSource,
   type PrepItem,
@@ -55,6 +56,8 @@ export function newSession(
     date,
     played: false,
     planNoteId: null,
+    recap: "",
+    recapEventId: null,
     items: [],
     createdAt: src.now,
     updatedAt: src.now,
@@ -63,7 +66,12 @@ export function newSession(
 
 /** Nothing was set on it yet: it can go away without losing anything. */
 function isUntouched(session: Session): boolean {
-  return session.date === null && session.planNoteId === null && session.items.length === 0;
+  return (
+    session.date === null &&
+    session.planNoteId === null &&
+    session.recap === "" &&
+    session.items.length === 0
+  );
 }
 
 /**
@@ -126,10 +134,17 @@ export function numberError(
 
 export function update(
   session: Session,
-  change: Partial<Pick<Session, "number" | "date" | "planNoteId" | "items">>,
+  change: Partial<
+    Pick<Session, "number" | "date" | "planNoteId" | "recap" | "recapEventId" | "items">
+  >,
   src: Pick<ChangeSource, "now">,
 ): Session {
   return { ...session, ...change, updatedAt: src.now };
+}
+
+/** The recap as it is stored: no blank lines around it, within the limit. */
+export function cleanRecap(text: string): string {
+  return text.trim().slice(0, RECAP_MAX).trim();
 }
 
 // Checklist

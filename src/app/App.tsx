@@ -10,6 +10,7 @@ import { createCharacter, RelationsScreen, showCharacter } from "../modules/rela
 import { CharacterEvents, showEvent, TimelineScreen } from "../modules/timeline";
 import { MusicScreen } from "../modules/music";
 import { NotesScreen } from "../modules/notes";
+import { SessionRecapHost } from "../modules/sessions";
 import { SettingsScreen } from "../modules/settings";
 import { FirstRun } from "./FirstRun";
 import { useMentions } from "./mentions";
@@ -177,6 +178,7 @@ export function App() {
       )}
       {search && <SearchDialog onClose={() => setSearch(false)} onOpenHelp={openHelp} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
+      <SessionRecapHost />
       <MentionMenu />
     </>
   );

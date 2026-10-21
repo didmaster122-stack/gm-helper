@@ -1,15 +1,21 @@
 // Objects of the active campaign that can be mentioned, and what the app does with a mention.
 // The app wires the services (it knows every module); editors and cards only read this store.
 import { create } from "zustand";
-import type { MentionKind, MentionRef, MentionTarget } from "./domain";
+import type {
+  MentionKind,
+  MentionRef,
+  MentionSource,
+  MentionSourceKind,
+  MentionTarget,
+} from "./domain";
 
 export interface MentionServices {
   /** Everything of the campaign that can be mentioned. */
   load: (campaignId: string) => Promise<MentionTarget[]>;
-  /** Shows the object in its section. */
-  open: (kind: MentionKind, id: string) => void | Promise<void>;
-  /** Notes and descriptions of the campaign that mention the object. */
-  mentionedIn: (campaignId: string, kind: MentionKind, id: string) => Promise<MentionTarget[]>;
+  /** Shows the object (or the session recap) in its section. */
+  open: (kind: MentionSourceKind, id: string) => void | Promise<void>;
+  /** Notes, descriptions and recaps of the campaign that mention the object. */
+  mentionedIn: (campaignId: string, kind: MentionKind, id: string) => Promise<MentionSource[]>;
 }
 
 interface MentionState {
@@ -77,6 +83,15 @@ export function mentionTitle(id: string): string | null | undefined {
 /** The name to show and to search by: the current one, or the saved one. */
 export function mentionName(ref: MentionRef): string {
   return mentionTitle(ref.id) ?? ref.label;
+}
+
+/** Opens a text that has the mention, from "Где упоминается". */
+export function openMentionSource(source: MentionSource): void {
+  const services = useMentionStore.getState().services;
+  if (!services) return;
+  void Promise.resolve(services.open(source.kind, source.id)).catch((e: unknown) =>
+    console.error(e),
+  );
 }
 
 export function openMention(kind: MentionKind, id: string): void {

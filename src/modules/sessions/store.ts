@@ -2,7 +2,9 @@ import { create } from "zustand";
 import { localDay } from "../../shared/dates";
 import { getDb } from "../../shared/db";
 import { ru } from "../../shared/i18n/ru";
+import { refreshMentions } from "../../shared/mentions";
 import { openSessionPlan } from "../notes";
+import { saveRecapEvent } from "../timeline";
 import * as domain from "./domain/sessions";
 import type { ChangeSource, PrepItem, Session } from "./domain/types";
 import * as repo from "./repo";
@@ -25,6 +27,14 @@ interface SessionsState {
   remove: (id: string) => Promise<void>;
   /** Opens (or creates) the plan note in the notes module and links it to the session. */
   openPlan: (id: string) => Promise<void>;
+  /** The session whose recap dialog is open. */
+  recapId: string | null;
+  openRecap: (id: string | null) => void;
+  /**
+   * Saves the recap. With `onTimeline` the recap event of the session is added or updated;
+   * without it the session lets its event go (the event stays on the timeline).
+   */
+  saveRecap: (id: string, recap: string, onTimeline: boolean) => Promise<void>;
 }
 
 const source = (): ChangeSource => ({
@@ -64,10 +74,11 @@ export const useSessionsStore = create<SessionsState>((set, get) => {
     campaignId: null,
     status: "idle",
     sessions: [],
+    recapId: null,
 
     async load(campaignId, force = false) {
       if (get().campaignId === campaignId && !force && get().status === "ready") return;
-      set({ campaignId, status: campaignId ? "loading" : "idle", sessions: [] });
+      set({ campaignId, status: campaignId ? "loading" : "idle", sessions: [], recapId: null });
       if (!campaignId) return;
       try {
         const sessions = await repo.listSessions(await getDb(), campaignId);
@@ -98,7 +109,10 @@ export const useSessionsStore = create<SessionsState>((set, get) => {
     },
 
     async markPlayed(id) {
-      await apply(domain.markPlayed(get().sessions, id, localDay(new Date()), source()));
+      const change = domain.markPlayed(get().sessions, id, localDay(new Date()), source());
+      await apply(change);
+      // "Played" offers to write down what happened.
+      if (change.put.some((s) => s.id === id)) set({ recapId: id });
     },
 
     async unmarkPlayed(id) {
@@ -107,6 +121,25 @@ export const useSessionsStore = create<SessionsState>((set, get) => {
 
     async remove(id) {
       await apply({ put: [], remove: [id] });
+    },
+
+    openRecap: (recapId) => set({ recapId }),
+
+    async saveRecap(id, text, onTimeline) {
+      const session = find(id);
+      const recap = domain.cleanRecap(text);
+      // An empty recap makes no event, but an event made before follows the text.
+      const recapEventId =
+        onTimeline && (recap !== "" || session.recapEventId !== null)
+          ? await saveRecapEvent(session.campaignId, {
+              eventId: session.recapEventId,
+              session: session.number,
+              title: ru.sessions.recap.eventTitle(session.number),
+              description: recap,
+            })
+          : null;
+      await putOne(domain.update(find(id), { recap, recapEventId }, source()));
+      void refreshMentions();
     },
 
     async openPlan(id) {

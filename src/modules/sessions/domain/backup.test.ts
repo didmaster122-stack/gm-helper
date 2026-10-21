@@ -11,6 +11,8 @@ const session: Session = {
   date: "2026-10-20",
   played: true,
   planNoteId: "n1",
+  recap: "Победа над @[character:ch1|Страд]",
+  recapEventId: "e1",
   items: [
     { id: "i1", text: "Карта склепа", done: true },
     { id: "i2", text: "Музыка", done: false },
@@ -26,12 +28,18 @@ describe("sessions backup", () => {
       NOW,
     );
     let n = 0;
-    const [out] = remapSessions(parsed, "c2", () => `new-${++n}`, new Map([["n1", "n9"]]));
+    const [out] = remapSessions(parsed, "c2", () => `new-${++n}`, {
+      notes: new Map([["n1", "n9"]]),
+      events: new Map([["e1", "e9"]]),
+      mentions: new Map([["ch1", "ch9"]]),
+    });
     expect(out).toEqual({
       ...session,
       id: "new-1",
       campaignId: "c2",
       planNoteId: "n9",
+      recap: "Победа над @[character:ch9|Страд]",
+      recapEventId: "e9",
       items: [
         { id: "new-2", text: "Карта склепа", done: true },
         { id: "new-3", text: "Музыка", done: false },
@@ -39,9 +47,17 @@ describe("sessions backup", () => {
     });
   });
 
-  it("drops a plan link to a note that is not in the file", () => {
+  it("drops links to a note and an event that are not in the file", () => {
     const parsed = parseSessionsBackup(toSessionsBackup([session]), NOW);
-    expect(remapSessions(parsed, "c2", () => "x", new Map())[0]?.planNoteId).toBeNull();
+    const empty = new Map<string, string>();
+    const [out] = remapSessions(parsed, "c2", () => "x", {
+      notes: empty,
+      events: empty,
+      mentions: empty,
+    });
+    expect(out?.planNoteId).toBeNull();
+    expect(out?.recapEventId).toBeNull();
+    expect(out?.recap).toBe(session.recap);
   });
 
   it("reads damaged data leniently", () => {
@@ -63,6 +79,8 @@ describe("sessions backup", () => {
         date: null,
         played: false,
         planNoteId: null,
+        recap: "",
+        recapEventId: null,
         items: [{ text: "Ок", done: false }],
         createdAt: NOW,
         updatedAt: NOW,

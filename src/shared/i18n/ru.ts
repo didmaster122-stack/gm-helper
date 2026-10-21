@@ -1,6 +1,6 @@
 // All user-facing strings. Components must not contain literal UI text.
 import type { RecentKind } from "../db/recentRepo";
-import type { MentionKind } from "../mentions/domain";
+import type { MentionSourceKind } from "../mentions/domain";
 import type { SearchKind } from "../search/global";
 import type { CampaignInputError } from "../../modules/campaigns/types";
 import type {
@@ -117,7 +117,8 @@ export const ru = {
       event: "Событие",
       note: "Заметка",
       battlemap: "Баттлмап",
-    } satisfies Record<MentionKind, string>,
+      session: "Итоги сессии",
+    } satisfies Record<MentionSourceKind, string>,
     nothing: "Никого не нашлось",
     hint: "@ — упомянуть персонажа, фракцию, событие, карту или заметку",
     missing: "Объект удалён",
@@ -331,8 +332,21 @@ export const ru = {
     numberInvalid: "Номер — целое число от 1",
     deleteTitle: "Удалить сессию?",
     deleteText: (n: number) =>
-      `Сессия ${n} и её чек-лист будут удалены. Заметка с планом останется в разделе «Заметки».`,
+      `Сессия ${n}, её чек-лист и итоги будут удалены. Заметка с планом и событие итогов в хронологии останутся.`,
     status: { prep: "Подготовка", running: "Идёт", finished: "Завершена" },
+    recap: {
+      title: (n: number) => `Итоги сессии ${n}`,
+      eventTitle: (n: number) => `Итоги сессии ${n}`,
+      label: "Что произошло",
+      placeholder: "Что случилось за столом. @ — упомянуть персонажа, событие, заметку…",
+      skip: "Пропустить",
+      addToTimeline: "Добавить событием в хронологию",
+      keepOnTimeline: "Обновить событие в хронологии",
+      saveFailed: "Не удалось сохранить итоги",
+      column: "Итоги",
+      write: "Записать итоги",
+      edit: "Изменить итоги",
+    },
     prep: {
       title: "Подготовка",
       progress: (done: number, total: number) => `${done} из ${total} готово`,

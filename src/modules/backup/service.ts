@@ -176,7 +176,6 @@ export async function importCampaign(
   const { characterIds, factionIds } = remappedGraph;
   const remappedTimeline = remapTimeline(timelineIn, campaign.id, newId, characterIds);
   const remappedNotes = remapNotes(notesIn, campaign.id, newId, ru.notes.untitled);
-  const sessions = remapSessions(sessionsIn, campaign.id, newId, remappedNotes.noteIds);
   const maps = mapsIn.maps.map((m) => ({ ...m, newId: newId() }));
 
   // Mentions point to objects by id: move them to the new ids of this copy.
@@ -190,6 +189,11 @@ export async function importCampaign(
   const graph = remapGraphMentions(remappedGraph.graph, mentionIds);
   const timeline = remapTimelineMentions(remappedTimeline.timeline, mentionIds);
   const notes = { ...remappedNotes, notes: remapNoteMentions(remappedNotes.notes, mentionIds) };
+  const sessions = remapSessions(sessionsIn, campaign.id, newId, {
+    notes: remappedNotes.noteIds,
+    events: remappedTimeline.eventIds,
+    mentions: mentionIds,
+  });
 
   await runScript(
     db,

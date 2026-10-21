@@ -167,3 +167,42 @@
 .sessions-table small.error {
   display: block;
 }
+
+.sessions-table tr.sessions-recap td {
+  padding-top: 0;
+  border-top: none;
+}
+
+.sessions-recap button {
+  display: -webkit-box;
+  width: 100%;
+  padding: 4px 8px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--text);
+  text-align: left;
+  white-space: pre-line;
+  cursor: pointer;
+}
+
+.sessions-recap button:hover {
+  background: var(--surface-2);
+}
+
+/* ---- Recap ---- */
+
+.recap-dialog {
+  display: grid;
+  gap: 12px;
+  width: min(560px, 100%);
+}
+
+.recap-dialog .mention-field .mention-input {
+  min-height: 160px;
+}

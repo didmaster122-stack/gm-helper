@@ -5,14 +5,17 @@ import { mapSearchRecords } from "../modules/battlemap";
 import { useCampaignStore } from "../modules/campaigns";
 import { noteSearchRecords, notesMentioning } from "../modules/notes";
 import { relationSearchRecords, relationsMentioning } from "../modules/relations";
+import { sessionsMentioning, useSessionsStore } from "../modules/sessions";
 import { eventSearchRecords, eventsMentioning } from "../modules/timeline";
 import { getDb } from "../shared/db";
+import { ru } from "../shared/i18n/ru";
 import {
   configureMentions,
   isMentionKind,
   refreshMentions,
   setMentionCampaign,
   type MentionServices,
+  type MentionSource,
   type MentionTarget,
 } from "../shared/mentions";
 import { openSearchRecord } from "./search";
@@ -34,17 +37,32 @@ const services: MentionServices = {
       );
   },
   open(kind, id) {
+    if (kind === "session") {
+      useSessionsStore.getState().openRecap(id);
+      return;
+    }
     const campaignId = useCampaignStore.getState().activeId;
     return openSearchRecord({ kind, id, campaignId, title: "" });
   },
   async mentionedIn(campaignId, _kind, id) {
     const db = await getDb();
-    const lists = await Promise.all([
+    const [sessions, ...lists] = await Promise.all([
+      sessionsMentioning(db, campaignId, id),
       notesMentioning(db, campaignId, id),
       relationsMentioning(db, campaignId, id),
       eventsMentioning(db, campaignId, id),
     ]);
-    return lists.flat().sort((a, b) => a.title.localeCompare(b.title, "ru"));
+    const found: MentionSource[] = lists.flat();
+    // A recap on the timeline is already listed as its event.
+    const events = new Set(found.map((s) => s.id));
+    const recaps = sessions
+      .filter((s) => s.recapEventId === null || !events.has(s.recapEventId))
+      .map((s): MentionSource => ({
+        kind: "session",
+        id: s.id,
+        title: ru.sessions.recap.title(s.number),
+      }));
+    return [...found, ...recaps].sort((a, b) => a.title.localeCompare(b.title, "ru"));
   },
 };
 

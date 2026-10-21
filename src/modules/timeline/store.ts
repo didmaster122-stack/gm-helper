@@ -3,7 +3,7 @@ import { getDb } from "../../shared/db";
 import { initHistory, pushHistory, redo, undo, type History } from "../../shared/history";
 import { ru } from "../../shared/i18n/ru";
 import { noFilter, type TimelineFilter } from "./domain/filter";
-import { ensureDefaults, type IdSource } from "./domain/timeline";
+import { ensureDefaults, putRecapEvent, type IdSource, type RecapInput } from "./domain/timeline";
 import { emptyTimeline, type Timeline } from "./domain/types";
 import * as repo from "./repo";
 
@@ -148,4 +148,26 @@ export function showEvent(campaignId: string, id: string): void {
   } else {
     requested = { campaignId, id };
   }
+}
+
+/**
+ * Writes the recap of a session to the campaign's timeline as one undo step and waits for the
+ * save. Returns the id of the recap event.
+ */
+export async function saveRecapEvent(campaignId: string, input: RecapInput): Promise<string> {
+  const store = useTimelineStore.getState();
+  await store.load(campaignId);
+  if (useTimelineStore.getState().status !== "ready") throw new Error("Timeline is not loaded");
+  const before = useTimelineStore.getState().saveError;
+  let id = "";
+  useTimelineStore.getState().edit((t, src) => {
+    const result = putRecapEvent(t, input, src);
+    id = result.id;
+    return result.timeline;
+  });
+  await saving;
+  const after = useTimelineStore.getState().saveError;
+  if (after && after !== before) throw new Error("Failed to save the recap event");
+  if (!id) throw new Error("The timeline has no main lane");
+  return id;
 }

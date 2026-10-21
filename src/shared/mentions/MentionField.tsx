@@ -12,6 +12,8 @@ interface MentionFieldProps {
   value: string;
   onCommit: (value: string) => void;
   placeholder?: string;
+  /** Puts the cursor at the end of the text when the field appears. */
+  autoFocus?: boolean;
 }
 
 // Only lines of text and mentions: no formatting.
@@ -49,6 +51,7 @@ export function MentionField({
   value,
   onCommit,
   placeholder = ru.mentions.hint,
+  autoFocus = false,
 }: MentionFieldProps) {
   const labelId = useId();
   const valueRef = useRef(value);
@@ -60,6 +63,7 @@ export function MentionField({
   const editor = useEditor({
     extensions: extensions(placeholder),
     content: textToFieldDoc(value) as JSONContent,
+    autofocus: autoFocus ? "end" : false,
     editorProps: { attributes: { class: "mention-input", "aria-labelledby": labelId } },
     onBlur: ({ editor: e }) => {
       const text = fieldDocToText(e.getJSON() as FieldNode);

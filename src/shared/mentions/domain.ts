@@ -25,6 +25,15 @@ export interface MentionTarget {
   title: string;
 }
 
+/** Where a mention can be: a text of a mentionable object, or the recap of a session. */
+export type MentionSourceKind = MentionKind | "session";
+
+export interface MentionSource {
+  kind: MentionSourceKind;
+  id: string;
+  title: string;
+}
+
 export type MentionSegment = { type: "text"; text: string } | { type: "mention"; ref: MentionRef };
 
 const TOKEN = new RegExp(

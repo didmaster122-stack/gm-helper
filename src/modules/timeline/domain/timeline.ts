@@ -366,3 +366,52 @@ export function removeLane(t: Timeline, id: string, now: string): Timeline {
     events: t.events.map((e) => (e.laneId === id ? { ...e, laneId: main.id, updatedAt: now } : e)),
   };
 }
+
+// ---- Session recaps ----
+
+/** What a played session puts on the timeline (spec §1.4). */
+export interface RecapInput {
+  /** The event made for this recap before; it may have been deleted on the timeline since. */
+  eventId: string | null;
+  session: number;
+  title: string;
+  description: string;
+}
+
+/**
+ * Keeps the recap event of a session up to date: an existing event gets the new text (it stays
+ * where the user moved it), a missing one is added to the main lane at the end of the session,
+ * which is added to the timeline when it has fewer sessions.
+ */
+export function putRecapEvent(
+  t: Timeline,
+  input: RecapInput,
+  src: IdSource,
+): { timeline: Timeline; id: string } {
+  const existing = input.eventId ? t.events.find((e) => e.id === input.eventId) : undefined;
+  if (existing) {
+    const timeline = updateEvent(t, existing.id, { description: input.description }, src.now);
+    return { timeline, id: existing.id };
+  }
+  const lane = mainLane(t);
+  if (!lane) return { timeline: t, id: "" };
+  const id = src.newId();
+  const grown = { ...t, sessionCount: Math.max(t.sessionCount, input.session) };
+  const timeline = addEvent(grown, {
+    id,
+    campaignId: src.campaignId,
+    laneId: lane.id,
+    session: input.session,
+    sort: 0,
+    title: input.title,
+    description: input.description,
+    gameDate: "",
+    importance: "major",
+    status: "happened",
+    characterIds: [],
+    tags: [],
+    createdAt: src.now,
+    updatedAt: src.now,
+  });
+  return { timeline, id };
+}

@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { ru } from "../i18n/ru";
-import type { MentionKind, MentionTarget } from "./domain";
-import { openMention, useMentionStore } from "./store";
+import type { MentionKind, MentionSource } from "./domain";
+import { openMentionSource, useMentionStore } from "./store";
 
 interface MentionedInProps {
   kind: MentionKind;
   id: string;
 }
 
-type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; list: MentionTarget[] };
+type State = { kind: "loading" } | { kind: "error" } | { kind: "ready"; list: MentionSource[] };
 
-/** "Где упоминается": notes and descriptions that mention the object, each opening it. */
+/** "Где упоминается": notes, descriptions and recaps that mention the object, each opening it. */
 export function MentionedIn({ kind, id }: MentionedInProps) {
   const services = useMentionStore((s) => s.services);
   const campaignId = useMentionStore((s) => s.campaignId);
@@ -50,7 +50,7 @@ export function MentionedIn({ kind, id }: MentionedInProps) {
                 <button
                   type="button"
                   className="mentioned-row"
-                  onClick={() => openMention(source.kind, source.id)}
+                  onClick={() => openMentionSource(source)}
                 >
                   <span className="mentioned-title">{source.title}</span>
                   <span className="muted">{t.kinds[source.kind]}</span>

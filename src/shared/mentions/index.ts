@@ -9,6 +9,8 @@ export {
   remapMentionText,
   type MentionKind,
   type MentionRef,
+  type MentionSource,
+  type MentionSourceKind,
   type MentionTarget,
 } from "./domain";
 export { MentionNode } from "./extension";
@@ -20,6 +22,7 @@ export {
   mentionName,
   mentionTitle,
   openMention,
+  openMentionSource,
   refreshMentions,
   setMentionCampaign,
   useMentionStore,
