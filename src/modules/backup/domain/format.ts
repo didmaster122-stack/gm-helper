@@ -1,22 +1,27 @@
 import { safeFileName } from "../../../shared/fs/names";
-import { isRecord, readDate, readString } from "../../../shared/parse";
+import { isRecord, readDate, readNullableString, readString } from "../../../shared/parse";
 import type { MapsBackup } from "../../battlemap";
 import type { ArtRefs } from "../../library";
 import type { NotesBackup } from "../../notes";
 import type { GraphBackup } from "../../relations";
+import type { SessionsBackup } from "../../sessions";
 import type { TimelineBackup } from "../../timeline";
 
 export const BACKUP_FORMAT = "gm-helper.campaign";
 /**
  * 2: token records got `cells` and `frame` (read with defaults from version 1 files).
  * 3: the `notes` section (files of versions 1 and 2 are read with no notes).
+ * 4: the `sessions` section and the campaign cover (`campaign.coverArtId`); older files are
+ *    converted with no sessions and no cover.
  */
-export const BACKUP_VERSION = 3;
+export const BACKUP_VERSION = 4;
 
 export interface BackupCampaign {
   name: string;
   system: string;
   description: string;
+  /** Id of the cover art in `library.arts`, or null. */
+  coverArtId: string | null;
   createdAt: string;
 }
 
@@ -24,7 +29,7 @@ export interface BackupCampaign {
  * One campaign in one JSON file. Arts are not inside: they are files of the library, so the file
  * keeps their relative paths and hashes (`library`) and the import finds them again.
  */
-export interface CampaignBackupV3 {
+export interface CampaignBackupV4 {
   format: typeof BACKUP_FORMAT;
   version: typeof BACKUP_VERSION;
   exportedAt: string;
@@ -34,6 +39,7 @@ export interface CampaignBackupV3 {
   timeline: TimelineBackup;
   battlemaps: MapsBackup;
   notes: NotesBackup;
+  sessions: SessionsBackup;
 }
 
 /** The checked envelope; each section is read by the module it belongs to. */
@@ -44,6 +50,7 @@ export interface BackupEnvelope {
   timeline: unknown;
   battlemaps: unknown;
   notes: unknown;
+  sessions: unknown;
 }
 
 export type BackupErrorKind = "notJson" | "notBackup" | "newerVersion" | "badCampaign";
@@ -55,23 +62,35 @@ export class BackupError extends Error {
 }
 
 /**
- * Reads the file and checks its envelope. A later format version gets a converter here that
- * turns the older `raw` into the current one before the sections are read. Versions 1 and 2 differ
- * only by fields and sections that are read with defaults (token frame and size, no notes), so
- * they need no conversion.
+ * Brings an older file to the current version before the sections are read. Versions 1 to 3 differ
+ * by fields and sections that are read with defaults (token frame and size, no notes); version 4
+ * added sessions and the cover, which older files do not have.
  */
+function upgrade(raw: Record<string, unknown>): Record<string, unknown> {
+  if (raw.version === BACKUP_VERSION) return raw;
+  const campaign = isRecord(raw.campaign) ? raw.campaign : {};
+  return {
+    ...raw,
+    version: BACKUP_VERSION,
+    campaign: { ...campaign, coverArtId: null },
+    sessions: { sessions: [] },
+  };
+}
+
+/** Reads the file, checks its envelope and converts older versions. */
 export function parseBackup(text: string, now: string): BackupEnvelope {
-  let raw: unknown;
+  let parsed: unknown;
   try {
-    raw = JSON.parse(text);
+    parsed = JSON.parse(text);
   } catch {
     throw new BackupError("notJson");
   }
-  if (!isRecord(raw) || raw.format !== BACKUP_FORMAT || typeof raw.version !== "number") {
+  if (!isRecord(parsed) || parsed.format !== BACKUP_FORMAT || typeof parsed.version !== "number") {
     throw new BackupError("notBackup");
   }
-  if (raw.version > BACKUP_VERSION) throw new BackupError("newerVersion");
-  if (![1, 2, 3].includes(raw.version)) throw new BackupError("notBackup");
+  if (parsed.version > BACKUP_VERSION) throw new BackupError("newerVersion");
+  if (![1, 2, 3, 4].includes(parsed.version)) throw new BackupError("notBackup");
+  const raw = upgrade(parsed);
 
   const campaign = isRecord(raw.campaign) ? raw.campaign : {};
   const name = readString(campaign.name).trim();
@@ -82,6 +101,7 @@ export function parseBackup(text: string, now: string): BackupEnvelope {
       name,
       system,
       description: readString(campaign.description),
+      coverArtId: readNullableString(campaign.coverArtId),
       createdAt: readDate(campaign.createdAt, now),
     },
     library: raw.library,
@@ -89,6 +109,7 @@ export function parseBackup(text: string, now: string): BackupEnvelope {
     timeline: raw.timeline,
     battlemaps: raw.battlemaps,
     notes: raw.notes,
+    sessions: raw.sessions,
   };
 }
 

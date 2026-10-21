@@ -194,11 +194,19 @@ describe("notes backup", () => {
     const raw: unknown = JSON.parse(JSON.stringify(toNotesBackup(notes, [tag("s3", "Сессия 3")])));
     const parsed = parseNotesBackup(raw, NOW);
     let n = 0;
-    const { tags, notes: out } = remapNotes(parsed, "c2", () => `new-${++n}`, "Без названия");
+    const {
+      tags,
+      notes: out,
+      noteIds,
+    } = remapNotes(parsed, "c2", () => `new-${++n}`, "Без названия");
     expect(tags).toEqual([{ ...tag("new-1", "Сессия 3"), campaignId: "c2" }]);
     expect(out.map((x) => [x.id, x.campaignId, x.tagIds, x.plainText, x.filePath])).toEqual([
       ["new-2", "c2", ["new-1"], "эль", null],
       ["new-3", "c2", [], "", "_notes/c1/m.pdf"],
+    ]);
+    expect([...noteIds]).toEqual([
+      ["a", "new-2"],
+      ["m", "new-3"],
     ]);
   });
 

@@ -79,13 +79,16 @@ export function parseNotesBackup(raw: unknown, now: string): NotesBackup {
   return { tags, notes };
 }
 
-/** Records for a new campaign: new ids, tag links only to tags of the section. */
+/**
+ * Records for a new campaign: new ids, tag links only to tags of the section. `noteIds` maps the
+ * ids in the file to the new ones, for links from other sections (session plans).
+ */
 export function remapNotes(
   backup: NotesBackup,
   campaignId: string,
   newId: () => string,
   untitled: string,
-): { tags: NoteTag[]; notes: Note[] } {
+): { tags: NoteTag[]; notes: Note[]; noteIds: Map<string, string> } {
   const tagIds = new Map(backup.tags.map((t) => [t.id, newId()]));
   const tags = backup.tags.map((t) => ({
     id: tagIds.get(t.id) ?? newId(),
@@ -94,17 +97,22 @@ export function remapNotes(
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
   }));
-  const notes = backup.notes.map((n) => ({
-    id: newId(),
-    campaignId,
-    kind: n.kind,
-    title: n.title || untitled,
-    content: n.kind === "text" ? n.content : "",
-    plainText: n.kind === "text" ? docPlainText(parseDoc(n.content)) : "",
-    filePath: n.kind === "pdf" ? n.filePath : null,
-    tagIds: [...new Set(n.tagIds.map((id) => tagIds.get(id)).filter((id) => id !== undefined))],
-    createdAt: n.createdAt,
-    updatedAt: n.updatedAt,
-  }));
-  return { tags, notes };
+  const noteIds = new Map<string, string>();
+  const notes = backup.notes.map((n) => {
+    const id = newId();
+    if (!noteIds.has(n.id)) noteIds.set(n.id, id);
+    return {
+      id,
+      campaignId,
+      kind: n.kind,
+      title: n.title || untitled,
+      content: n.kind === "text" ? n.content : "",
+      plainText: n.kind === "text" ? docPlainText(parseDoc(n.content)) : "",
+      filePath: n.kind === "pdf" ? n.filePath : null,
+      tagIds: [...new Set(n.tagIds.map((t) => tagIds.get(t)).filter((t) => t !== undefined))],
+      createdAt: n.createdAt,
+      updatedAt: n.updatedAt,
+    };
+  });
+  return { tags, notes, noteIds };
 }

@@ -40,6 +40,13 @@ import {
   toGraphBackup,
 } from "../relations";
 import {
+  listSessions,
+  parseSessionsBackup,
+  remapSessions,
+  sessionStatements,
+  toSessionsBackup,
+} from "../sessions";
+import {
   emptyTimeline,
   loadTimeline,
   parseTimelineBackup,
@@ -51,22 +58,24 @@ import {
   BACKUP_VERSION,
   importedCampaignName,
   parseBackup,
-  type CampaignBackupV3,
+  type CampaignBackupV4,
 } from "./domain/format";
 
-/** The campaign with its graph, timeline, maps and notes as JSON text. */
+/** The campaign with its sessions, graph, timeline, maps and notes as JSON text. */
 export async function exportCampaign(campaign: Campaign): Promise<string> {
   const db = await getDb();
-  const [graph, types, timeline, battlemaps, notes, noteTags] = await Promise.all([
+  const [graph, types, timeline, battlemaps, notes, noteTags, sessions] = await Promise.all([
     loadGraph(db, campaign.id),
     listRelationTypes(db),
     loadTimeline(db, campaign.id),
     collectMapsBackup(db, campaign.id),
     listNotes(db, campaign.id),
     listTags(db, campaign.id),
+    listSessions(db, campaign.id),
   ]);
-  const library = await collectLibraryRefs(db, [...graph.characters, ...graph.factions]);
-  const backup: CampaignBackupV3 = {
+  const cover = { artId: campaign.coverArtId, tokenId: null };
+  const library = await collectLibraryRefs(db, [...graph.characters, ...graph.factions, cover]);
+  const backup: CampaignBackupV4 = {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
@@ -74,6 +83,10 @@ export async function exportCampaign(campaign: Campaign): Promise<string> {
       name: campaign.name,
       system: campaign.system,
       description: campaign.description,
+      // Only an art the file carries a reference to can be found again.
+      coverArtId: library.arts.some((a) => a.id === campaign.coverArtId)
+        ? campaign.coverArtId
+        : null,
       createdAt: campaign.createdAt,
     },
     library,
@@ -81,6 +94,7 @@ export async function exportCampaign(campaign: Campaign): Promise<string> {
     timeline,
     battlemaps,
     notes: toNotesBackup(notes, noteTags),
+    sessions: toSessionsBackup(sessions),
   };
   return JSON.stringify(backup);
 }
@@ -91,6 +105,7 @@ export interface ImportReport {
   events: number;
   maps: number;
   notes: number;
+  sessions: number;
   /** Maps whose data could not be read. */
   mapsSkipped: number;
   /** Arts the portraits use. */
@@ -118,6 +133,7 @@ export async function importCampaign(
   const timelineIn = parseTimelineBackup(envelope.timeline, now);
   const mapsIn = parseMapsBackup(envelope.battlemaps, now);
   const notesIn = parseNotesBackup(envelope.notes, now);
+  const sessionsIn = parseSessionsBackup(envelope.sessions, now);
   const refs = parseArtRefs(envelope.library, now);
 
   const db = await getDb();
@@ -139,6 +155,10 @@ export async function importCampaign(
     ),
     system: envelope.campaign.system,
     description: envelope.campaign.description,
+    coverArtId: resolvePictureLink(
+      { artId: envelope.campaign.coverArtId, tokenId: null },
+      library.resolution,
+    ).artId,
     archived: false,
     createdAt: envelope.campaign.createdAt,
     updatedAt: now,
@@ -152,6 +172,7 @@ export async function importCampaign(
   );
   const timeline = remapTimeline(timelineIn, campaign.id, newId, characterIds);
   const notes = remapNotes(notesIn, campaign.id, newId, ru.notes.untitled);
+  const sessions = remapSessions(sessionsIn, campaign.id, newId, notes.noteIds);
 
   await runScript(
     db,
@@ -168,6 +189,7 @@ export async function importCampaign(
       ),
       ...notes.tags.map(tagInsertStatement),
       ...notes.notes.flatMap(noteInsertStatements),
+      ...sessions.flatMap(sessionStatements),
     ],
     Number.MAX_SAFE_INTEGER,
   );
@@ -181,6 +203,7 @@ export async function importCampaign(
     events: timeline.events.length,
     maps: mapsIn.maps.length,
     notes: notes.notes.length,
+    sessions: sessions.length,
     mapsSkipped: mapsIn.skipped,
     arts: refs.arts.length,
     artsByHash: library.resolution.byHash,
