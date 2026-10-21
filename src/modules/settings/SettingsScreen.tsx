@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { FolderOpen, Monitor, Moon, Sun } from "lucide-react";
 import { pickDirectory } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { Button, Segmented, useThemeStore } from "../../shared/ui";
+import { Button, ScreenHeader, Segmented, useThemeStore } from "../../shared/ui";
 import { BackupSettings } from "../backup";
 import { CellTypesSettings, ObjectsSettings } from "../battlemap";
 import { CampaignList } from "../campaigns";
@@ -48,7 +48,7 @@ export function SettingsScreen({
 
   return (
     <div className="screen settings">
-      <h1>{ru.settings.title}</h1>
+      <ScreenHeader title={ru.settings.title} />
 
       <Section title={ru.settings.appearance} hint={ru.settings.appearanceHint}>
         <Segmented

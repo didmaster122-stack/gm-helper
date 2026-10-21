@@ -5,23 +5,27 @@
  */
 
 :root {
-  --font: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  --font: "Golos Text", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Alegreya", Georgia, serif;
   --font-mono: "Cascadia Mono", Consolas, monospace;
-  --text-xs: 11px;
-  --text-sm: 12px;
-  --text-md: 13px;
-  --text-base: 14px;
-  --text-lg: 16px;
-  --text-xl: 20px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-base: 15px;
+  --text-lg: 17px;
+  --text-xl: 22px;
+  /* Display sizes are set in --font-display. */
+  --text-title: 26px;
+  --text-screen: 38px;
 
   --radius-sm: 4px;
-  --radius: 6px;
-  --radius-md: 8px;
+  --radius: 8px;
+  --radius-md: 10px;
   --radius-lg: 12px;
   --radius-full: 999px;
 
-  --control-h: 32px;
-  --control-h-sm: 26px;
+  --control-h: 36px;
+  --control-h-sm: 30px;
 
   --sidebar-w: 216px;
   --panel-w: 320px;
@@ -29,33 +33,38 @@
   --ease: cubic-bezier(0.2, 0, 0, 1);
   --duration: 120ms;
 
-  /* The gold accent: fills keep one shade in both themes, text and borders adapt. */
-  --accent: #c9a24a;
-  --accent-fg: #1d1606;
   --info: #3b82f6;
 }
 
+/* Light theme: a lapis accent on cool paper. The spine is dark in both themes. */
 :root,
 :root[data-theme="light"] {
   color-scheme: light;
 
-  --bg: #f4f4f6;
+  --bg: #f4f5f9;
   --surface: #ffffff;
-  --surface-2: #f1f1f4;
-  --surface-3: #e6e6eb;
-  --canvas: #ebebef;
-  --border: #e1e1e7;
-  --border-strong: #cbcbd3;
+  --surface-2: #eceff6;
+  --surface-3: #e1e5f0;
+  --canvas: #e8ebf3;
+  --border: #d8dce9;
+  --border-strong: #c2c8db;
 
-  --text: #1c1d22;
-  --text-muted: #61636f;
-  --text-subtle: #8c8e99;
+  --text: #141a30;
+  --text-muted: #4a5272;
+  --text-subtle: #6b7290;
 
-  --accent-hover: #bb9338;
-  --accent-text: #87631a;
-  --accent-soft: rgb(201 162 74 / 16%);
-  --accent-softer: rgb(201 162 74 / 8%);
-  --focus-ring: rgb(201 162 74 / 45%);
+  --accent: #2c4db0;
+  --accent-fg: #ffffff;
+  --accent-hover: #233f95;
+  --accent-text: #2c4db0;
+  --accent-soft: rgb(44 77 176 / 12%);
+  --accent-softer: rgb(44 77 176 / 6%);
+  --focus-ring: rgb(44 77 176 / 45%);
+
+  --spine: #1c2347;
+  --spine-fg: #eef0fb;
+  --spine-muted: #a2abd4;
+  --spine-hover: #262e58;
 
   --danger: #c4372b;
   --danger-hover: #ab2d22;
@@ -64,37 +73,49 @@
   --warning-soft: rgb(214 140 20 / 12%);
   --success: #2e7d4f;
 
-  --overlay: rgb(20 21 26 / 40%);
-  --shadow-sm: 0 1px 2px rgb(20 21 26 / 6%);
-  --shadow-md: 0 4px 14px rgb(20 21 26 / 10%), 0 1px 3px rgb(20 21 26 / 6%);
-  --shadow-lg: 0 16px 48px rgb(20 21 26 / 18%), 0 2px 8px rgb(20 21 26 / 8%);
+  --overlay: rgb(14 18 36 / 40%);
+  --shadow-sm: none;
+  --shadow-md: 0 4px 12px rgb(14 18 36 / 8%);
+  --shadow-lg: 0 8px 24px rgb(14 18 36 / 16%);
 
-  --checker-a: #e4e4ea;
-  --checker-b: #f6f6f8;
-  --band-odd: rgb(20 21 26 / 2.5%);
-  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2361636f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  --checker-a: #e1e5f0;
+  --checker-b: #f4f5f9;
+  --band-odd: rgb(20 26 48 / 2.5%);
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%234a5272' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+
+  /* Battlemap editor overlays over user cell colours. */
+  --map-region: #2c4db0;
+  --map-region-active: #6f8cf0;
+  --map-region-fill: rgb(111 140 240 / 28%);
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #0f1013;
-  --surface: #17181d;
-  --surface-2: #1f2127;
-  --surface-3: #292b33;
-  --canvas: #121317;
-  --border: #282a31;
-  --border-strong: #393c46;
+  --bg: #11141f;
+  --surface: #181c2b;
+  --surface-2: #20253a;
+  --surface-3: #2a3048;
+  --canvas: #0e111b;
+  --border: #2c3350;
+  --border-strong: #3c4466;
 
-  --text: #e8e8ec;
-  --text-muted: #9c9eab;
-  --text-subtle: #6d6f7b;
+  --text: #eceef8;
+  --text-muted: #a8aecb;
+  --text-subtle: #7e86a8;
 
-  --accent-hover: #d8b45f;
-  --accent-text: #dcb760;
-  --accent-soft: rgb(201 162 74 / 18%);
-  --accent-softer: rgb(201 162 74 / 8%);
-  --focus-ring: rgb(201 162 74 / 50%);
+  --accent: #7891f2;
+  --accent-fg: #0c1127;
+  --accent-hover: #91a5f5;
+  --accent-text: #93a7f6;
+  --accent-soft: rgb(120 145 242 / 18%);
+  --accent-softer: rgb(120 145 242 / 8%);
+  --focus-ring: rgb(120 145 242 / 55%);
+
+  --spine: #0a0d19;
+  --spine-fg: #e3e6f5;
+  --spine-muted: #7d86ad;
+  --spine-hover: #151a30;
 
   --danger: #e2675d;
   --danger-hover: #ec7e75;
@@ -104,12 +125,16 @@
   --success: #5cb87f;
 
   --overlay: rgb(0 0 0 / 60%);
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 30%);
-  --shadow-md: 0 4px 14px rgb(0 0 0 / 40%), 0 1px 3px rgb(0 0 0 / 30%);
-  --shadow-lg: 0 16px 48px rgb(0 0 0 / 55%), 0 2px 8px rgb(0 0 0 / 35%);
+  --shadow-sm: none;
+  --shadow-md: 0 4px 12px rgb(0 0 0 / 30%);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 45%);
 
-  --checker-a: #2a2c34;
-  --checker-b: #1d1f25;
+  --checker-a: #2a3048;
+  --checker-b: #1c2030;
   --band-odd: rgb(255 255 255 / 2.5%);
-  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%239c9eab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23a8aecb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
+
+  --map-region: #7891f2;
+  --map-region-active: #b4c3ff;
+  --map-region-fill: rgb(150 172 255 / 26%);
 }

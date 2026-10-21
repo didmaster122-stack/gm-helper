@@ -132,6 +132,60 @@ label.check {
   margin: 0;
 }
 
+/* One header per screen: path, a large title, a summary line and the screen's actions. */
+.screen-header {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.screen-header-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.screen-header-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.screen-header-path li + li::before {
+  content: "/";
+  margin-right: 6px;
+}
+
+.screen-header-path li:last-child {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.screen-header h1 {
+  margin: 2px 0 0;
+  font-size: var(--text-screen);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.screen-header-summary {
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+
+.screen-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* ---- Badges, tags, chips ---- */
 
 .badge {
@@ -229,6 +283,38 @@ label.check {
 
 .tag-editor input:focus {
   box-shadow: none;
+}
+
+/* Filter chips: a row of pills, one of them on. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chips button {
+  min-height: var(--control-h-sm);
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  box-shadow: none;
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.chips button:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.chips button.selected,
+.chips button.selected:hover:not(:disabled) {
+  background: var(--text);
+  border-color: transparent;
+  color: var(--bg);
+  font-weight: 600;
 }
 
 /* ---- Segmented control ---- */
@@ -592,13 +678,28 @@ label.check {
 .menu-list button {
   width: 100%;
   justify-content: flex-start;
-  min-height: 30px;
+  min-height: 32px;
   padding: 0 10px;
   border: none;
+  border-radius: calc(var(--radius) - 2px);
   background: transparent;
   box-shadow: none;
   font-weight: 400;
   text-align: left;
+}
+
+.menu-list button[aria-checked="true"] {
+  font-weight: 600;
+}
+
+.menu-list button[aria-checked] > .menu-check {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-text);
+}
+
+.menu-list button[aria-checked="false"] > .menu-check {
+  visibility: hidden;
 }
 
 .menu-list button.current,
@@ -682,7 +783,7 @@ label.check {
 .modal-title {
   flex: 1;
   margin: 0;
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
 }
 
 .modal-body {
@@ -796,7 +897,7 @@ label.check {
 }
 
 .empty-state.compact h2 {
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
 }
 
 /* Hint over the "missing files" list of a catalog with its clean-up button. */
