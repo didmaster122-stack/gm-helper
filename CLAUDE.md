@@ -24,7 +24,8 @@
 src/
   app/            # оболочка, навигация (useAppStore), первый запуск
   modules/
-    campaigns/    # кампании: repo, store, переключатель, форма, RequireCampaign
+    campaigns/    # кампании: repo, store, переключатель, форма, обложка, RequireCampaign
+    sessions/     # сессии кампании: номер, дата, «сыграна», чек-лист подготовки, заметка-план
     library/      # арты, индекс, поиск, токены; domain/ — чистая логика, service.ts — сценарии fs+БД, ArtPicker — для других модулей
     battlemap/    # модель сетки, редактор, экспорт
     relations/    # персонажи, фракции, граф
