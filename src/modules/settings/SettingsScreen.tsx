@@ -7,6 +7,7 @@ import { BackupSettings } from "../backup";
 import { CellTypesSettings, ObjectsSettings } from "../battlemap";
 import { CampaignList } from "../campaigns";
 import { RelationTypesSettings } from "../relations";
+import { DbBackupSettings, ErrorLogSettings } from "./DbBackupSettings";
 
 interface SettingsScreenProps {
   libraryRoot: string | null;
@@ -99,6 +100,14 @@ export function SettingsScreen({
 
         <Section title={ru.settings.backup} hint={ru.settings.backupHint}>
           <BackupSettings libraryRoot={libraryRoot} />
+        </Section>
+
+        <Section title={ru.settings.dbBackups} hint={ru.settings.dbBackupsHint}>
+          <DbBackupSettings />
+        </Section>
+
+        <Section title={ru.settings.errorLog} hint={ru.settings.errorLogHint}>
+          <ErrorLogSettings />
         </Section>
       </Group>
 
