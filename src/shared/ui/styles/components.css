@@ -186,6 +186,15 @@ label.check {
   gap: 8px;
 }
 
+/* Filters and view switches right under the header. */
+.screen-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px 0 20px;
+}
+
 /* ---- Badges, tags, chips ---- */
 
 .badge {
@@ -705,6 +714,31 @@ label.check {
 .menu-list button.current,
 .menu-list button:hover:not(:disabled) {
   background: var(--surface-2);
+}
+
+/* A button with a menu of choices, e.g. the sort order of a list. */
+.menu-select {
+  position: relative;
+}
+
+.menu-select > .popover {
+  left: auto;
+  right: 0;
+  min-width: 220px;
+}
+
+.menu-select-button {
+  gap: 6px;
+  min-height: var(--control-h-sm);
+  padding: 0 8px 0 12px;
+  font-size: var(--text-md);
+  font-weight: 500;
+}
+
+.menu-select-button > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
 }
 
 /* ---- Lists ---- */
