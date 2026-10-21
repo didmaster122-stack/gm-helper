@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { TriangleAlert } from "lucide-react";
 import { ru } from "../shared/i18n/ru";
-import { Button, EmptyState } from "../shared/ui";
+import { Button, EmptyState, ErrorBoundary } from "../shared/ui";
 import { RequireCampaign, useActiveCampaign } from "../modules/campaigns";
 import { LibraryScreen } from "../modules/library";
 import { BattlemapScreen } from "../modules/battlemap";
@@ -126,6 +126,7 @@ export function App() {
   const init = useAppStore((s) => s.init);
   const setModule = useAppStore((s) => s.setModule);
   const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+  const module = useAppStore((s) => s.module);
   const welcome = useAppStore((s) => s.welcome);
   const [help, setHelp] = useState(false);
   const [search, setSearch] = useState(false);
@@ -165,7 +166,9 @@ export function App() {
         <div className="layout">
           <Sidebar onOpenHelp={openHelp} onOpenSearch={openSearch} />
           <main className="content">
-            <CurrentModule />
+            <ErrorBoundary resetKey={module}>
+              <CurrentModule />
+            </ErrorBoundary>
           </main>
         </div>
       )}
