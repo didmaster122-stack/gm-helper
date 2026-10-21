@@ -3,11 +3,9 @@ import {
   CalendarMinus,
   CalendarPlus,
   ChevronDown,
-  Clock,
   Funnel,
   History,
   ImageDown,
-  Plus,
   Redo2,
   Rows3,
   Undo2,
@@ -29,20 +27,17 @@ interface TimelineToolbarProps {
   lanes: readonly Lane[];
   laneNames: Map<string, string>;
   characters: readonly CharacterRef[];
-  onNewEvent: () => void;
-  onNewMarker: () => void;
   onLanes: () => void;
   /** The whole timeline element, for PNG export. */
   exportSource: () => HTMLElement | null;
 }
 
+/** The row under the screen header: sessions, filters, lanes, history and export. */
 export function TimelineToolbar({
   campaignName,
   lanes,
   laneNames,
   characters,
-  onNewEvent,
-  onNewMarker,
   onLanes,
   exportSource,
 }: TimelineToolbarProps) {
@@ -86,12 +81,7 @@ export function TimelineToolbar({
   }
 
   return (
-    <div className="toolbar graph-toolbar">
-      <Button variant="primary" icon={Plus} onClick={onNewEvent} title={t.newEventHint}>
-        {t.newEvent}
-      </Button>
-      <IconButton icon={Clock} variant="secondary" label={t.marker.newHint} onClick={onNewMarker} />
-      <div className="toolbar-sep" />
+    <div className="screen-tools graph-tools">
       <div className="toolbar-group">
         <Button
           variant="ghost"

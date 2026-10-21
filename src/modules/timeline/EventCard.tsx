@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Trash, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { Button, CommitField, ConfirmDialog, IconButton, TagEditor } from "../../shared/ui";
+import {
+  Button,
+  CommitField,
+  ConfirmDialog,
+  IconButton,
+  Segmented,
+  TagEditor,
+} from "../../shared/ui";
 import { sessionList } from "./domain/layout";
 import {
   moveEvent,
@@ -60,6 +67,7 @@ export function EventCard({
   return (
     <div className="graph-card" key={e.id}>
       <CommitField
+        className="card-title-field"
         label={t.title}
         value={e.title}
         required
@@ -103,34 +111,29 @@ export function EventCard({
 
       <div className="field">
         <span>{t.status}</span>
-        <div className="segmented tl-statuses">
-          {EVENT_STATUSES.map((status) => (
-            <button
-              key={status}
-              type="button"
-              className={e.status === status ? "active" : ""}
-              onClick={() => patch({ status })}
-            >
-              {ru.timeline.statuses[status]}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          className="tl-statuses"
+          label={t.status}
+          value={e.status}
+          onChange={(status) => patch({ status })}
+          options={EVENT_STATUSES.map((status) => ({
+            value: status,
+            label: ru.timeline.statuses[status],
+          }))}
+        />
       </div>
 
       <div className="field">
         <span>{t.importance}</span>
-        <div className="segmented">
-          {EVENT_IMPORTANCES.map((importance) => (
-            <button
-              key={importance}
-              type="button"
-              className={e.importance === importance ? "active" : ""}
-              onClick={() => patch({ importance })}
-            >
-              {ru.timeline.importances[importance]}
-            </button>
-          ))}
-        </div>
+        <Segmented
+          label={t.importance}
+          value={e.importance}
+          onChange={(importance) => patch({ importance })}
+          options={EVENT_IMPORTANCES.map((importance) => ({
+            value: importance,
+            label: ru.timeline.importances[importance],
+          }))}
+        />
       </div>
 
       <section className="card-section">
