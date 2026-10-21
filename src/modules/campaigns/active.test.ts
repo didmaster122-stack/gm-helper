@@ -3,7 +3,16 @@ import { resolveActiveCampaignId } from "./active";
 import type { Campaign } from "./types";
 
 function campaign(id: string, archived = false): Campaign {
-  return { id, name: id, system: "PF2e", description: "", archived, createdAt: "", updatedAt: "" };
+  return {
+    id,
+    name: id,
+    system: "PF2e",
+    description: "",
+    coverArtId: null,
+    archived,
+    createdAt: "",
+    updatedAt: "",
+  };
 }
 
 describe("resolveActiveCampaignId", () => {

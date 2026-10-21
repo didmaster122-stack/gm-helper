@@ -89,6 +89,11 @@
   --map-region: #2c4db0;
   --map-region-active: #6f8cf0;
   --map-region-fill: rgb(111 140 240 / 28%);
+
+  /* Campaign cover without an art: two tones of a hue taken from the name (--cover-hue). */
+  --cover-saturation: 45%;
+  --cover-light-from: 46%;
+  --cover-light-to: 28%;
 }
 
 :root[data-theme="dark"] {
@@ -140,4 +145,8 @@
   --map-region: #7891f2;
   --map-region-active: #b4c3ff;
   --map-region-fill: rgb(150 172 255 / 26%);
+
+  --cover-saturation: 38%;
+  --cover-light-from: 38%;
+  --cover-light-to: 20%;
 }

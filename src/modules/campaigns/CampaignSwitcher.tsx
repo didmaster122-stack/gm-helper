@@ -19,10 +19,16 @@ interface CampaignSwitcherProps {
   libraryRoot: string | null;
   /** Folded spine: only the initials, the name goes to the tooltip. */
   collapsed?: boolean;
+  /** Shown after the system, e.g. the number of the last played session. */
+  detail?: string | null;
 }
 
 /** Active campaign block at the top of the spine; opens the list of campaigns. */
-export function CampaignSwitcher({ libraryRoot, collapsed = false }: CampaignSwitcherProps) {
+export function CampaignSwitcher({
+  libraryRoot,
+  collapsed = false,
+  detail = null,
+}: CampaignSwitcherProps) {
   const campaigns = useCampaignStore((s) => s.campaigns);
   const activeId = useCampaignStore((s) => s.activeId);
   const setActive = useCampaignStore((s) => s.setActive);
@@ -34,7 +40,8 @@ export function CampaignSwitcher({ libraryRoot, collapsed = false }: CampaignSwi
 
   const available = campaigns.filter((c) => !c.archived);
   const current = available.find((c) => c.id === activeId) ?? null;
-  const summary = current ? `${current.name} · ${current.system}` : ru.campaign.none;
+  const subtitle = current ? [current.system, detail].filter(Boolean).join(" · ") : "";
+  const summary = current ? `${current.name} · ${subtitle}` : ru.campaign.none;
 
   return (
     <div className={collapsed ? "campaign-switcher collapsed" : "campaign-switcher"} ref={ref}>
@@ -57,7 +64,7 @@ export function CampaignSwitcher({ libraryRoot, collapsed = false }: CampaignSwi
             <span className="campaign-trigger-name">
               {current ? current.name : ru.campaign.none}
             </span>
-            {current && <span className="campaign-trigger-system">{current.system}</span>}
+            {current && <span className="campaign-trigger-system">{subtitle}</span>}
             <ChevronsUpDown className="campaign-trigger-chevron" aria-hidden />
           </>
         )}

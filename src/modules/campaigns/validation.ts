@@ -8,6 +8,7 @@ export function normalizeCampaignInput(input: CampaignInput): CampaignInput {
     name: input.name.trim(),
     system: input.system.trim(),
     description: input.description.trim(),
+    coverArtId: input.coverArtId,
   };
 }
 

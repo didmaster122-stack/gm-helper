@@ -1,0 +1,38 @@
+/* Campaigns: the cover and the cover field of the form. */
+
+.campaign-cover {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius);
+  background: linear-gradient(
+    140deg,
+    hsl(var(--cover-hue) var(--cover-saturation) var(--cover-light-from)),
+    hsl(calc(var(--cover-hue) + 40) var(--cover-saturation) var(--cover-light-to))
+  );
+}
+
+.campaign-cover > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cover-field .campaign-cover {
+  flex: none;
+  width: 128px;
+}
+
+.cover-field-actions {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}

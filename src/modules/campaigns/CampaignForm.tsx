@@ -1,7 +1,10 @@
 import { useEffect, useId, useState, type FormEvent } from "react";
+import { ImagePlus, X } from "lucide-react";
 import { listSubfolders } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { Modal } from "../../shared/ui";
+import { Button, Modal } from "../../shared/ui";
+import { ArtPicker, useLibraryStore } from "../library";
+import { CampaignCover } from "./CampaignCover";
 import { useCampaignStore } from "./store";
 import type { Campaign, CampaignInput } from "./types";
 import { validateCampaignInput } from "./validation";
@@ -43,7 +46,15 @@ export function CampaignForm({ campaign, libraryRoot, onClose }: CampaignFormPro
     name: campaign?.name ?? "",
     system: campaign?.system ?? "",
     description: campaign?.description ?? "",
+    coverArtId: campaign?.coverArtId ?? null,
   });
+  const [picking, setPicking] = useState(false);
+  const openLibrary = useLibraryStore((s) => s.open);
+
+  // The cover preview needs the library index.
+  useEffect(() => {
+    if (libraryRoot) void openLibrary(libraryRoot);
+  }, [openLibrary, libraryRoot]);
   const [showErrors, setShowErrors] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -69,7 +80,7 @@ export function CampaignForm({ campaign, libraryRoot, onClose }: CampaignFormPro
     }
   }
 
-  const field = (key: keyof CampaignInput) => ({
+  const field = (key: "name" | "system" | "description") => ({
     value: input[key],
     onChange: (e: { target: { value: string } }) => setInput({ ...input, [key]: e.target.value }),
   });
@@ -113,8 +124,47 @@ export function CampaignForm({ campaign, libraryRoot, onClose }: CampaignFormPro
           <span>{ru.campaign.description}</span>
           <textarea {...field("description")} rows={4} />
         </label>
+        <div className="field">
+          <span>{ru.campaign.cover}</span>
+          <div className="cover-field">
+            <CampaignCover
+              name={input.name}
+              coverArtId={input.coverArtId}
+              libraryRoot={libraryRoot}
+            />
+            <div className="cover-field-actions">
+              {libraryRoot && (
+                <Button icon={ImagePlus} size="sm" onClick={() => setPicking(true)}>
+                  {ru.campaign.coverPick}
+                </Button>
+              )}
+              {input.coverArtId && (
+                <Button
+                  icon={X}
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setInput({ ...input, coverArtId: null })}
+                >
+                  {ru.campaign.coverRemove}
+                </Button>
+              )}
+              <small className="hint">{ru.campaign.coverHint}</small>
+            </div>
+          </div>
+        </div>
         {saveError && <p className="error">{saveError}</p>}
       </form>
+      {picking && libraryRoot && (
+        <ArtPicker
+          libraryRoot={libraryRoot}
+          preferredSystem={input.system.trim() || null}
+          onPick={(art) => {
+            setInput({ ...input, coverArtId: art.id });
+            setPicking(false);
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
     </Modal>
   );
 }
