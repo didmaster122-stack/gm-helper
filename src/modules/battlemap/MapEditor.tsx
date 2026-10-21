@@ -166,14 +166,25 @@ export function MapEditor({ types, objectDefs }: MapEditorProps) {
 
   return (
     <div className="map-editor">
-      <div className="toolbar map-toolbar">
-        <IconButton icon={ArrowLeft} label={ru.battlemap.back} onClick={() => void close()} />
-        <div className="toolbar-title">
+      <header className="map-editor-head">
+        <button type="button" className="map-editor-back" onClick={() => void close()}>
+          <ArrowLeft aria-hidden />
+          {ru.battlemap.title}
+        </button>
+        <div className="map-editor-title">
+          <h1>{map.name}</h1>
           {map.isTemplate && <span className="badge accent">{ru.battlemap.templates.badge}</span>}
-          <span>{map.name}</span>
           <span className="badge">{ru.battlemap.sizeCells(model.width, model.height)}</span>
+          <SaveIndicator state={saveState} />
+          <span className="spacer" />
+          {notice && <span className="notice-text">{notice}</span>}
+          <Button variant="primary" icon={Download} onClick={() => setExporting(true)}>
+            {ru.battlemap.export.button}
+          </Button>
         </div>
-        <div className="toolbar-sep" />
+      </header>
+
+      <div className="toolbar map-toolbar">
         <Segmented
           label={ru.battlemap.toolsLabel}
           value={tool}
@@ -236,12 +247,6 @@ export function MapEditor({ types, objectDefs }: MapEditorProps) {
             }
           />
         )}
-        <span className="spacer" />
-        {notice && <span className="notice-text">{notice}</span>}
-        <SaveIndicator state={saveState} />
-        <Button icon={Download} onClick={() => setExporting(true)}>
-          {ru.battlemap.export.button}
-        </Button>
       </div>
 
       <div className="map-body">

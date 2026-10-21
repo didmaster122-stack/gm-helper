@@ -6,10 +6,6 @@
 
 /* ---- Gallery ---- */
 
-.map-list-screen .screen-heading {
-  flex-wrap: wrap;
-}
-
 .gallery-search {
   width: 260px;
 }
@@ -24,25 +20,14 @@
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 16px;
+  gap: 28px 20px;
 }
 
+/* No card frame: the preview, the name and the actions on hover. */
 .map-card {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  overflow: hidden;
-  transition:
-    box-shadow var(--duration) var(--ease),
-    border-color var(--duration) var(--ease);
-}
-
-.map-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-md);
+  gap: 10px;
 }
 
 .map-card-open {
@@ -51,14 +36,18 @@
   min-height: 0;
   padding: 0;
   border: none;
-  border-bottom: 1px solid var(--border);
-  border-radius: 0;
+  border-radius: var(--radius-md);
   box-shadow: none;
   background: var(--canvas);
+  overflow: hidden;
 }
 
 .map-card-open:hover:not(:disabled) {
   background: var(--canvas);
+}
+
+.map-card-open:hover .map-card-preview {
+  filter: brightness(1.06);
 }
 
 .map-card-preview {
@@ -92,10 +81,10 @@
   flex-direction: column;
   flex: 1;
   gap: 6px;
-  padding: 12px 12px 10px;
 }
 
 .map-card-title {
+  font-size: var(--text-lg);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -132,7 +121,12 @@ button.tag:hover:not(:disabled) {
   align-items: center;
   gap: 2px;
   margin-top: auto;
-  padding-top: 6px;
+  transition: opacity var(--duration) var(--ease);
+}
+
+/* Map actions show on hover; a template keeps "Create map" in sight. */
+.map-gallery.maps .map-card:not(:hover, :focus-within) .map-card-actions {
+  opacity: 0;
 }
 
 /* ---- Editor ---- */
@@ -144,13 +138,59 @@ button.tag:hover:not(:disabled) {
   min-height: 0;
 }
 
+/* A compact screen header: the canvas needs the height more than a 38 px title. */
+.map-editor-head {
+  flex: none;
+  padding: 14px 24px 12px;
+}
+
+.map-editor-back {
+  gap: 4px;
+  min-height: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--text-sm);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.map-editor-back:hover:not(:disabled) {
+  background: transparent;
+  color: var(--text);
+}
+
+.map-editor-back > svg {
+  width: 14px;
+  height: 14px;
+}
+
+.map-editor-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin-top: 2px;
+}
+
+.map-editor-title h1 {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-title);
+  line-height: 1.2;
+}
+
 .map-toolbar {
   flex-wrap: nowrap;
   overflow-x: auto;
-}
-
-.map-toolbar .toolbar-title {
-  flex-shrink: 1;
+  min-height: 48px;
+  padding: 6px 24px;
+  background: transparent;
+  border-top: 1px solid var(--border);
 }
 
 .save-state {
@@ -214,7 +254,6 @@ button.tag:hover:not(:disabled) {
   flex-direction: column;
   width: 220px;
   flex: none;
-  background: var(--surface);
   border-right: 1px solid var(--border);
 }
 
@@ -340,6 +379,7 @@ button.tag:hover:not(:disabled) {
 .map-side {
   width: 284px;
   gap: 20px;
+  background: transparent;
 }
 
 .map-side-section .hint {
