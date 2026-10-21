@@ -6,6 +6,17 @@ import { useCampaignStore } from "../modules/campaigns";
 export type ModuleId =
   "library" | "battlemaps" | "relations" | "timeline" | "notes" | "music" | "settings";
 
+/** Folded spine is a per-machine view preference, like the theme. */
+const SIDEBAR_KEY = "gm-helper.sidebarCollapsed";
+
+function readSidebarCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind: "ready" };
 
 interface AppState {
@@ -17,23 +28,31 @@ interface AppState {
   musicRoot: string | null;
   musicRootMissing: boolean;
   module: ModuleId;
+  /** The welcome screen is shown instead of the current section (on start and from the spine). */
+  welcome: boolean;
+  sidebarCollapsed: boolean;
   init: () => Promise<void>;
   setLibraryRoot: (path: string) => Promise<void>;
   setMusicRoot: (path: string) => Promise<void>;
+  /** Shows the section, leaving the welcome screen. */
   setModule: (module: ModuleId) => void;
+  openWelcome: () => void;
+  toggleSidebar: () => void;
 }
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-export const useAppStore = create<AppState>((set) => ({
+export const useAppStore = create<AppState>((set, get) => ({
   status: { kind: "loading" },
   libraryRoot: null,
   libraryRootMissing: false,
   musicRoot: null,
   musicRootMissing: false,
   module: "library",
+  welcome: true,
+  sidebarCollapsed: readSidebarCollapsed(),
 
   async init() {
     set({ status: { kind: "loading" } });
@@ -67,6 +86,20 @@ export const useAppStore = create<AppState>((set) => ({
   },
 
   setModule(module) {
-    set({ module });
+    set({ module, welcome: false });
+  },
+
+  openWelcome() {
+    set({ welcome: true });
+  },
+
+  toggleSidebar() {
+    const sidebarCollapsed = !get().sidebarCollapsed;
+    try {
+      localStorage.setItem(SIDEBAR_KEY, sidebarCollapsed ? "1" : "0");
+    } catch {
+      // Not saved, but still applied for this run.
+    }
+    set({ sidebarCollapsed });
   },
 }));

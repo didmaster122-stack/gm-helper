@@ -37,7 +37,7 @@ describe("campaign repo", () => {
   it("creates a campaign with trimmed fields", async () => {
     const c = await createCampaign(
       db,
-      { name: "  Проклятие Страда ", system: " D&D 5e ", description: "" },
+      { name: "  Проклятие Страда ", system: " D&D 5e ", description: "", coverArtId: null },
       clock,
     );
 
@@ -46,10 +46,26 @@ describe("campaign repo", () => {
   });
 
   it("lists active campaigns first, then by name ignoring case", async () => {
-    const b = await createCampaign(db, { name: "бета", system: "PF2e", description: "" }, clock);
-    await createCampaign(db, { name: "Альфа", system: "PF2e", description: "" }, clock);
-    await createCampaign(db, { name: "Гамма", system: "PF2e", description: "" }, clock);
-    await createCampaign(db, { name: "вега", system: "PF2e", description: "" }, clock);
+    const b = await createCampaign(
+      db,
+      { name: "бета", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
+    await createCampaign(
+      db,
+      { name: "Альфа", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
+    await createCampaign(
+      db,
+      { name: "Гамма", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
+    await createCampaign(
+      db,
+      { name: "вега", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
     await setCampaignArchived(db, b.id, true, clock);
 
     const names = (await listCampaigns(db)).map((c) => c.name);
@@ -58,35 +74,83 @@ describe("campaign repo", () => {
   });
 
   it("updates fields and bumps updatedAt", async () => {
-    const c = await createCampaign(db, { name: "Старое", system: "PF2e", description: "" }, clock);
+    const c = await createCampaign(
+      db,
+      { name: "Старое", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
 
     await updateCampaign(
       db,
       c.id,
-      { name: "Новое", system: "D&D 5e", description: "Описание" },
+      { name: "Новое", system: "D&D 5e", description: "Описание", coverArtId: null },
       clock,
     );
 
     const updated = await getCampaign(db, c.id);
-    expect(updated).toMatchObject({ name: "Новое", system: "D&D 5e", description: "Описание" });
+    expect(updated).toMatchObject({
+      name: "Новое",
+      system: "D&D 5e",
+      description: "Описание",
+      coverArtId: null,
+    });
     expect(updated!.updatedAt > c.updatedAt).toBe(true);
     expect(updated!.createdAt).toBe(c.createdAt);
   });
 
   it("rejects invalid input", async () => {
     await expect(
-      createCampaign(db, { name: " ", system: "PF2e", description: "" }),
+      createCampaign(db, { name: " ", system: "PF2e", description: "", coverArtId: null }),
     ).rejects.toThrow(/nameRequired/);
   });
 
   it("deletes a campaign", async () => {
-    const c = await createCampaign(db, { name: "Удалить", system: "PF2e", description: "" }, clock);
+    const c = await createCampaign(
+      db,
+      { name: "Удалить", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
     await deleteCampaign(db, c.id);
     expect(await getCampaign(db, c.id)).toBeNull();
   });
 
+  it("keeps the cover art", async () => {
+    const c = await createCampaign(
+      db,
+      { name: "К", system: "PF2e", description: "", coverArtId: "art-1" },
+      clock,
+    );
+    expect((await getCampaign(db, c.id))?.coverArtId).toBe("art-1");
+    await updateCampaign(db, c.id, { ...c, coverArtId: null }, clock);
+    expect((await getCampaign(db, c.id))?.coverArtId).toBeNull();
+  });
+
+  it("deletes the campaign's sessions with it", async () => {
+    const c = await createCampaign(
+      db,
+      { name: "К", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
+    const session = `INSERT INTO sessions (id, campaign_id, number, created_at, updated_at)
+      VALUES (?, ?, 1, '', '')`;
+    await db.execute(session, ["s1", c.id]);
+    await db.execute(session, ["s2", "other"]);
+    const item = `INSERT INTO session_prep_items (id, session_id, text, position) VALUES (?, ?, 'П', 0)`;
+    await db.execute(item, ["i1", "s1"]);
+    await db.execute(item, ["i2", "s2"]);
+    await deleteCampaign(db, c.id);
+    const sessions = await db.select<{ id: string }>("SELECT id FROM sessions");
+    const items = await db.select<{ id: string }>("SELECT id FROM session_prep_items");
+    expect(sessions.map((r) => r.id)).toEqual(["s2"]);
+    expect(items.map((r) => r.id)).toEqual(["i2"]);
+  });
+
   it("deletes the campaign's maps with it", async () => {
-    const c = await createCampaign(db, { name: "К", system: "PF2e", description: "" }, clock);
+    const c = await createCampaign(
+      db,
+      { name: "К", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
     const insert = `INSERT INTO battlemaps (id, campaign_id, name, width, height, data, created_at, updated_at)
       VALUES (?, ?, 'Карта', 5, 5, '{}', '', '')`;
     await db.execute(insert, ["m1", c.id]);
@@ -97,7 +161,11 @@ describe("campaign repo", () => {
   });
 
   it("deletes the campaign's relation graph with it", async () => {
-    const c = await createCampaign(db, { name: "К", system: "PF2e", description: "" }, clock);
+    const c = await createCampaign(
+      db,
+      { name: "К", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
     const character = `INSERT INTO characters (id, campaign_id, name, kind, status, created_at, updated_at)
       VALUES (?, ?, 'Имя', 'npc', 'alive', '', '')`;
     await db.execute(character, ["c1", c.id]);
@@ -122,7 +190,11 @@ describe("campaign repo", () => {
   });
 
   it("deletes the campaign's timeline with it", async () => {
-    const c = await createCampaign(db, { name: "К", system: "PF2e", description: "" }, clock);
+    const c = await createCampaign(
+      db,
+      { name: "К", system: "PF2e", description: "", coverArtId: null },
+      clock,
+    );
     await db.execute("INSERT INTO timelines (campaign_id, session_count) VALUES (?, 3)", [c.id]);
     await db.execute(
       `INSERT INTO timeline_lanes (id, campaign_id, kind, sort, created_at, updated_at)
@@ -163,7 +235,9 @@ describe("validateCampaignInput", () => {
     [{ name: "Ок", system: "_tokens" }, ["systemInvalid"]],
     [{ name: "Ок", system: "D&D 5e" }, []],
   ])("%o → %o", (input, expected) => {
-    expect(validateCampaignInput({ description: "", ...input })).toEqual(expected);
+    expect(validateCampaignInput({ description: "", coverArtId: null, ...input })).toEqual(
+      expected,
+    );
   });
 });
 
@@ -176,6 +250,7 @@ describe("campaignInsertStatement", () => {
       name: " Тьма O'Hara ",
       system: "D&D 5e",
       description: "",
+      coverArtId: "art-1",
       archived: false,
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-10-21T00:00:00.000Z",

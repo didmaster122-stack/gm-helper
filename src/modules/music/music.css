@@ -24,13 +24,21 @@
   background: var(--bg);
 }
 
-.music-toolbar {
-  flex-wrap: nowrap;
+/* The catalog header has no tools row: the rule under it comes from here. */
+.music > .screen-head {
+  border-bottom: 1px solid var(--border);
 }
 
 .music-search {
-  flex: 0 1 320px;
-  min-width: 160px;
+  width: 260px;
+}
+
+.music-status {
+  color: var(--text-muted);
+}
+
+.screen-header-summary .badge {
+  margin-left: 8px;
 }
 
 /* ---- Track list ---- */
@@ -373,16 +381,14 @@ button.play-button {
   width: 96px;
 }
 
-/* ---- Mini player in the sidebar ---- */
+/* ---- Mini player in the spine (colours come from the spine's scope) ---- */
 
 .mini-player {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 8px;
-  padding: 8px;
+  gap: 2px;
+  padding: 10px;
   background: var(--surface-2);
-  border: 1px solid var(--border);
   border-radius: var(--radius-md);
 }
 
@@ -394,19 +400,19 @@ button.play-button {
   border: none;
   background: transparent;
   box-shadow: none;
-  font-size: var(--text-md);
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
 .mini-title:hover:not(:disabled) {
   background: transparent;
-  color: var(--accent-text);
+  text-decoration: underline;
 }
 
 .mini-title > svg {
   width: 14px;
   height: 14px;
-  color: var(--accent-text);
+  color: var(--text-muted);
 }
 
 .mini-title > span {
@@ -414,8 +420,18 @@ button.play-button {
   text-overflow: ellipsis;
 }
 
-.mini-player .seek-bar {
+.mini-seek .seek-bar {
+  display: block;
   width: 100%;
+}
+
+.mini-times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -2px;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
 }
 
 .mini-controls {
@@ -426,17 +442,6 @@ button.play-button {
 
 .volume.compact .volume-bar {
   width: 56px;
-}
-
-/* ---- Tabs: listen / edit ---- */
-
-.music-tabs {
-  display: flex;
-  align-items: center;
-  flex: none;
-  padding: 8px 12px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
 }
 
 .track-main-actions {
@@ -455,15 +460,6 @@ button.play-button {
   background: var(--bg);
 }
 
-.editor-toolbar {
-  flex: none;
-}
-
-/* Stays at the right edge, also when the toolbar wraps in a narrow window. */
-.editor-save {
-  margin-left: auto;
-}
-
 .editor-time {
   min-width: 96px;
   padding: 0 4px;
@@ -477,7 +473,7 @@ button.play-button {
   flex-direction: column;
   gap: 12px;
   min-height: 0;
-  padding: 12px;
+  padding: 16px 32px;
   overflow-y: auto;
 }
 

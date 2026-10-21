@@ -282,3 +282,8 @@ export const useEditorStore = create<EditorState>((set, get) => {
     flush: save,
   };
 });
+
+/** Opens the map in the battlemap section (it is shown when its campaign is the active one). */
+export function showMap(id: string): Promise<void> {
+  return useEditorStore.getState().openById(id);
+}

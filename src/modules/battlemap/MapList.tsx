@@ -18,9 +18,10 @@ import {
   Button,
   ConfirmDialog,
   EmptyState,
+  FilterChips,
   IconButton,
+  ScreenHeader,
   SearchInput,
-  Segmented,
 } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { useCellTypeStore } from "./cellTypeStore";
@@ -112,27 +113,19 @@ export function MapList({ campaign }: { campaign: Campaign }) {
 
   return (
     <div className="screen wide map-list-screen">
-      <div className="screen-heading">
-        <h1>{ru.battlemap.title}</h1>
-        <Segmented
-          value={tab}
-          onChange={setTab}
-          options={(["maps", "templates"] as const satisfies readonly GalleryTab[]).map((t) => ({
-            value: t,
-            label: ru.battlemap.gallery.tabs[t],
-            icon: t === "maps" ? MapIcon : LayoutTemplate,
-          }))}
-        />
-        <span className="spacer" />
-        <SearchInput
-          wrapperClassName="gallery-search"
-          screenSearch
-          placeholder={ru.battlemap.gallery.search}
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        {tab === "maps" && (
+      <ScreenHeader
+        title={ru.battlemap.title}
+        path={[campaign.name]}
+        summary={ru.battlemap.gallery.summary(maps.length, templates.length)}
+        actions={
           <>
+            <SearchInput
+              wrapperClassName="gallery-search"
+              screenSearch
+              placeholder={ru.battlemap.gallery.search}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
             <Button icon={Upload} onClick={() => void importFile()}>
               {ru.battlemap.import.button}
             </Button>
@@ -140,7 +133,18 @@ export function MapList({ campaign }: { campaign: Campaign }) {
               {ru.battlemap.newMap}
             </Button>
           </>
-        )}
+        }
+      />
+      <div className="screen-tools">
+        <FilterChips
+          label={ru.battlemap.gallery.tabsLabel}
+          value={tab}
+          onChange={setTab}
+          options={(["maps", "templates"] as const satisfies readonly GalleryTab[]).map((t) => ({
+            value: t,
+            label: ru.battlemap.gallery.tabs[t],
+          }))}
+        />
       </div>
       {error && (
         <div className="notice error">
@@ -162,11 +166,6 @@ export function MapList({ campaign }: { campaign: Campaign }) {
             icon={MapIcon}
             title={ru.battlemap.emptyTitle}
             text={ru.battlemap.emptyText}
-            action={
-              <Button variant="primary" icon={Plus} onClick={() => setForm({ kind: "new" })}>
-                {ru.battlemap.newMap}
-              </Button>
-            }
           />
         ) : (
           <EmptyState
@@ -178,7 +177,7 @@ export function MapList({ campaign }: { campaign: Campaign }) {
       ) : shown.length === 0 ? (
         <EmptyState compact icon={SearchX} title={ru.battlemap.gallery.noResults(query.trim())} />
       ) : (
-        <ul className="map-gallery">
+        <ul className={`map-gallery ${tab}`}>
           {shown.map((m) => (
             <li key={m.id} className="map-card">
               <button
@@ -220,7 +219,6 @@ export function MapList({ campaign }: { campaign: Campaign }) {
                   {tab === "templates" ? (
                     <Button
                       size="sm"
-                      variant="primary"
                       icon={Plus}
                       onClick={() => setForm({ kind: "fromTemplate", template: m })}
                     >

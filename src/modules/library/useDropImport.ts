@@ -1,5 +1,5 @@
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ru } from "../../shared/i18n/ru";
 import type { ImportItem } from "./domain/importPlan";
 import { joinRel } from "./domain/paths";
@@ -12,7 +12,7 @@ export interface PendingImport {
 }
 
 /**
- * Files dropped onto the window are copied into the selected group.
+ * Files dropped onto the window (or picked with `importPaths`) are copied into the selected group.
  * Returns drag state, a pending import with conflicts (needs a dialog) and a status message.
  */
 export function useDropImport() {
@@ -20,7 +20,7 @@ export function useDropImport() {
   const [pending, setPending] = useState<PendingImport | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
-  async function execute(folder: string, items: ImportItem[], rename: boolean) {
+  const execute = useCallback(async (folder: string, items: ImportItem[], rename: boolean) => {
     const { root, sync } = useLibraryStore.getState();
     if (!root) return;
     const { copied, failed } = await runImport(root, folder, items, rename);
@@ -35,7 +35,28 @@ export function useDropImport() {
         .join(" · "),
     );
     await sync();
-  }
+  }, []);
+
+  /** Copies files into the selected group, asking about name conflicts first. */
+  const importPaths = useCallback(
+    async (paths: readonly string[]) => {
+      const { root, selection } = useLibraryStore.getState();
+      if (!root || paths.length === 0) return;
+      if (selection.kind !== "group") {
+        setNotice(ru.library.dropNeedGroup);
+        return;
+      }
+      const folder = joinRel(selection.system, selection.group);
+      try {
+        const items = await prepareImport(root, folder, paths);
+        if (items.some((i) => i.conflict)) setPending({ folder, items });
+        else await execute(folder, items, false);
+      } catch (error) {
+        setNotice(String(error));
+      }
+    },
+    [execute],
+  );
 
   useEffect(() => {
     let disposed = false;
@@ -50,20 +71,7 @@ export function useDropImport() {
         setDragging(false);
         if (payload.type !== "drop" || payload.paths.length === 0) return;
 
-        const { root, selection } = useLibraryStore.getState();
-        if (!root) return;
-        if (selection.kind !== "group") {
-          setNotice(ru.library.dropNeedGroup);
-          return;
-        }
-        const folder = joinRel(selection.system, selection.group);
-        try {
-          const items = await prepareImport(root, folder, payload.paths);
-          if (items.some((i) => i.conflict)) setPending({ folder, items });
-          else await execute(folder, items, false);
-        } catch (error) {
-          setNotice(String(error));
-        }
+        await importPaths(payload.paths);
       })
       .then((fn) => {
         if (disposed) fn();
@@ -74,12 +82,13 @@ export function useDropImport() {
       disposed = true;
       unlisten?.();
     };
-  }, []);
+  }, [importPaths]);
 
   return {
     dragging,
     pending,
     notice,
+    importPaths,
     clearNotice: () => setNotice(null),
     resolvePending: async (rename: boolean) => {
       if (pending) await execute(pending.folder, pending.items, rename);

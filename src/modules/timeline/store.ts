@@ -36,6 +36,13 @@ interface TimelineState {
 /** Saves run one after another, in the order of the edits. */
 let saving: Promise<void> = Promise.resolve();
 
+/** An event to show once its campaign is loaded (see `showEvent`). */
+let requested: { campaignId: string; id: string } | null = null;
+
+function shown(id: string) {
+  return { selection: { kind: "event" as const, id }, focusId: id };
+}
+
 function idSource(campaignId: string): IdSource {
   return { campaignId, now: new Date().toISOString(), newId: () => crypto.randomUUID() };
 }
@@ -90,8 +97,11 @@ export const useTimelineStore = create<TimelineState>((set, get) => {
         const stored = await repo.loadTimeline(db, campaignId);
         const timeline = ensureDefaults(stored, ru.timeline.sideLane, idSource(campaignId));
         if (timeline !== stored) await repo.saveTimelineChange(db, campaignId, stored, timeline);
-        if (get().campaignId === campaignId) {
-          set({ history: initHistory(timeline), status: "ready" });
+        if (get().campaignId !== campaignId) return;
+        set({ history: initHistory(timeline), status: "ready" });
+        if (requested?.campaignId === campaignId) {
+          set(shown(requested.id));
+          requested = null;
         }
       } catch (error) {
         console.error("Failed to load timeline", error);
@@ -127,7 +137,15 @@ export function useTimeline(): Timeline {
   return useTimelineStore((s) => s.history.present);
 }
 
-/** Selects an event and centres the timeline on it when it is shown next. */
-export function showEvent(id: string): void {
-  useTimelineStore.setState({ selection: { kind: "event", id }, focusId: id });
+/**
+ * Selects an event and centres the view on it when it is shown next. An event of a campaign
+ * that is not loaded yet is selected after loading.
+ */
+export function showEvent(campaignId: string, id: string): void {
+  if (useTimelineStore.getState().campaignId === campaignId) {
+    requested = null;
+    useTimelineStore.setState(shown(id));
+  } else {
+    requested = { campaignId, id };
+  }
 }

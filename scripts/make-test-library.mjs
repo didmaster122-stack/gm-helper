@@ -1,4 +1,5 @@
-// Generates a test art library: node make-test-library.mjs <outDir>
+// Generates a test art library: node make-test-library.mjs <outDir> [variants]
+// 30 variants (default) give ~1400 arts, 210 give ~10 000.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { deflateSync } from "node:zlib";
@@ -78,7 +79,7 @@ const layout = {
 
 let seed = 1;
 let count = 0;
-const variants = 30;
+const variants = Number(process.argv[3] ?? 30);
 for (const [system, groups] of Object.entries(layout)) {
   for (const [group, names] of Object.entries(groups)) {
     const dir = join(out, system, group);

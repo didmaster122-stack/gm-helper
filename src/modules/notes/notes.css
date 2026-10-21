@@ -3,7 +3,27 @@
 .notes {
   position: relative;
   display: flex;
+  flex-direction: column;
   height: 100%;
+  min-height: 0;
+}
+
+.notes-head {
+  flex: none;
+  padding: 28px 32px 0;
+}
+
+.notes-head .screen-header {
+  margin-bottom: 18px;
+}
+
+.notes-search {
+  width: 260px;
+}
+
+.notes-body {
+  flex: 1;
+  display: flex;
   min-height: 0;
 }
 
@@ -15,25 +35,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--surface);
   border-right: 1px solid var(--border);
-}
-
-.notes-sidebar-head {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-.notes-create {
-  display: flex;
-  gap: 6px;
-}
-
-.notes-create > button:first-child {
-  flex: 1;
 }
 
 .notes-filters,
@@ -41,6 +43,13 @@
   display: flex;
   align-items: center;
   gap: 6px;
+}
+
+.notes-head .notes-filters {
+  gap: 8px;
+  margin: 0 -32px;
+  padding: 0 32px 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .notes-dropdown {
@@ -60,7 +69,7 @@
   overflow-y: auto;
   list-style: none;
   margin: 0;
-  padding: 6px;
+  padding: 12px 12px 12px 24px;
 }
 
 .note-row {
@@ -144,7 +153,8 @@
 }
 
 .notes-selection {
-  padding: 8px 12px;
+  flex-wrap: wrap;
+  padding: 8px 12px 8px 24px;
   border-top: 1px solid var(--border);
 }
 
@@ -171,7 +181,6 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: var(--bg);
 }
 
 .notes-main > .notice {
@@ -206,16 +215,17 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 12px 16px 4px;
+  padding: 16px 24px 4px;
 }
 
 input.note-title {
   flex: 1;
   min-width: 0;
   height: auto;
-  padding: 4px 8px;
-  font-size: var(--text-xl);
-  font-weight: 600;
+  padding: 2px 8px;
+  font-family: var(--font-display);
+  font-size: var(--text-title);
+  font-weight: 700;
   background: transparent;
   border-color: transparent;
   box-shadow: none;
@@ -236,7 +246,7 @@ input.note-title:focus {
   flex-wrap: wrap;
   align-items: center;
   gap: 4px;
-  padding: 0 16px 10px 24px;
+  padding: 0 24px 10px 32px;
 }
 
 .tag-picker {
@@ -276,7 +286,12 @@ input.note-title:focus {
   flex-direction: column;
 }
 
-.note-editor-toolbar {
+/* Editor and PDF tools sit on the page, not on a panel of their own. */
+.note-editor-toolbar,
+.pdf-toolbar {
+  min-height: 48px;
+  padding: 6px 24px;
+  background: transparent;
   border-top: 1px solid var(--border);
 }
 
@@ -466,7 +481,6 @@ input.note-title:focus {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-top: 1px solid var(--border);
 }
 
 .pdf-toolbar .search-input {

@@ -1,4 +1,6 @@
 // All user-facing strings. Components must not contain literal UI text.
+import type { RecentKind } from "../db/recentRepo";
+import type { SearchKind } from "../search/global";
 import type { CampaignInputError } from "../../modules/campaigns/types";
 import type {
   BuiltinRelationTypeId,
@@ -13,6 +15,17 @@ import type {
 } from "../../modules/timeline/domain/types";
 
 const CREATURE_NAMES = ["Средний", "Большой", "Огромный", "Громадный"];
+
+/** Russian plural: `plural(3, "день", "дня", "дней")` → "дня". */
+function plural(n: number, one: string, few: string, many: string): string {
+  const n10 = Math.abs(n) % 10;
+  const n100 = Math.abs(n) % 100;
+  if (n10 === 1 && n100 !== 11) return one;
+  if (n10 >= 2 && n10 <= 4 && (n100 < 12 || n100 > 14)) return few;
+  return many;
+}
+
+const days = (n: number) => `${n} ${plural(n, "день", "дня", "дней")}`;
 
 export const ru = {
   appName: "GM Helper",
@@ -33,6 +46,8 @@ export const ru = {
     system: "Как в системе",
     light: "Светлая",
     dark: "Тёмная",
+    toLight: "Светлая тема",
+    toDark: "Тёмная тема",
   },
   shortcuts: {
     title: "Горячие клавиши",
@@ -42,10 +57,12 @@ export const ru = {
     musicEditor: "Редактор музыки",
     battlemap: "Баттлмап",
     keys: {
-      modules: "Перейти к разделу",
+      modules: "Перейти к разделу (по порядку в боковой панели)",
+      sidebar: "Свернуть / развернуть боковую панель",
       playPause: "Музыка: пауза / воспроизведение (в разделе «Музыка»)",
       settings: "Настройки",
       search: "Поиск на экране",
+      globalSearch: "Общий поиск: разделы, команды и объекты всех кампаний",
       help: "Список горячих клавиш",
       undo: "Отменить",
       redo: "Повторить",
@@ -63,6 +80,35 @@ export const ru = {
       home: "Курсор в начало / в конец",
     },
   },
+  search: {
+    open: "Общий поиск",
+    placeholder: "Разделы, команды, персонажи, заметки, события, арты…",
+    recent: "Недавнее в кампании",
+    recentEmpty: "Начните вводить — найдутся разделы, команды и объекты всех кампаний.",
+    nothing: "Ничего не найдено",
+    loadFailed: "Не удалось загрузить данные для поиска",
+    openFailed: "Не удалось открыть: возможно, объект удалён",
+    more: (n: number) => `ещё ${n}`,
+    hint: "↑ ↓ — выбрать, Enter — открыть, Esc — закрыть",
+    groups: {
+      command: "Разделы и команды",
+      character: "Персонажи",
+      faction: "Фракции",
+      event: "События",
+      note: "Заметки",
+      battlemap: "Баттлмапы",
+      art: "Арты",
+    } satisfies Record<SearchKind, string>,
+    section: "Раздел",
+    command: "Команда",
+    commands: {
+      welcome: "Приветственный экран",
+      newNote: "Новая заметка",
+      help: "Горячие клавиши",
+      theme: "Сменить тему оформления",
+      sidebar: "Свернуть / развернуть боковую панель",
+    },
+  },
   nav: {
     library: "Библиотека",
     battlemaps: "Баттлмапы",
@@ -71,6 +117,53 @@ export const ru = {
     notes: "Заметки",
     music: "Музыка",
     settings: "Настройки",
+    groups: {
+      prep: "Подготовка",
+      world: "Мир кампании",
+      table: "За столом",
+    },
+    sections: "Разделы",
+    collapse: "Свернуть панель",
+    expand: "Развернуть панель",
+  },
+  dates: {
+    today: "сегодня",
+    yesterday: "вчера",
+    tomorrow: "завтра",
+    todayAt: (time: string) => `сегодня, ${time}`,
+    /** Genitive, for "19 окт". */
+    monthsShort: [
+      "янв",
+      "фев",
+      "мар",
+      "апр",
+      "мая",
+      "июн",
+      "июл",
+      "авг",
+      "сен",
+      "окт",
+      "ноя",
+      "дек",
+    ],
+    /** Nominative, for "май 2025". */
+    months: [
+      "январь",
+      "февраль",
+      "март",
+      "апрель",
+      "май",
+      "июнь",
+      "июль",
+      "август",
+      "сентябрь",
+      "октябрь",
+      "ноябрь",
+      "декабрь",
+    ],
+    weekdays: ["воскресенье", "понедельник", "вторник", "среда", "четверг", "пятница", "суббота"],
+    inDays: (n: number) => `через ${days(n)}`,
+    daysAgo: (n: number) => `${days(n)} назад`,
   },
   startup: {
     errorTitle: "Не удалось запустить приложение",
@@ -78,16 +171,65 @@ export const ru = {
   firstRun: {
     title: "Добро пожаловать в GM Helper",
     text: "Выберите папку библиотеки артов. Внутри неё будут папки систем, в них — группы существ и фракций, а в группах — арты.",
-    structureHint: "Система / Группа / арт.png",
+    eyebrow: "Первый запуск",
+    missingEyebrow: "Библиотека",
+    structureTitle: "Как устроена библиотека",
+    structureExample: [
+      "Библиотека/",
+      "  D&D 5e/",
+      "    Нежить/",
+      "      лич.png",
+      "      скелет-лучник.webp",
+      "      _tokens/        токены, их делает приложение",
+      "    Гильдия воров/",
+      "  Pathfinder 2e/",
+    ].join("\n"),
+    structureNote: "Система / Группа / арт. Арты остаются обычными файлами на диске.",
     pick: "Выбрать папку…",
     missingTitle: "Папка библиотеки не найдена",
     missingText: (path: string) =>
       `Папка «${path}» недоступна. Возможно, её переместили или отключили диск. Выберите папку заново.`,
     dialogTitle: "Папка библиотеки артов",
   },
+  welcome: {
+    continue: "Продолжить",
+    open: "Открыть кампанию",
+    recent: "Недавнее в кампании",
+    recentEmpty:
+      "Здесь появятся баттлмапы, заметки, арты, события и персонажи, которые вы открывали.",
+    openFailed: "Не удалось открыть: возможно, объект удалён",
+    kinds: {
+      battlemap: "Баттлмап",
+      note: "Заметка",
+      art: "Арт",
+      event: "Событие",
+      character: "Персонаж",
+    } satisfies Record<RecentKind, string>,
+    helpHint: "Горячие клавиши",
+    others: "Другие кампании",
+    campaigns: "Кампании",
+    newCampaignText: "Выбрать систему и начать",
+    lastWas: (n: number, when: string) => `сессия ${n} была ${when}`,
+    lastNumber: (n: number) => `сессия ${n}`,
+    nextIn: (when: string) => `следующая ${when}`,
+    nextOn: (day: string) => `следующая — ${day}`,
+    nextNoDate: "следующая без даты",
+    noSessions: "сессий ещё не было",
+    firstTitle: "Первая кампания",
+    firstText:
+      "Кампания объединяет баттлмапы, заметки, персонажей, хронологию и сессии. Библиотека артов общая для всех кампаний.",
+    firstCreate: "Создать кампанию",
+    allDoneTitle: "Все кампании завершены",
+    allDoneText: "Верните кампанию из архива или начните новую.",
+    rightEmpty: "Здесь появятся ближайшая сессия и другие кампании.",
+    restoreTitle: "Вернуть кампанию из архива?",
+    restoreText: (name: string) => `Кампания «${name}» снова станет активной.`,
+    restore: "Вернуть",
+  },
   campaign: {
     switcherLabel: "Кампания",
     none: "Нет кампании",
+    all: "Все кампании",
     new: "Новая кампания",
     edit: "Редактировать кампанию",
     name: "Название",
@@ -95,6 +237,10 @@ export const ru = {
     systemHint:
       "Папка верхнего уровня в библиотеке. Можно ввести новую — папка будет создана позже.",
     description: "Описание",
+    cover: "Обложка",
+    coverPick: "Выбрать арт…",
+    coverRemove: "Убрать обложку",
+    coverHint: "Без арта обложка — цветной градиент по названию.",
     archived: "В архиве",
     active: "Активная",
     archive: "В архив",
@@ -103,7 +249,8 @@ export const ru = {
     deleteText: (name: string) =>
       `Кампания «${name}» и все её данные будут удалены без возможности восстановления. Арты в библиотеке не пострадают.`,
     needCampaignTitle: "Нет активной кампании",
-    needCampaignText: "Этот раздел относится к кампании. Создайте кампанию или выберите её сверху.",
+    needCampaignText:
+      "Этот раздел относится к кампании. Создайте кампанию или выберите её в боковой панели.",
     errors: {
       nameRequired: "Введите название",
       nameTooLong: "Слишком длинное название",
@@ -111,6 +258,47 @@ export const ru = {
       systemInvalid:
         'Недопустимое имя папки: нельзя использовать < > : " / \\ | ? * и начинать с «_» или «.»',
     } satisfies Record<CampaignInputError, string>,
+  },
+  sessions: {
+    session: (n: number) => `Сессия ${n}`,
+    spineLast: (n: number) => `сессия ${n}`,
+    spineNext: (n: number, when: string | null) =>
+      when ? `Сессия ${n} · ${when}` : `Сессия ${n} · без даты`,
+    spineSchedule: "Запланировать сессию",
+    next: "Ближайшая сессия",
+    noDate: "Дата не назначена",
+    date: "Дата сессии",
+    clearDate: "Убрать дату",
+    lastPlayed: (n: number) => `Сыграно сессий: ${n}`,
+    noneYet: "Сессий пока нет",
+    schedule: (n: number) => `Запланировать сессию ${n}`,
+    played: "Сессия сыграна",
+    playedLabel: "Сыграна",
+    plan: (n: number) => `План сессии ${n}`,
+    planTitle: (n: number) => `План сессии ${n}`,
+    planTag: (n: number) => `Сессия ${n}`,
+    planFailed: "Не удалось открыть план сессии",
+    saveFailed: "Не удалось сохранить изменения сессии",
+    loadFailed: "Не удалось загрузить сессии",
+    all: "Все сессии",
+    allTitle: "Сессии кампании",
+    number: "Номер",
+    numberTaken: "Такой номер уже есть",
+    numberInvalid: "Номер — целое число от 1",
+    deleteTitle: "Удалить сессию?",
+    deleteText: (n: number) =>
+      `Сессия ${n} и её чек-лист будут удалены. Заметка с планом останется в разделе «Заметки».`,
+    status: { prep: "Подготовка", running: "Идёт", finished: "Завершена" },
+    prep: {
+      title: "Подготовка",
+      progress: (done: number, total: number) => `${done} из ${total} готово`,
+      add: "Добавить пункт…",
+      item: "Пункт чек-листа",
+      up: "Выше",
+      down: "Ниже",
+      remove: "Удалить пункт",
+      empty: "Список пуст. Что нужно подготовить?",
+    },
   },
   music: {
     title: "Музыка",
@@ -135,7 +323,7 @@ export const ru = {
     syncing: "Сканирование…",
     syncProgress: (done: number, total: number) => `Чтение файлов: ${done} из ${total}`,
     syncErrors: (count: number) => `Не удалось прочитать: ${count}`,
-    count: (n: number) => `Треков: ${n}`,
+    count: (n: number) => `${n} ${plural(n, "трек", "трека", "треков")}`,
     playAll: "Слушать всё",
     emptyTitle: "Здесь пока пусто",
     emptyCollection:
@@ -202,6 +390,8 @@ export const ru = {
       openMusic: "Открыть раздел «Музыка»",
     },
     editor: {
+      summary: (sources: number, clips: number, duration: string) =>
+        `${sources} ${plural(sources, "источник", "источника", "источников")} · ${clips} ${plural(clips, "фрагмент", "фрагмента", "фрагментов")} · ${duration}`,
       addToEditor: "В редактор",
       addToEditorHint: "Добавить трек источником в редактор (до трёх)",
       inEditor: "Уже в редакторе",
@@ -266,6 +456,8 @@ export const ru = {
   },
   settings: {
     title: "Настройки",
+    summary: "Оформление, папки, кампании и справочники. Изменения сохраняются сразу.",
+    groups: { general: "Общие", data: "Данные", references: "Справочники" },
     libraryRoot: "Папка библиотеки артов",
     campaigns: "Кампании",
     noCampaigns: "Кампаний пока нет.",
@@ -281,7 +473,7 @@ export const ru = {
     musicRootNone: "Не выбрана",
     backup: "Резервные копии",
     backupHint:
-      "Кампания целиком в одном файле: персонажи, фракции, связи, хронология, карты и заметки. Арты и вложения заметок в файл не входят — они найдутся в библиотеке по пути или по содержимому.",
+      "Кампания целиком в одном файле: сессии с чек-листами, персонажи, фракции, связи, хронология, карты и заметки. Арты и вложения заметок в файл не входят — они найдутся в библиотеке по пути или по содержимому.",
   },
   backup: {
     campaign: "Кампания",
@@ -294,8 +486,14 @@ export const ru = {
     exportFailed: "Не удалось сохранить резервную копию.",
     importedSuffix: "импорт",
     imported: (name: string) => `Кампания «${name}» импортирована и выбрана активной.`,
-    importSummary: (characters: number, events: number, maps: number, notes: number) =>
-      `Персонажей: ${characters}, событий: ${events}, карт: ${maps}, заметок: ${notes}.`,
+    importSummary: (
+      sessions: number,
+      characters: number,
+      events: number,
+      maps: number,
+      notes: number,
+    ) =>
+      `Сессий: ${sessions}, персонажей: ${characters}, событий: ${events}, карт: ${maps}, заметок: ${notes}.`,
     artsFound: (found: number, total: number, byHash: number) =>
       `Арты найдены: ${found} из ${total}` +
       (byHash > 0 ? ` (по содержимому после переименования: ${byHash})` : "") +
@@ -337,6 +535,35 @@ export const ru = {
     },
   },
   library: {
+    title: "Библиотека",
+    summary: (arts: number, withTokens: number, system: string | null) =>
+      [
+        `${arts} ${plural(arts, "арт", "арта", "артов")}`,
+        `${withTokens} с токенами`,
+        system && `система кампании: ${system}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+    addArt: "Добавить арт",
+    addArtNeedGroup: "Чтобы добавить арты, выберите группу слева",
+    addArtDialogTitle: "Добавить арты в группу",
+    imageFilter: "Изображения",
+    otherSystems: (n: number) => `Другие системы (${n})`,
+    hideOtherSystems: "Скрыть другие системы",
+    sort: {
+      label: "Сортировка",
+      button: (by: string) => `Сортировка: ${by}`,
+      name: "по имени",
+      added: "по дате добавления",
+      tokens: "по числу токенов",
+      byRelevance: "При поиске арты идут по совпадению с запросом",
+    },
+    selected: {
+      tokens: (n: number) =>
+        n === 0 ? "без токенов" : `${n} ${plural(n, "токен", "токена", "токенов")}`,
+      open: "Открыть",
+      clear: "Снять выделение",
+    },
     all: "Все арты",
     unsorted: "Не разобрано",
     missing: "Файл отсутствует",
@@ -402,7 +629,7 @@ export const ru = {
     },
     filter: {
       label: "Токены",
-      any: "Все арты",
+      any: "Все",
       with: "С токенами",
       without: "Без токенов",
     },
@@ -594,6 +821,9 @@ export const ru = {
     },
     gallery: {
       tabs: { maps: "Карты кампании", templates: "Шаблоны" },
+      tabsLabel: "Что показать",
+      summary: (maps: number, templates: number) =>
+        `${maps} ${plural(maps, "карта", "карты", "карт")} · ${templates} ${plural(templates, "шаблон", "шаблона", "шаблонов")}`,
       search: "Поиск по названию и тегам",
       searchTag: "Найти карты с этим тегом",
       noResults: (q: string) => `Ничего не найдено по запросу «${q}».`,
@@ -721,6 +951,8 @@ export const ru = {
     failed: "Не удалось загрузить картинку.",
   },
   relations: {
+    summary: (characters: number, factions: number, relations: number) =>
+      `${characters} ${plural(characters, "персонаж", "персонажа", "персонажей")} · ${factions} ${plural(factions, "фракция", "фракции", "фракций")} · ${relations} ${plural(relations, "связь", "связи", "связей")}`,
     newCharacter: "Персонаж",
     newCharacterTitle: "Новый персонаж",
     newFaction: "Фракция",
@@ -869,6 +1101,14 @@ export const ru = {
     },
   },
   timeline: {
+    summary: (events: number, sessions: number, current: number | null) =>
+      [
+        `${events} ${plural(events, "событие", "события", "событий")}`,
+        `${sessions} ${plural(sessions, "сессия", "сессии", "сессий")}`,
+        current !== null ? `текущая — ${current}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
     mainLane: "Основной сюжет",
     sideLane: "Побочные квесты",
     personalLane: (name: string) => `Личный квест: ${name}`,
@@ -1027,7 +1267,20 @@ export const ru = {
     noOpenText: "Выберите заметку в списке или создайте новую.",
     kind: { text: "Текст", pdf: "PDF" },
     untaggedBadge: "без тега",
-    sort: { label: "Сортировка", updated: "Сначала изменённые", title: "По названию" },
+    sort: {
+      label: "Сортировка",
+      button: (by: string) => `Сортировка: ${by}`,
+      updated: "сначала изменённые",
+      title: "по названию",
+    },
+    summary: (notes: number, pdfs: number, shown: number) =>
+      [
+        `${notes} ${plural(notes, "заметка", "заметки", "заметок")}`,
+        pdfs > 0 && `из них PDF: ${pdfs}`,
+        shown < notes && `показано: ${shown}`,
+      ]
+        .filter(Boolean)
+        .join(" · "),
     filter: {
       button: "Теги",
       title: "Показывать заметки с тегами",

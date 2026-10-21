@@ -8,6 +8,7 @@ interface CampaignRow {
   name: string;
   system: string;
   description: string;
+  cover_art_id: string | null;
   archived: number;
   created_at: string;
   updated_at: string;
@@ -19,6 +20,7 @@ function fromRow(row: CampaignRow): Campaign {
     name: row.name,
     system: row.system,
     description: row.description,
+    coverArtId: row.cover_art_id,
     archived: row.archived !== 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -67,9 +69,10 @@ export async function createCampaign(
   const id = clock.newId();
   const now = clock.now().toISOString();
   await db.execute(
-    `INSERT INTO campaigns (id, name, system, description, archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, 0, ?, ?)`,
-    [id, data.name, data.system, data.description, now, now],
+    `INSERT INTO campaigns
+       (id, name, system, description, cover_art_id, archived, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 0, ?, ?)`,
+    [id, data.name, data.system, data.description, data.coverArtId, now, now],
   );
   return { id, ...data, archived: false, createdAt: now, updatedAt: now };
 }
@@ -82,11 +85,13 @@ export function campaignInsertStatement(campaign: Campaign): string {
     data.name,
     data.system,
     data.description,
+    data.coverArtId,
     campaign.archived,
     campaign.createdAt,
     campaign.updatedAt,
   ];
-  return `INSERT INTO campaigns (id, name, system, description, archived, created_at, updated_at)
+  return `INSERT INTO campaigns
+    (id, name, system, description, cover_art_id, archived, created_at, updated_at)
     VALUES (${values.map(sqlLiteral).join(", ")})`;
 }
 
@@ -98,8 +103,9 @@ export async function updateCampaign(
 ): Promise<void> {
   const data = assertValid(input);
   await db.execute(
-    "UPDATE campaigns SET name = ?, system = ?, description = ?, updated_at = ? WHERE id = ?",
-    [data.name, data.system, data.description, clock.now().toISOString(), id],
+    `UPDATE campaigns SET name = ?, system = ?, description = ?, cover_art_id = ?, updated_at = ?
+     WHERE id = ?`,
+    [data.name, data.system, data.description, data.coverArtId, clock.now().toISOString(), id],
   );
 }
 
@@ -117,12 +123,14 @@ export async function setCampaignArchived(
 }
 
 /**
- * Deletes the campaign with its maps, relation graph, timeline and notes. Note attachment files
+ * Deletes the campaign with its sessions, maps, relation graph, timeline and notes. Note attachment files
  * stay on disk; the notes module moves unused ones to the recycle bin.
  */
 export async function deleteCampaign(db: Db, id: string): Promise<void> {
   const key = sqlLiteral(id);
   await runScript(db, [
+    `DELETE FROM session_prep_items WHERE session_id IN (SELECT id FROM sessions WHERE campaign_id = ${key})`,
+    `DELETE FROM sessions WHERE campaign_id = ${key}`,
     `DELETE FROM note_tag_links WHERE note_id IN (SELECT id FROM notes WHERE campaign_id = ${key})`,
     `DELETE FROM notes WHERE campaign_id = ${key}`,
     `DELETE FROM note_tags WHERE campaign_id = ${key}`,
@@ -135,6 +143,7 @@ export async function deleteCampaign(db: Db, id: string): Promise<void> {
     `DELETE FROM timeline_events WHERE campaign_id = ${key}`,
     `DELETE FROM timeline_lanes WHERE campaign_id = ${key}`,
     `DELETE FROM timelines WHERE campaign_id = ${key}`,
+    `DELETE FROM recent_items WHERE campaign_id = ${key}`,
     `DELETE FROM campaigns WHERE id = ${key}`,
   ]);
 }

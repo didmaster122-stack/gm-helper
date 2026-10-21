@@ -1,16 +1,6 @@
 import { getNodesBounds, useReactFlow } from "@xyflow/react";
 import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  ChevronDown,
-  Funnel,
-  ImageDown,
-  Network,
-  Redo2,
-  Shield,
-  Undo2,
-  UserPlus,
-  X,
-} from "lucide-react";
+import { ChevronDown, Funnel, ImageDown, Network, Redo2, Undo2, X } from "lucide-react";
 import { pickSavePath, writeChosenFile } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
 import { Button, IconButton, SearchInput, themeColor, useDismiss } from "../../shared/ui";
@@ -24,20 +14,14 @@ import { useGraph, useRelationsStore } from "./store";
 
 type Notice = { kind: "info" | "error"; text: string } | null;
 
-interface GraphToolbarProps {
+interface GraphToolsProps {
   campaignName: string;
-  onNewCharacter: () => void;
-  onNewFaction: () => void;
   /** Element containing the React Flow canvas (for PNG export). */
   canvas: () => HTMLElement | null;
 }
 
-export function GraphToolbar({
-  campaignName,
-  onNewCharacter,
-  onNewFaction,
-  canvas,
-}: GraphToolbarProps) {
+/** The row under the screen header: filters, layout, history and export. */
+export function GraphTools({ campaignName, canvas }: GraphToolsProps) {
   const t = ru.relations;
   const history = useRelationsStore((s) => s.history);
   const undo = useRelationsStore((s) => s.undo);
@@ -79,15 +63,7 @@ export function GraphToolbar({
   }
 
   return (
-    <div className="toolbar graph-toolbar">
-      <Button variant="primary" icon={UserPlus} onClick={onNewCharacter}>
-        {t.newCharacter}
-      </Button>
-      <Button icon={Shield} onClick={onNewFaction}>
-        {t.newFaction}
-      </Button>
-      <div className="toolbar-sep" />
-      <GraphSearch />
+    <div className="screen-tools graph-tools">
       <FilterMenu />
       <span className="spacer" />
       {notice && (
@@ -126,7 +102,7 @@ export function GraphToolbar({
   );
 }
 
-function GraphSearch() {
+export function GraphSearch() {
   const graph = useGraph();
   const filter = useRelationsStore((s) => s.filter);
   const setFilter = useRelationsStore((s) => s.setFilter);

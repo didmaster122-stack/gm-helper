@@ -132,6 +132,89 @@ label.check {
   margin: 0;
 }
 
+/* One header per screen: path, a large title, a summary line and the screen's actions. */
+.screen-header {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.screen-header-titles {
+  flex: 1;
+  min-width: 0;
+}
+
+.screen-header-path {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.screen-header-path li + li::before {
+  content: "/";
+  margin-right: 6px;
+}
+
+.screen-header-path li:last-child {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.screen-header h1 {
+  margin: 2px 0 0;
+  font-size: var(--text-screen);
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.screen-header-summary {
+  margin-top: 4px;
+  color: var(--text-muted);
+}
+
+.screen-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Filters and view switches right under the header. */
+.screen-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -4px 0 20px;
+}
+
+/* Header of a full-height screen (graph, timeline, music): content runs edge to edge below it. */
+.screen-head {
+  flex: none;
+  padding: 28px 32px 0;
+}
+
+.screen-head .screen-header {
+  margin-bottom: 18px;
+}
+
+.screen-head .screen-tools {
+  margin: 0 -32px;
+  padding: 0 32px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.screen-head + .notice {
+  margin: 12px 32px 0;
+}
+
 /* ---- Badges, tags, chips ---- */
 
 .badge {
@@ -229,6 +312,38 @@ label.check {
 
 .tag-editor input:focus {
   box-shadow: none;
+}
+
+/* Filter chips: a row of pills, one of them on. */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chips button {
+  min-height: var(--control-h-sm);
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  box-shadow: none;
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.chips button:hover:not(:disabled) {
+  background: var(--surface-2);
+  color: var(--text);
+}
+
+.chips button.selected,
+.chips button.selected:hover:not(:disabled) {
+  background: var(--text);
+  border-color: transparent;
+  color: var(--bg);
+  font-weight: 600;
 }
 
 /* ---- Segmented control ---- */
@@ -494,6 +609,38 @@ label.check {
   gap: 14px;
 }
 
+/* The name of the shown object, edited in place: a heading until it is focused. */
+.card-title-field > span:first-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.card-title-field > input {
+  height: auto;
+  margin-right: 32px;
+  padding: 2px 6px;
+  margin-left: -7px;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.card-title-field > input:hover {
+  border-color: var(--border);
+}
+
+.card-title-field > input:focus {
+  background: var(--surface);
+  border-color: var(--focus-ring);
+}
+
 .graph-card-title {
   margin: 0;
   padding-right: 36px;
@@ -592,18 +739,58 @@ label.check {
 .menu-list button {
   width: 100%;
   justify-content: flex-start;
-  min-height: 30px;
+  min-height: 32px;
   padding: 0 10px;
   border: none;
+  border-radius: calc(var(--radius) - 2px);
   background: transparent;
   box-shadow: none;
   font-weight: 400;
   text-align: left;
 }
 
+.menu-list button[aria-checked="true"] {
+  font-weight: 600;
+}
+
+.menu-list button[aria-checked] > .menu-check {
+  width: 16px;
+  height: 16px;
+  color: var(--accent-text);
+}
+
+.menu-list button[aria-checked="false"] > .menu-check {
+  visibility: hidden;
+}
+
 .menu-list button.current,
 .menu-list button:hover:not(:disabled) {
   background: var(--surface-2);
+}
+
+/* A button with a menu of choices, e.g. the sort order of a list. */
+.menu-select {
+  position: relative;
+}
+
+.menu-select > .popover {
+  left: auto;
+  right: 0;
+  min-width: 220px;
+}
+
+.menu-select-button {
+  gap: 6px;
+  min-height: var(--control-h-sm);
+  padding: 0 8px 0 12px;
+  font-size: var(--text-md);
+  font-weight: 500;
+}
+
+.menu-select-button > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
 }
 
 /* ---- Lists ---- */
@@ -676,20 +863,28 @@ label.check {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 14px 0 20px;
+  padding: 18px 16px 0 24px;
 }
 
 .modal-title {
   flex: 1;
   margin: 0;
-  font-size: var(--text-lg);
+  font-size: var(--text-xl);
 }
 
 .modal-body {
   flex: 1;
   min-height: 0;
-  padding: 14px 20px 20px;
+  padding: 16px 24px 20px;
   overflow: auto;
+}
+
+/* A failure of the whole dialog (not of one field): the same plate as screen notices. */
+.modal p.error {
+  padding: 8px 12px;
+  color: var(--text);
+  background: var(--danger-soft);
+  border-radius: var(--radius-md);
 }
 
 .modal-body > p {
@@ -710,10 +905,7 @@ label.check {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 20px;
-  background: var(--surface-2);
-  border-top: 1px solid var(--border);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  padding: 4px 24px 20px;
 }
 
 @keyframes fade-in {
@@ -796,7 +988,7 @@ label.check {
 }
 
 .empty-state.compact h2 {
-  font-size: var(--text-base);
+  font-size: var(--text-lg);
 }
 
 /* Hint over the "missing files" list of a catalog with its clean-up button. */

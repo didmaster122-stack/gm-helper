@@ -150,7 +150,7 @@ export function Timeline() {
     ctx.fillRect(0, 0, width, RULER_H);
     const step = rulerStep(zoom);
     const minor = step / 5;
-    ctx.font = "11px Segoe UI, system-ui, sans-serif";
+    ctx.font = '11px "Golos Text", "Segoe UI", sans-serif';
     ctx.textBaseline = "middle";
     for (let i = Math.floor(visibleFrom / minor); i * minor <= visibleTo; i++) {
       const time = i * minor;

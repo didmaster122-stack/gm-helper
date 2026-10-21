@@ -40,6 +40,15 @@ interface RelationsState {
 /** Saves run one after another, in the order of the edits. */
 let saving: Promise<void> = Promise.resolve();
 
+type Shown = "character" | "faction";
+
+/** A character or faction to show once its campaign is loaded (see `showCharacter`). */
+let requested: { campaignId: string; kind: Shown; id: string } | null = null;
+
+function shown(id: string, kind: Shown = "character") {
+  return { selection: { kind, id }, focusId: id, filter: noFilter };
+}
+
 export const useRelationsStore = create<RelationsState>((set, get) => {
   function persist(prev: RelationGraph, next: RelationGraph) {
     const campaignId = get().campaignId;
@@ -87,7 +96,12 @@ export const useRelationsStore = create<RelationsState>((set, get) => {
       try {
         await saving;
         const graph = await repo.loadGraph(await getDb(), campaignId);
-        if (get().campaignId === campaignId) set({ history: initHistory(graph), status: "ready" });
+        if (get().campaignId !== campaignId) return;
+        set({ history: initHistory(graph), status: "ready" });
+        if (requested?.campaignId === campaignId) {
+          set(shown(requested.id, requested.kind));
+          requested = null;
+        }
       } catch (error) {
         console.error("Failed to load relation graph", error);
         if (get().campaignId === campaignId) set({ status: "error" });
@@ -166,11 +180,19 @@ export async function createCharacter(campaignId: string, input: NewCharacter): 
   return id;
 }
 
-/** Selects a character and centres the graph on it when the graph is shown next. */
-export function showCharacter(id: string): void {
-  useRelationsStore.setState({
-    selection: { kind: "character", id },
-    focusId: id,
-    filter: noFilter,
-  });
+/**
+ * Selects a character and centres the view on it when it is shown next. A character of a campaign
+ * that is not loaded yet is selected after loading.
+ */
+export function showCharacter(campaignId: string, id: string, kind: Shown = "character"): void {
+  if (useRelationsStore.getState().campaignId === campaignId) {
+    requested = null;
+    useRelationsStore.setState(shown(id, kind));
+  } else {
+    requested = { campaignId, kind, id };
+  }
+}
+
+export function showFaction(campaignId: string, id: string): void {
+  showCharacter(campaignId, id, "faction");
 }

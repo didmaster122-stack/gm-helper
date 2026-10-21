@@ -1,35 +1,21 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  ArrowDownAZ,
   ChevronDown,
-  CalendarClock,
   FileText,
   FileType,
   Funnel,
   ListChecks,
-  Plus,
   SearchX,
   Tags,
-  Upload,
   X,
 } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import {
-  Button,
-  EmptyState,
-  IconButton,
-  SearchInput,
-  Segmented,
-  useDismiss,
-} from "../../shared/ui";
+import { Button, EmptyState, IconButton, MenuSelect, useDismiss } from "../../shared/ui";
 import { filterNotes, notesWithTag, sortTags, type NoteSort } from "./domain/filter";
 import type { Note } from "./domain/types";
 import { useNotesStore } from "./store";
 
 interface NoteListProps {
-  onCreate: () => void;
-  onAddPdf: () => void;
-  onManageTags: () => void;
   onArchive: () => void;
 }
 
@@ -62,7 +48,75 @@ function Dropdown({
 
 const formatDate = (iso: string) => new Date(iso).toLocaleDateString("ru");
 
-export function NoteList({ onCreate, onAddPdf, onManageTags, onArchive }: NoteListProps) {
+/** Tag filter, tag management and sort order: the tools row under the screen header. */
+export function NoteFilters({ onManageTags }: { onManageTags: () => void }) {
+  const t = ru.notes;
+  const tags = useNotesStore((s) => s.tags);
+  const filter = useNotesStore((s) => s.filter);
+  const setFilter = useNotesStore((s) => s.setFilter);
+  const sort = useNotesStore((s) => s.sort);
+  const setSort = useNotesStore((s) => s.setSort);
+  const sortedTags = useMemo(() => sortTags(tags), [tags]);
+  const tagFilterOn = filter.untagged || filter.tagIds.length > 0;
+
+  const toggleFilterTag = (id: string) =>
+    setFilter({
+      untagged: false,
+      tagIds: filter.tagIds.includes(id)
+        ? filter.tagIds.filter((x) => x !== id)
+        : [...filter.tagIds, id],
+    });
+
+  return (
+    <div className="notes-filters">
+      <Dropdown label={t.filter.button} icon={Funnel} active={tagFilterOn}>
+        {() => (
+          <div className="popover filter-menu">
+            <h4>{t.filter.title}</h4>
+            {sortedTags.length === 0 && <p className="muted">{t.filter.noTags}</p>}
+            {sortedTags.map((tag) => (
+              <label key={tag.id} className="check">
+                <input
+                  type="checkbox"
+                  checked={!filter.untagged && filter.tagIds.includes(tag.id)}
+                  onChange={() => toggleFilterTag(tag.id)}
+                />
+                <span>{tag.name}</span>
+              </label>
+            ))}
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={filter.untagged}
+                onChange={(e) => setFilter({ untagged: e.target.checked, tagIds: [] })}
+              />
+              <span>{t.filter.untagged}</span>
+            </label>
+            {tagFilterOn && (
+              <Button size="sm" onClick={() => setFilter({ untagged: false, tagIds: [] })}>
+                {t.filter.clear}
+              </Button>
+            )}
+          </div>
+        )}
+      </Dropdown>
+      <IconButton size="sm" icon={Tags} label={t.tags.manage} onClick={onManageTags} />
+      <span className="spacer" />
+      <MenuSelect<NoteSort>
+        label={t.sort.label}
+        buttonLabel={t.sort.button(t.sort[sort])}
+        value={sort}
+        onChange={setSort}
+        options={[
+          { value: "updated", label: t.sort.updated },
+          { value: "title", label: t.sort.title },
+        ]}
+      />
+    </div>
+  );
+}
+
+export function NoteList({ onArchive }: NoteListProps) {
   const t = ru.notes;
   const notes = useNotesStore((s) => s.notes);
   const tags = useNotesStore((s) => s.tags);
@@ -73,22 +127,11 @@ export function NoteList({ onCreate, onAddPdf, onManageTags, onArchive }: NoteLi
   const check = useNotesStore((s) => s.check);
   const clearChecked = useNotesStore((s) => s.clearChecked);
   const filter = useNotesStore((s) => s.filter);
-  const setFilter = useNotesStore((s) => s.setFilter);
   const sort = useNotesStore((s) => s.sort);
-  const setSort = useNotesStore((s) => s.setSort);
 
   const shown = useMemo(() => filterNotes(notes, filter, sort), [notes, filter, sort]);
   const sortedTags = useMemo(() => sortTags(tags), [tags]);
   const tagNames = useMemo(() => new Map(tags.map((tag) => [tag.id, tag.name])), [tags]);
-  const tagFilterOn = filter.untagged || filter.tagIds.length > 0;
-
-  const toggleFilterTag = (id: string) =>
-    setFilter({
-      untagged: false,
-      tagIds: filter.tagIds.includes(id)
-        ? filter.tagIds.filter((x) => x !== id)
-        : [...filter.tagIds, id],
-    });
 
   const row = (note: Note) => {
     const Icon = note.kind === "pdf" ? FileType : FileText;
@@ -130,68 +173,6 @@ export function NoteList({ onCreate, onAddPdf, onManageTags, onArchive }: NoteLi
 
   return (
     <aside className="notes-sidebar">
-      <div className="notes-sidebar-head">
-        <div className="notes-create">
-          <Button variant="primary" icon={Plus} onClick={onCreate}>
-            {t.newNote}
-          </Button>
-          <Button icon={Upload} onClick={onAddPdf}>
-            {t.addPdf}
-          </Button>
-        </div>
-        <SearchInput
-          screenSearch
-          placeholder={t.search}
-          value={filter.query}
-          onChange={(e) => setFilter({ query: e.target.value })}
-        />
-        <div className="notes-filters">
-          <Dropdown label={t.filter.button} icon={Funnel} active={tagFilterOn}>
-            {() => (
-              <div className="popover filter-menu">
-                <h4>{t.filter.title}</h4>
-                {sortedTags.length === 0 && <p className="muted">{t.filter.noTags}</p>}
-                {sortedTags.map((tag) => (
-                  <label key={tag.id} className="check">
-                    <input
-                      type="checkbox"
-                      checked={!filter.untagged && filter.tagIds.includes(tag.id)}
-                      onChange={() => toggleFilterTag(tag.id)}
-                    />
-                    <span>{tag.name}</span>
-                  </label>
-                ))}
-                <label className="check">
-                  <input
-                    type="checkbox"
-                    checked={filter.untagged}
-                    onChange={(e) => setFilter({ untagged: e.target.checked, tagIds: [] })}
-                  />
-                  <span>{t.filter.untagged}</span>
-                </label>
-                {tagFilterOn && (
-                  <Button size="sm" onClick={() => setFilter({ untagged: false, tagIds: [] })}>
-                    {t.filter.clear}
-                  </Button>
-                )}
-              </div>
-            )}
-          </Dropdown>
-          <Segmented<NoteSort>
-            size="sm"
-            label={t.sort.label}
-            value={sort}
-            onChange={setSort}
-            options={[
-              { value: "updated", label: t.sort.updated, icon: CalendarClock, iconOnly: true },
-              { value: "title", label: t.sort.title, icon: ArrowDownAZ, iconOnly: true },
-            ]}
-          />
-          <span className="spacer" />
-          <IconButton size="sm" icon={Tags} label={t.tags.manage} onClick={onManageTags} />
-        </div>
-      </div>
-
       {notes.length === 0 ? (
         <EmptyState compact icon={FileText} title={t.emptyTitle} text={t.emptyText} />
       ) : shown.length === 0 ? (
@@ -228,7 +209,7 @@ export function NoteList({ onCreate, onAddPdf, onManageTags, onArchive }: NoteLi
           </span>
         )}
         <span className="spacer" />
-        <Button size="sm" variant="primary" disabled={checked.size === 0} onClick={onArchive}>
+        <Button size="sm" disabled={checked.size === 0} onClick={onArchive}>
           {t.archive.button}
         </Button>
       </div>

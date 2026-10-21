@@ -38,6 +38,7 @@ export function ArtPanel({
   const putTokens = useLibraryStore((s) => s.putTokens);
   const sync = useLibraryStore((s) => s.sync);
   const selectArt = useLibraryStore((s) => s.selectArt);
+  const closePanel = useLibraryStore((s) => s.closePanel);
   const tokens = useArtTokens(art.id);
   const [dialog, setDialog] = useState<Dialog>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +74,7 @@ export function ArtPanel({
     <aside className="side-panel art-panel" key={art.id}>
       <div className="panel-header">
         <h2 className="art-title">{artName(art)}</h2>
-        <IconButton icon={X} label={ru.common.close} onClick={() => selectArt(null)} />
+        <IconButton icon={X} label={ru.common.close} onClick={closePanel} />
       </div>
 
       <button

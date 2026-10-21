@@ -1,5 +1,7 @@
 import { sqlLiteral as L } from "../../shared/db/script";
+import { placeholders } from "../../shared/db/placeholders";
 import type { Db } from "../../shared/db/types";
+import type { SearchRecord } from "../../shared/search/global";
 import type { MapEntry } from "./domain/backup";
 import {
   BUILTIN_TYPES,
@@ -512,4 +514,40 @@ export async function updateObjectDef(
 /** Deletes a catalog object. Maps keep their instances and show them as "?". */
 export async function deleteObjectDef(db: Db, id: string): Promise<void> {
   await db.execute("DELETE FROM map_objects WHERE id = ?", [id]);
+}
+
+/** Names of campaign maps by id (not templates); ids that are not found are left out. */
+export async function mapTitles(db: Db, ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db.select<{ id: string; title: string }>(
+    `SELECT id, name AS title FROM battlemaps WHERE is_template = 0 AND id IN (${ids.map(() => "?").join(", ")})`,
+    ids,
+  );
+  return new Map(rows.map((r) => [r.id, r.title]));
+}
+
+/** Battlemaps of the campaigns (not templates) for the app-wide search. */
+export async function mapSearchRecords(
+  db: Db,
+  campaignIds: readonly string[],
+): Promise<SearchRecord[]> {
+  if (campaignIds.length === 0) return [];
+  const rows = await db.select<{
+    id: string;
+    campaign_id: string;
+    name: string;
+    description: string;
+    tags: string;
+  }>(
+    `SELECT id, campaign_id, name, description, tags FROM battlemaps
+     WHERE is_template = 0 AND campaign_id IN (${placeholders(campaignIds)})`,
+    campaignIds,
+  );
+  return rows.map((r) => ({
+    kind: "battlemap",
+    id: r.id,
+    campaignId: r.campaign_id,
+    title: r.name,
+    body: [r.description, ...parseTags(r.tags)],
+  }));
 }

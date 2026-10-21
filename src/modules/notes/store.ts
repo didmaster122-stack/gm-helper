@@ -19,6 +19,8 @@ interface NotesState {
   tags: NoteTag[];
   /** The note shown on the right. */
   openId: string | null;
+  /** A note another section asked to open, shown once its campaign is loaded. */
+  requestedId: string | null;
   /** Notes ticked for the archive. */
   checked: ReadonlySet<string>;
   filter: NoteFilter;
@@ -67,6 +69,7 @@ export const useNotesStore = create<NotesState>((set, get) => {
     notes: [],
     tags: [],
     openId: null,
+    requestedId: null,
     checked: NO_CHECKS,
     filter: noFilter,
     sort: "updated",
@@ -92,7 +95,15 @@ export const useNotesStore = create<NotesState>((set, get) => {
           repo.listTags(db, campaignId),
         ]);
         if (get().campaignId !== campaignId) return;
-        set({ notes, tags, status: "ready" });
+        const requested = get().requestedId;
+        const show = requested !== null && notes.some((n) => n.id === requested);
+        set({
+          notes,
+          tags,
+          status: "ready",
+          requestedId: null,
+          ...(show ? { openId: requested, filter: noFilter } : {}),
+        });
       } catch (error) {
         console.error(error);
         if (get().campaignId === campaignId) set({ status: "error" });
@@ -241,3 +252,54 @@ export const useNotesStore = create<NotesState>((set, get) => {
     },
   };
 });
+
+/** Opens the note in the notes section: now if its campaign is loaded, otherwise after loading. */
+export function showNote(note: Note, tag: NoteTag | null): void {
+  const state = useNotesStore.getState();
+  if (state.campaignId !== note.campaignId || state.status !== "ready") {
+    useNotesStore.setState({ requestedId: note.id });
+    return;
+  }
+  useNotesStore.setState({
+    notes: state.notes.some((n) => n.id === note.id) ? state.notes : [...state.notes, note],
+    tags: !tag || state.tags.some((t) => t.id === tag.id) ? state.tags : [...state.tags, tag],
+    openId: note.id,
+    filter: noFilter,
+  });
+}
+
+/** Opens a note by id in the notes section: now if its campaign is loaded, otherwise after loading. */
+export function showNoteById(campaignId: string, id: string): void {
+  const state = useNotesStore.getState();
+  if (state.campaignId !== campaignId || state.status !== "ready") {
+    useNotesStore.setState({ requestedId: id });
+    return;
+  }
+  if (state.notes.some((n) => n.id === id))
+    useNotesStore.setState({ openId: id, filter: noFilter });
+}
+
+/** Creates an empty text note of the campaign and opens it when the notes section is shown. */
+export async function createTextNote(campaignId: string): Promise<void> {
+  const state = useNotesStore.getState();
+  if (state.campaignId === campaignId && state.status === "ready") {
+    await state.createText();
+    return;
+  }
+  const note = await repo.createNote(await getDb(), {
+    campaignId,
+    kind: "text",
+    title: ru.notes.untitled,
+    content: serializeDoc(emptyDoc()),
+    plainText: "",
+    filePath: null,
+    tagIds: [],
+  });
+  // A list loaded before the note existed is read again by the section.
+  useNotesStore.setState({
+    requestedId: note.id,
+    ...(useNotesStore.getState().campaignId === campaignId
+      ? { campaignId: null, status: "idle" }
+      : {}),
+  });
+}

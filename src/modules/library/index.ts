@@ -1,7 +1,8 @@
 import "./library.css";
 export { LibraryScreen } from "./LibraryScreen";
 export { ArtPicker } from "./ArtPicker";
-export { useLibraryStore } from "./store";
+export { showArt, useLibraryStore } from "./store";
+export { artTitles } from "./repo";
 export { artName, toAbsolute } from "./domain/paths";
 export type { Art, Token } from "./domain/types";
 export { tokenUrl } from "./tokenUrl";
@@ -9,3 +10,4 @@ export type { CharacterTarget } from "./ArtPanel";
 export { useThumbnail } from "./thumbnails";
 export { collectLibraryRefs, reloadLibrary, resolveLibraryRefs } from "./backup";
 export { parseArtRefs, resolvePictureLink, type ArtRefs } from "./domain/artRefs";
+export { artSearchRecords } from "./domain/search";

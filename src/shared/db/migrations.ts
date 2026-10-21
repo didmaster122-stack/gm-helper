@@ -366,4 +366,53 @@ export const migrations: Migration[] = [
       CREATE INDEX note_tag_links_tag ON note_tag_links (tag_id);
     `,
   },
+  {
+    version: 13,
+    name: "sessions and campaign cover",
+    sql: `
+      -- Cover: id of an art in the library, NULL for the gradient made from the name.
+      ALTER TABLE campaigns ADD COLUMN cover_art_id TEXT;
+
+      -- Game sessions of a campaign. date: the calendar day (YYYY-MM-DD) or NULL;
+      -- plan_note_id: the note with the session plan, may point to a deleted note.
+      CREATE TABLE sessions (
+        id           TEXT PRIMARY KEY,
+        campaign_id  TEXT NOT NULL,
+        number       INTEGER NOT NULL,
+        date         TEXT,
+        played       INTEGER NOT NULL DEFAULT 0,
+        plan_note_id TEXT,
+        created_at   TEXT NOT NULL,
+        updated_at   TEXT NOT NULL
+      );
+      CREATE INDEX sessions_campaign ON sessions (campaign_id);
+
+      -- The preparation checklist of a session, ordered by position.
+      CREATE TABLE session_prep_items (
+        id         TEXT PRIMARY KEY,
+        session_id TEXT NOT NULL,
+        text       TEXT NOT NULL,
+        done       INTEGER NOT NULL DEFAULT 0,
+        position   INTEGER NOT NULL
+      );
+      CREATE INDEX session_prep_items_session ON session_prep_items (session_id);
+    `,
+  },
+  {
+    version: 14,
+    name: "recently opened objects",
+    sql: `
+      -- What was opened lately in each campaign, for the welcome screen. Local only, not backed up.
+      -- kind: battlemap | note | art | event | character. Rows of deleted objects are dropped when
+      -- the welcome screen notices them.
+      CREATE TABLE recent_items (
+        campaign_id TEXT NOT NULL,
+        kind        TEXT NOT NULL,
+        object_id   TEXT NOT NULL,
+        opened_at   TEXT NOT NULL,
+        PRIMARY KEY (campaign_id, kind, object_id)
+      );
+      CREATE INDEX recent_items_opened ON recent_items (campaign_id, opened_at);
+    `,
+  },
 ];

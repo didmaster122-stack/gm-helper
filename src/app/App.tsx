@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
-import { Keyboard, TriangleAlert } from "lucide-react";
+import { TriangleAlert } from "lucide-react";
 import { ru } from "../shared/i18n/ru";
-import { Button, EmptyState, IconButton } from "../shared/ui";
-import { CampaignSwitcher, RequireCampaign, useActiveCampaign } from "../modules/campaigns";
+import { Button, EmptyState } from "../shared/ui";
+import { RequireCampaign, useActiveCampaign } from "../modules/campaigns";
 import { LibraryScreen } from "../modules/library";
 import { BattlemapScreen } from "../modules/battlemap";
 import { createCharacter, RelationsScreen, showCharacter } from "../modules/relations";
@@ -11,10 +11,12 @@ import { MusicScreen } from "../modules/music";
 import { NotesScreen } from "../modules/notes";
 import { SettingsScreen } from "../modules/settings";
 import { FirstRun } from "./FirstRun";
+import { SearchDialog } from "./SearchDialog";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { useGlobalShortcuts } from "./shortcuts";
 import { Sidebar } from "./Sidebar";
 import { useAppStore } from "./store";
+import { Welcome } from "./Welcome";
 
 function CurrentModule() {
   const module = useAppStore((s) => s.module);
@@ -32,6 +34,7 @@ function CurrentModule() {
         <LibraryScreen
           libraryRoot={libraryRoot}
           preferredSystem={campaign?.system ?? null}
+          campaignId={campaign?.id ?? null}
           characterTarget={
             campaign
               ? {
@@ -64,7 +67,7 @@ function CurrentModule() {
                     campaignId={campaign.id}
                     characterId={characterId}
                     onOpenEvent={(id) => {
-                      showEvent(id);
+                      showEvent(campaign.id, id);
                       setModule("timeline");
                     }}
                   />
@@ -81,7 +84,7 @@ function CurrentModule() {
             <TimelineScreen
               campaign={campaign}
               onOpenCharacter={(id) => {
-                showCharacter(id);
+                showCharacter(campaign.id, id);
                 setModule("relations");
               }}
             />
@@ -122,9 +125,13 @@ export function App() {
   const missing = useAppStore((s) => s.libraryRootMissing);
   const init = useAppStore((s) => s.init);
   const setModule = useAppStore((s) => s.setModule);
+  const toggleSidebar = useAppStore((s) => s.toggleSidebar);
+  const welcome = useAppStore((s) => s.welcome);
   const [help, setHelp] = useState(false);
+  const [search, setSearch] = useState(false);
   const openHelp = useCallback(() => setHelp(true), []);
-  useGlobalShortcuts(setModule, openHelp);
+  const openSearch = useCallback(() => setSearch(true), []);
+  useGlobalShortcuts({ setModule, openHelp, openSearch, toggleSidebar });
 
   useEffect(() => {
     void init();
@@ -151,19 +158,19 @@ export function App() {
   if (!libraryRoot || missing) return <FirstRun />;
 
   return (
-    <div className="layout">
-      <Sidebar />
-      <div className="main">
-        <header className="topbar">
-          <CampaignSwitcher libraryRoot={libraryRoot} />
-          <div className="spacer" />
-          <IconButton icon={Keyboard} label={ru.shortcuts.open} shortcut="F1" onClick={openHelp} />
-        </header>
-        <main className="content">
-          <CurrentModule />
-        </main>
-      </div>
+    <>
+      {welcome ? (
+        <Welcome onOpenHelp={openHelp} onOpenSearch={openSearch} />
+      ) : (
+        <div className="layout">
+          <Sidebar onOpenHelp={openHelp} onOpenSearch={openSearch} />
+          <main className="content">
+            <CurrentModule />
+          </main>
+        </div>
+      )}
+      {search && <SearchDialog onClose={() => setSearch(false)} onOpenHelp={openHelp} />}
       {help && <ShortcutsDialog onClose={() => setHelp(false)} />}
-    </div>
+    </>
   );
 }

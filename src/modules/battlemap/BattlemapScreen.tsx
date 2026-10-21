@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useRememberOpened } from "../../shared/recent";
 import type { Campaign } from "../campaigns";
 import { useCellTypeStore } from "./cellTypeStore";
 import { LibraryContext } from "./libraryContext";
@@ -30,6 +31,7 @@ export function BattlemapScreen({ campaign, libraryRoot }: BattlemapScreenProps)
   // Switching the campaign closes a map of the previous one (saving it first).
   // Templates belong to no campaign and stay open.
   const foreign = map !== null && !map.isTemplate && map.campaignId !== campaign.id;
+  useRememberOpened(campaign.id, "battlemap", map && !map.isTemplate && !foreign ? map.id : null);
   useEffect(() => {
     if (foreign) void close();
   }, [foreign, close]);

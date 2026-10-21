@@ -1,5 +1,7 @@
 import { runScript, sqlLiteral } from "../../shared/db/script";
+import { placeholders } from "../../shared/db/placeholders";
 import type { Db } from "../../shared/db/types";
+import type { SearchRecord } from "../../shared/search/global";
 import { NOTE_KINDS, type Note, type NoteKind, type NoteTag } from "./domain/types";
 
 export interface RepoClock {
@@ -220,4 +222,43 @@ export async function deleteTag(db: Db, id: string): Promise<void> {
     `DELETE FROM note_tag_links WHERE tag_id = ${key}`,
     `DELETE FROM note_tags WHERE id = ${key}`,
   ]);
+}
+
+/** Note titles by id; ids that are not found are left out. */
+export async function noteTitles(db: Db, ids: readonly string[]): Promise<Map<string, string>> {
+  if (ids.length === 0) return new Map();
+  const rows = await db.select<{ id: string; title: string }>(
+    `SELECT id, title AS title FROM notes WHERE id IN (${ids.map(() => "?").join(", ")})`,
+    ids,
+  );
+  return new Map(rows.map((r) => [r.id, r.title]));
+}
+
+/** Notes of the campaigns for the app-wide search: title, text and tags. */
+export async function noteSearchRecords(
+  db: Db,
+  campaignIds: readonly string[],
+): Promise<SearchRecord[]> {
+  if (campaignIds.length === 0) return [];
+  const where = `campaign_id IN (${placeholders(campaignIds)})`;
+  const notes = await db.select<{
+    id: string;
+    campaign_id: string;
+    title: string;
+    plain_text: string;
+  }>(`SELECT id, campaign_id, title, plain_text FROM notes WHERE ${where}`, campaignIds);
+  const tags = await db.select<{ note_id: string; name: string }>(
+    `SELECT l.note_id, t.name FROM note_tag_links l JOIN note_tags t ON t.id = l.tag_id
+     WHERE t.${where}`,
+    campaignIds,
+  );
+  const tagsByNote = new Map<string, string[]>();
+  for (const t of tags) tagsByNote.set(t.note_id, [...(tagsByNote.get(t.note_id) ?? []), t.name]);
+  return notes.map((r) => ({
+    kind: "note",
+    id: r.id,
+    campaignId: r.campaign_id,
+    title: r.title,
+    body: [r.plain_text, ...(tagsByNote.get(r.id) ?? [])],
+  }));
 }

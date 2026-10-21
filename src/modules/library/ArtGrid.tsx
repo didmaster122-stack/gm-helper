@@ -6,9 +6,13 @@ import { artName, toAbsolute } from "./domain/paths";
 import type { Art } from "./domain/types";
 import { useThumbnail } from "./thumbnails";
 
-const TILE = 150;
-const GAP = 10;
-const ROW = TILE + 34;
+const TILE = 156;
+/** Must match `--art-thumb-h` in library.css. */
+const THUMB = 196;
+const GAP = 18;
+const ROW_GAP = 22;
+const PAD = 24;
+const ROW = THUMB + 8 + 18 + ROW_GAP;
 
 interface ArtGridProps {
   root: string;
@@ -43,7 +47,7 @@ export function ArtGrid({
 }: ArtGridProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const width = useWidth(scrollRef);
-  const columns = Math.max(1, Math.floor((width - GAP) / (TILE + GAP)));
+  const columns = Math.max(1, Math.floor((width - 2 * PAD + GAP) / (TILE + GAP)));
   const rows = Math.ceil(arts.length / columns);
 
   // The project does not use React Compiler, so its memoization warning does not apply.
@@ -70,9 +74,10 @@ export function ArtGrid({
             className="art-grid-row"
             style={{
               transform: `translateY(${row.start}px)`,
-              gridTemplateColumns: `repeat(${columns}, ${TILE}px)`,
+              width: "100%",
+              gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
               gap: GAP,
-              padding: `0 ${GAP}px`,
+              padding: `0 ${PAD}px`,
             }}
           >
             {arts.slice(row.index * columns, row.index * columns + columns).map((art) => (

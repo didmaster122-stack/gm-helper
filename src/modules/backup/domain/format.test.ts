@@ -32,16 +32,37 @@ describe("campaign backup envelope", () => {
       name: "Проклятие",
       system: "D&D 5e",
       description: "Готика",
+      coverArtId: null,
       createdAt: NOW,
     });
     expect(envelope.relations).toEqual({ characters: [] });
     expect(envelope.timeline).toBeUndefined();
   });
 
-  it("reads version 1, 2 and 3 files", () => {
-    expect(errorKind(JSON.stringify(valid))).toBeNull();
-    expect(errorKind(JSON.stringify({ ...valid, version: 2 }))).toBeNull();
-    expect(errorKind(JSON.stringify({ ...valid, version: 3 }))).toBeNull();
+  it("reads version 1 to 4 files", () => {
+    for (const version of [1, 2, 3, 4]) {
+      expect(errorKind(JSON.stringify({ ...valid, version }))).toBeNull();
+    }
+  });
+
+  it("converts files before version 4 to no sessions and no cover", () => {
+    const old = { ...valid, version: 3, campaign: { ...valid.campaign, coverArtId: "a1" } };
+    const envelope = parseBackup(JSON.stringify({ ...old, sessions: { sessions: [{}] } }), NOW);
+    expect(envelope.sessions).toEqual({ sessions: [] });
+    expect(envelope.campaign.coverArtId).toBeNull();
+  });
+
+  it("hands over the sessions section and the cover of version 4 files", () => {
+    const sessions = { sessions: [{ number: 1 }] };
+    const file = {
+      ...valid,
+      version: 4,
+      campaign: { ...valid.campaign, coverArtId: "a1" },
+      sessions,
+    };
+    const envelope = parseBackup(JSON.stringify(file), NOW);
+    expect(envelope.sessions).toEqual(sessions);
+    expect(envelope.campaign.coverArtId).toBe("a1");
   });
 
   it("hands over the notes section, absent in files before version 3", () => {
@@ -55,7 +76,7 @@ describe("campaign backup envelope", () => {
     expect(errorKind(JSON.stringify({ format: "gm-helper.battlemap", version: 2 }))).toBe(
       "notBackup",
     );
-    expect(errorKind(JSON.stringify({ ...valid, version: 4 }))).toBe("newerVersion");
+    expect(errorKind(JSON.stringify({ ...valid, version: 5 }))).toBe("newerVersion");
     expect(errorKind(JSON.stringify({ ...valid, version: 0 }))).toBe("notBackup");
     expect(errorKind(JSON.stringify({ ...valid, campaign: { name: "Без системы" } }))).toBe(
       "badCampaign",

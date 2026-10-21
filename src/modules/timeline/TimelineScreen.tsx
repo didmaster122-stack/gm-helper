@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CircleAlert, Funnel, Info, X } from "lucide-react";
+import { CircleAlert, Clock, Funnel, Info, Plus, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
-import { Button, EmptyState, IconButton } from "../../shared/ui";
+import { useRememberOpened } from "../../shared/recent";
+import { Button, EmptyState, IconButton, ScreenHeader } from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { useGraph, useRelationsStore } from "../relations";
 import { noFilter, visibleEvents } from "./domain/filter";
@@ -35,6 +36,12 @@ export function TimelineScreen({ campaign, onOpenCharacter }: TimelineScreenProp
   const loadRelations = useRelationsStore((s) => s.load);
   const relationsStatus = useRelationsStore((s) => s.status);
   const relationsFor = useRelationsStore((s) => s.campaignId);
+  const selection = useTimelineStore((s) => s.selection);
+  useRememberOpened(
+    campaign.id,
+    "event",
+    loadedFor === campaign.id && selection?.kind === "event" ? selection.id : null,
+  );
 
   useEffect(() => {
     void load(campaign.id);
@@ -58,7 +65,11 @@ export function TimelineScreen({ campaign, onOpenCharacter }: TimelineScreenProp
   const charactersPending =
     relationsFor !== campaign.id || relationsStatus === "loading" || relationsStatus === "idle";
   if (status !== "ready" || loadedFor !== campaign.id || charactersPending) {
-    return <div className="center muted">{ru.common.loading}</div>;
+    return (
+      <div className="center">
+        <div className="spinner" role="status" aria-label={ru.common.loading} />
+      </div>
+    );
   }
 
   return <TimelineView key={campaign.id} campaign={campaign} onOpenCharacter={onOpenCharacter} />;
@@ -228,16 +239,44 @@ function TimelineView({ campaign, onOpenCharacter }: TimelineScreenProps) {
 
   return (
     <div className="tl-screen">
-      <TimelineToolbar
-        campaignName={campaign.name}
-        lanes={unhidden}
-        laneNames={names}
-        characters={characters}
-        onNewEvent={newEvent}
-        onNewMarker={() => createMarker(timeline.currentSession, null)}
-        onLanes={() => setLanesOpen(true)}
-        exportSource={() => canvasRef.current?.querySelector<HTMLElement>(".tl-content") ?? null}
-      />
+      <div className="screen-head">
+        <ScreenHeader
+          title={ru.nav.timeline}
+          path={[campaign.name]}
+          summary={ru.timeline.summary(
+            timeline.events.length,
+            timeline.sessionCount,
+            timeline.currentSession,
+          )}
+          actions={
+            <>
+              <Button
+                icon={Clock}
+                onClick={() => createMarker(timeline.currentSession, null)}
+                title={ru.timeline.marker.newHint}
+              >
+                {ru.timeline.marker.new}
+              </Button>
+              <Button
+                variant="primary"
+                icon={Plus}
+                onClick={newEvent}
+                title={ru.timeline.newEventHint}
+              >
+                {ru.timeline.newEvent}
+              </Button>
+            </>
+          }
+        />
+        <TimelineToolbar
+          campaignName={campaign.name}
+          lanes={unhidden}
+          laneNames={names}
+          characters={characters}
+          onLanes={() => setLanesOpen(true)}
+          exportSource={() => canvasRef.current?.querySelector<HTMLElement>(".tl-content") ?? null}
+        />
+      </div>
       {saveError && (
         <div className="notice error">
           <CircleAlert aria-hidden />

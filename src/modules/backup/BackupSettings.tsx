@@ -22,7 +22,15 @@ function ReportView({ report, onClose }: { report: ImportReport; onClose: () => 
       <Info aria-hidden />
       <div>
         <p>{t.imported(report.campaign.name)}</p>
-        <p>{t.importSummary(report.characters, report.events, report.maps, report.notes)}</p>
+        <p>
+          {t.importSummary(
+            report.sessions,
+            report.characters,
+            report.events,
+            report.maps,
+            report.notes,
+          )}
+        </p>
         {report.mapsSkipped > 0 && <p>{t.mapsSkipped(report.mapsSkipped)}</p>}
         {report.arts > 0 && <p>{t.artsFound(found, report.arts, report.artsByHash)}</p>}
         {listed.length > 0 && (

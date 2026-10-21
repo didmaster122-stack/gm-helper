@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { classifyPath } from "./paths";
-import { buildEntry, editDistance, matchesSelection, normalize, searchArts } from "./search";
+import {
+  buildEntry,
+  editDistance,
+  matchesSelection,
+  normalize,
+  searchArts,
+  sortArts,
+} from "./search";
 import type { Art } from "./types";
 
 function art(relPath: string, extra: Partial<Art> = {}): Art {
@@ -137,5 +144,33 @@ describe("matchesSelection", () => {
     const gone = art("S/G/x.png", { missing: true });
     expect(matchesSelection(gone, { kind: "all" })).toBe(false);
     expect(matchesSelection(gone, { kind: "missing" })).toBe(true);
+  });
+});
+
+describe("sortArts", () => {
+  const arts = [
+    art("S/G/Бета.png", { createdAt: "2026-01-02T00:00:00.000Z" }),
+    art("S/G/альфа.png", { createdAt: "2026-01-01T00:00:00.000Z" }),
+    art("S/G/Гамма.png", { createdAt: "2026-01-03T00:00:00.000Z" }),
+  ];
+  const names = (list: Art[]) => list.map((a) => a.fileName);
+  const tokens = new Map([["S/G/Бета.png", 2]]);
+  const count = (id: string) => tokens.get(id) ?? 0;
+
+  it("sorts by name, case-insensitively", () => {
+    expect(names(sortArts(arts, "name", count))).toEqual(["альфа.png", "Бета.png", "Гамма.png"]);
+  });
+
+  it("puts the newest first", () => {
+    expect(names(sortArts(arts, "added", count))).toEqual(["Гамма.png", "Бета.png", "альфа.png"]);
+  });
+
+  it("puts arts with more tokens first, then by name", () => {
+    expect(names(sortArts(arts, "tokens", count))).toEqual(["Бета.png", "альфа.png", "Гамма.png"]);
+  });
+
+  it("does not change the input", () => {
+    sortArts(arts, "added", count);
+    expect(names(arts)).toEqual(["Бета.png", "альфа.png", "Гамма.png"]);
   });
 });
