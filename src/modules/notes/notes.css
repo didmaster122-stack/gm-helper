@@ -11,7 +11,7 @@
 
 .notes-sidebar {
   flex: none;
-  width: 340px;
+  width: 360px;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -32,8 +32,11 @@
   gap: 6px;
 }
 
-.notes-create > button:first-child {
-  flex: 1;
+/* Both buttons share the width: with the larger type they no longer fit side by side as they are. */
+.notes-create > button {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding-inline: 10px;
 }
 
 .notes-filters,
@@ -144,6 +147,7 @@
 }
 
 .notes-selection {
+  flex-wrap: wrap;
   padding: 8px 12px;
   border-top: 1px solid var(--border);
 }
