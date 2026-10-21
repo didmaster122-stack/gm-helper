@@ -292,7 +292,7 @@ export const ru = {
     syncing: "Сканирование…",
     syncProgress: (done: number, total: number) => `Чтение файлов: ${done} из ${total}`,
     syncErrors: (count: number) => `Не удалось прочитать: ${count}`,
-    count: (n: number) => `Треков: ${n}`,
+    count: (n: number) => `${n} ${plural(n, "трек", "трека", "треков")}`,
     playAll: "Слушать всё",
     emptyTitle: "Здесь пока пусто",
     emptyCollection:
@@ -359,6 +359,8 @@ export const ru = {
       openMusic: "Открыть раздел «Музыка»",
     },
     editor: {
+      summary: (sources: number, clips: number, duration: string) =>
+        `${sources} ${plural(sources, "источник", "источника", "источников")} · ${clips} ${plural(clips, "фрагмент", "фрагмента", "фрагментов")} · ${duration}`,
       addToEditor: "В редактор",
       addToEditorHint: "Добавить трек источником в редактор (до трёх)",
       inEditor: "Уже в редакторе",
@@ -423,6 +425,8 @@ export const ru = {
   },
   settings: {
     title: "Настройки",
+    summary: "Оформление, папки, кампании и справочники. Изменения сохраняются сразу.",
+    groups: { general: "Общие", data: "Данные", references: "Справочники" },
     libraryRoot: "Папка библиотеки артов",
     campaigns: "Кампании",
     noCampaigns: "Кампаний пока нет.",
@@ -916,6 +920,8 @@ export const ru = {
     failed: "Не удалось загрузить картинку.",
   },
   relations: {
+    summary: (characters: number, factions: number, relations: number) =>
+      `${characters} ${plural(characters, "персонаж", "персонажа", "персонажей")} · ${factions} ${plural(factions, "фракция", "фракции", "фракций")} · ${relations} ${plural(relations, "связь", "связи", "связей")}`,
     newCharacter: "Персонаж",
     newCharacterTitle: "Новый персонаж",
     newFaction: "Фракция",
@@ -1064,6 +1070,14 @@ export const ru = {
     },
   },
   timeline: {
+    summary: (events: number, sessions: number, current: number | null) =>
+      [
+        `${events} ${plural(events, "событие", "события", "событий")}`,
+        `${sessions} ${plural(sessions, "сессия", "сессии", "сессий")}`,
+        current !== null ? `текущая — ${current}` : null,
+      ]
+        .filter(Boolean)
+        .join(" · "),
     mainLane: "Основной сюжет",
     sideLane: "Побочные квесты",
     personalLane: (name: string) => `Личный квест: ${name}`,

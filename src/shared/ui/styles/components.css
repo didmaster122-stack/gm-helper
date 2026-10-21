@@ -195,6 +195,26 @@ label.check {
   margin: -4px 0 20px;
 }
 
+/* Header of a full-height screen (graph, timeline, music): content runs edge to edge below it. */
+.screen-head {
+  flex: none;
+  padding: 28px 32px 0;
+}
+
+.screen-head .screen-header {
+  margin-bottom: 18px;
+}
+
+.screen-head .screen-tools {
+  margin: 0 -32px;
+  padding: 0 32px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.screen-head + .notice {
+  margin: 12px 32px 0;
+}
+
 /* ---- Badges, tags, chips ---- */
 
 .badge {
@@ -589,6 +609,38 @@ label.check {
   gap: 14px;
 }
 
+/* The name of the shown object, edited in place: a heading until it is focused. */
+.card-title-field > span:first-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.card-title-field > input {
+  height: auto;
+  margin-right: 32px;
+  padding: 2px 6px;
+  margin-left: -7px;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.card-title-field > input:hover {
+  border-color: var(--border);
+}
+
+.card-title-field > input:focus {
+  background: var(--surface);
+  border-color: var(--focus-ring);
+}
+
 .graph-card-title {
   margin: 0;
   padding-right: 36px;
@@ -811,7 +863,7 @@ label.check {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 14px 0 20px;
+  padding: 18px 16px 0 24px;
 }
 
 .modal-title {
@@ -823,8 +875,16 @@ label.check {
 .modal-body {
   flex: 1;
   min-height: 0;
-  padding: 14px 20px 20px;
+  padding: 16px 24px 20px;
   overflow: auto;
+}
+
+/* A failure of the whole dialog (not of one field): the same plate as screen notices. */
+.modal p.error {
+  padding: 8px 12px;
+  color: var(--text);
+  background: var(--danger-soft);
+  border-radius: var(--radius-md);
 }
 
 .modal-body > p {
@@ -845,10 +905,7 @@ label.check {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 20px;
-  background: var(--surface-2);
-  border-top: 1px solid var(--border);
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  padding: 4px 24px 20px;
 }
 
 @keyframes fade-in {
