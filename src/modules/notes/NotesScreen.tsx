@@ -1,16 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
-import { Check, CircleAlert, Copy, FileText, Trash, X } from "lucide-react";
+import { Check, CircleAlert, Copy, FileText, Plus, Trash, Upload, X } from "lucide-react";
 import { toAbsolute } from "../../shared/catalog/paths";
 import { pickFiles, pickSavePath } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
 import { useRememberOpened } from "../../shared/recent";
-import { Button, ConfirmDialog, EmptyState, IconButton, PromptDialog } from "../../shared/ui";
+import {
+  Button,
+  ConfirmDialog,
+  EmptyState,
+  IconButton,
+  PromptDialog,
+  ScreenHeader,
+  SearchInput,
+} from "../../shared/ui";
 import type { Campaign } from "../campaigns";
 import { archiveFileName } from "./domain/archive";
 import { isImageFile, isPdfFile, PDF_EXTENSION } from "./domain/attachments";
 import { NOTE_TITLE_MAX, type Note } from "./domain/types";
-import { NoteList } from "./NoteList";
+import { filterNotes } from "./domain/filter";
+import { NoteFilters, NoteList } from "./NoteList";
 import { PdfViewer } from "./PdfViewer";
 import { writeArchive } from "./service";
 import { useNotesStore } from "./store";
@@ -37,6 +46,9 @@ export function NotesScreen({ campaign, libraryRoot }: NotesScreenProps) {
   const checked = useNotesStore((s) => s.checked);
   const createText = useNotesStore((s) => s.createText);
   const addPdfs = useNotesStore((s) => s.addPdfs);
+  const filter = useNotesStore((s) => s.filter);
+  const setFilter = useNotesStore((s) => s.setFilter);
+  const sort = useNotesStore((s) => s.sort);
   const [message, setMessage] = useState<Message | null>(null);
   const [dragging, setDragging] = useState(false);
   const [managingTags, setManagingTags] = useState(false);
@@ -150,42 +162,66 @@ export function NotesScreen({ campaign, libraryRoot }: NotesScreenProps) {
   }
 
   const openNote = notes.find((n) => n.id === openId) ?? null;
+  const pdfCount = notes.filter((n) => n.kind === "pdf").length;
+  const shownCount = filterNotes(notes, filter, sort).length;
 
   return (
     <div className={dragging ? "notes dragging" : "notes"}>
-      <NoteList
-        onCreate={() => void createText()}
-        onAddPdf={() => void pickPdfs()}
-        onManageTags={() => setManagingTags(true)}
-        onArchive={() => setArchiving(true)}
-      />
-      <section className="notes-main">
-        {message && (
-          <div className={message.tone === "error" ? "notice error" : "notice"}>
-            {message.tone === "error" ? <CircleAlert aria-hidden /> : <Check aria-hidden />}
-            <span>{message.text}</span>
-            <IconButton
-              size="sm"
-              icon={X}
-              label={ru.common.close}
-              onClick={() => setMessage(null)}
+      <div className="notes-head">
+        <ScreenHeader
+          title={t.title}
+          path={[campaign.name]}
+          summary={t.summary(notes.length, pdfCount, shownCount)}
+          actions={
+            <>
+              <SearchInput
+                wrapperClassName="notes-search"
+                screenSearch
+                placeholder={t.search}
+                value={filter.query}
+                onChange={(e) => setFilter({ query: e.target.value })}
+              />
+              <Button icon={Upload} onClick={() => void pickPdfs()}>
+                {t.addPdf}
+              </Button>
+              <Button variant="primary" icon={Plus} onClick={() => void createText()}>
+                {t.newNote}
+              </Button>
+            </>
+          }
+        />
+        <NoteFilters onManageTags={() => setManagingTags(true)} />
+      </div>
+      <div className="notes-body">
+        <NoteList onArchive={() => setArchiving(true)} />
+        <section className="notes-main">
+          {message && (
+            <div className={message.tone === "error" ? "notice error" : "notice"}>
+              {message.tone === "error" ? <CircleAlert aria-hidden /> : <Check aria-hidden />}
+              <span>{message.text}</span>
+              <IconButton
+                size="sm"
+                icon={X}
+                label={ru.common.close}
+                onClick={() => setMessage(null)}
+              />
+            </div>
+          )}
+          {openNote ? (
+            <NoteView
+              key={openNote.id}
+              note={openNote}
+              libraryRoot={libraryRoot}
+              preferredSystem={campaign.system}
+              editorApi={editorApi}
+              onError={showError}
             />
-          </div>
-        )}
-        {openNote ? (
-          <NoteView
-            key={openNote.id}
-            note={openNote}
-            libraryRoot={libraryRoot}
-            preferredSystem={campaign.system}
-            editorApi={editorApi}
-            onError={showError}
-          />
-        ) : (
-          <EmptyState icon={FileText} title={t.noOpenTitle} text={t.noOpenText} />
-        )}
-        {dragging && <div className="notes-drop">{t.drop}</div>}
-      </section>
+          ) : (
+            <EmptyState icon={FileText} title={t.noOpenTitle} text={t.noOpenText} />
+          )}
+          {dragging && <div className="notes-drop">{t.drop}</div>}
+        </section>
+      </div>
       {managingTags && (
         <TagsDialog tags={tags} notes={notes} onClose={() => setManagingTags(false)} />
       )}
