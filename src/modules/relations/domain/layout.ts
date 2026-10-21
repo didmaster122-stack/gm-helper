@@ -29,6 +29,9 @@ interface LayoutNode {
   group: string | null;
 }
 
+/** Pull to the centre per pixel of distance; keeps unrelated nodes about `distance` apart. */
+const GRAVITY = 1;
+
 export interface LayoutOptions {
   iterations?: number;
   /** Preferred distance between connected nodes. */
@@ -170,6 +173,19 @@ export function forceLayout(graph: RelationGraph, options: LayoutOptions = {}): 
       const force = (3 * d * d) / L;
       dx[i]! -= (ddx / d) * force;
       dy[i]! -= (ddy / d) * force;
+    });
+
+    // Everything is pulled to the common centre: without it, nodes with no relations
+    // only push each other and fly apart as far as the iterations let them.
+    let cx = 0;
+    let cy = 0;
+    for (const node of nodes) {
+      cx += node.x / n;
+      cy += node.y / n;
+    }
+    nodes.forEach((node, i) => {
+      dx[i]! -= (node.x - cx) * GRAVITY;
+      dy[i]! -= (node.y - cy) * GRAVITY;
     });
 
     nodes.forEach((node, i) => {

@@ -3,7 +3,8 @@ import { getDb, getSetting, setSetting } from "../shared/db";
 import { pathExists } from "../shared/fs";
 import { useCampaignStore } from "../modules/campaigns";
 
-export type ModuleId = "library" | "battlemaps" | "relations" | "timeline" | "music" | "settings";
+export type ModuleId =
+  "library" | "battlemaps" | "relations" | "timeline" | "notes" | "music" | "settings";
 
 type Status = { kind: "loading" } | { kind: "error"; message: string } | { kind: "ready" };
 

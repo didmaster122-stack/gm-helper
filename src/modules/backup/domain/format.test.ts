@@ -38,12 +38,24 @@ describe("campaign backup envelope", () => {
     expect(envelope.timeline).toBeUndefined();
   });
 
+  it("reads version 1, 2 and 3 files", () => {
+    expect(errorKind(JSON.stringify(valid))).toBeNull();
+    expect(errorKind(JSON.stringify({ ...valid, version: 2 }))).toBeNull();
+    expect(errorKind(JSON.stringify({ ...valid, version: 3 }))).toBeNull();
+  });
+
+  it("hands over the notes section, absent in files before version 3", () => {
+    expect(parseBackup(JSON.stringify({ ...valid, version: 2 }), NOW).notes).toBeUndefined();
+    const notes = { tags: [], notes: [] };
+    expect(parseBackup(JSON.stringify({ ...valid, version: 3, notes }), NOW).notes).toEqual(notes);
+  });
+
   it("tells what is wrong with a file", () => {
     expect(errorKind("{oops")).toBe("notJson");
     expect(errorKind(JSON.stringify({ format: "gm-helper.battlemap", version: 2 }))).toBe(
       "notBackup",
     );
-    expect(errorKind(JSON.stringify({ ...valid, version: 2 }))).toBe("newerVersion");
+    expect(errorKind(JSON.stringify({ ...valid, version: 4 }))).toBe("newerVersion");
     expect(errorKind(JSON.stringify({ ...valid, version: 0 }))).toBe("notBackup");
     expect(errorKind(JSON.stringify({ ...valid, campaign: { name: "Без системы" } }))).toBe(
       "badCampaign",

@@ -8,6 +8,7 @@ import { BattlemapScreen } from "../modules/battlemap";
 import { createCharacter, RelationsScreen, showCharacter } from "../modules/relations";
 import { CharacterEvents, showEvent, TimelineScreen } from "../modules/timeline";
 import { MusicScreen } from "../modules/music";
+import { NotesScreen } from "../modules/notes";
 import { SettingsScreen } from "../modules/settings";
 import { FirstRun } from "./FirstRun";
 import { ShortcutsDialog } from "./ShortcutsDialog";
@@ -85,6 +86,14 @@ function CurrentModule() {
               }}
             />
           )}
+        </RequireCampaign>
+      );
+    case "notes":
+      return (
+        <RequireCampaign libraryRoot={libraryRoot}>
+          {(campaign) =>
+            libraryRoot ? <NotesScreen campaign={campaign} libraryRoot={libraryRoot} /> : null
+          }
         </RequireCampaign>
       );
     case "music":

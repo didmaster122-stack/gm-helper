@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { nextTokenFileName, retargetTokenNames, tokenNumber, tokensFolder } from "./tokenNames";
+import {
+  nextTokenFileName,
+  resizedTokenFileName,
+  retargetTokenNames,
+  tokenFileName,
+  tokenNumber,
+  tokensFolder,
+} from "./tokenNames";
 
 describe("token file names", () => {
   it("puts tokens into _tokens next to the art", () => {
@@ -43,5 +50,35 @@ describe("retargetTokenNames", () => {
 
   it("keeps foreign names, made unique", () => {
     expect(retargetTokenNames(["face.png"], "lich", ["face.png"])).toEqual(["face (2).png"]);
+  });
+});
+
+describe("token size in file names", () => {
+  it("writes the size of tokens larger than one cell", () => {
+    expect(tokenFileName("дракон", 2, 3)).toBe("дракон.token-2-3x3.png");
+    expect(tokenFileName("дракон", 2, 1)).toBe("дракон.token-2.png");
+  });
+
+  it("numbers tokens of any size together", () => {
+    expect(nextTokenFileName("lich", ["lich.token-1.png", "lich.token-4-2x2.png"], 3)).toBe(
+      "lich.token-5-3x3.png",
+    );
+    expect(tokenNumber("lich.token-4-2x2.png")).toBe(4);
+    expect(tokenNumber("lich.token-4-2x3.png")).toBeNull();
+  });
+
+  it("changes the size suffix and keeps the number", () => {
+    expect(resizedTokenFileName("lich.token-4.png", 2)).toBe("lich.token-4-2x2.png");
+    expect(resizedTokenFileName("lich.token-4-2x2.png", 1)).toBe("lich.token-4.png");
+    expect(resizedTokenFileName("my token.png", 2)).toBe("my token.png");
+  });
+
+  it("keeps the size when the art is renamed", () => {
+    expect(retargetTokenNames(["lich.token-1-4x4.png"], "Король", [])).toEqual([
+      "Король.token-1-4x4.png",
+    ]);
+    expect(
+      retargetTokenNames(["lich.token-1-2x2.png"], "Король", ["Король.token-1-2x2.png"]),
+    ).toEqual(["Король.token-2-2x2.png"]);
   });
 });

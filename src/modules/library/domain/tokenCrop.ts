@@ -9,6 +9,20 @@ export function isTokenSize(value: number): value is TokenSize {
   return (TOKEN_SIZES as readonly number[]).includes(value);
 }
 
+/** Creature size in grid cells per side: Medium 1×1, Large 2×2, Huge 3×3, Gargantuan 4×4. */
+export const CREATURE_SIZES = [1, 2, 3, 4] as const;
+export type CreatureSize = (typeof CREATURE_SIZES)[number];
+export const DEFAULT_CREATURE_SIZE: CreatureSize = 1;
+
+export function isCreatureSize(value: number): value is CreatureSize {
+  return (CREATURE_SIZES as readonly number[]).includes(value);
+}
+
+/** Side of the PNG: `size` pixels for each cell the creature covers. */
+export function tokenPixelSize(size: TokenSize, cells: CreatureSize): number {
+  return size * cells;
+}
+
 export interface TokenCrop {
   /** Circle centre as a fraction of the image width (0 = left edge, 1 = right edge). */
   centerX: number;

@@ -7,7 +7,7 @@ const sections: { title: string; rows: [string[], string][] }[] = [
   {
     title: ru.shortcuts.global,
     rows: [
-      [["Ctrl+1", "…", "Ctrl+5"], k.modules],
+      [["Ctrl+1", "…", "Ctrl+6"], k.modules],
       [["Ctrl+,"], k.settings],
       [["Ctrl+F"], k.search],
       [["F1"], k.help],

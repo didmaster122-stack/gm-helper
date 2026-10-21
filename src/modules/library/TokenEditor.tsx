@@ -1,24 +1,23 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react";
 import { ru } from "../../shared/i18n/ru";
-import { Modal } from "../../shared/ui";
+import { Button, Modal } from "../../shared/ui";
 import { toAbsolute } from "./domain/paths";
 import {
   clampCrop,
   DEFAULT_CROP,
-  DEFAULT_TOKEN_SIZE,
   imagePlacement,
-  isTokenSize,
   panCrop,
   sliderToZoom,
-  TOKEN_SIZES,
   zoomCropAt,
   zoomToSlider,
   type ImageSize,
   type TokenCrop,
-  type TokenSize,
 } from "./domain/tokenCrop";
+import { frameRing, type TokenFrame } from "./domain/tokenFrame";
 import type { Art, Token } from "./domain/types";
+import { loadTokenDefaults, saveTokenDefaults, type TokenDefaults } from "./tokenDefaults";
 import { createToken, loadImage, updateToken } from "./tokenService";
+import { TokenOptionsFields } from "./TokenOptionsFields";
 
 /** Canvas side and circle diameter in CSS pixels; the margin shows the art around the circle. */
 const VIEW = 420;
@@ -32,17 +31,36 @@ interface TokenEditorProps {
   art: Art;
   /** Existing token to adjust; a new one is created otherwise. */
   token?: Token;
+  /**
+   * Batch creation: only the framing is edited, with the batch's options, and handed
+   * back to the caller; nothing is written.
+   */
+  adjust?: { crop: TokenCrop; options: TokenDefaults; onApply: (crop: TokenCrop) => void };
   title: string;
-  onSaved: (token: Token) => void;
+  onSaved?: (token: Token) => void;
   onClose: () => void;
 }
 
 type Loaded = { kind: "loading" } | { kind: "error" } | { kind: "ready"; img: HTMLImageElement };
 
-export function TokenEditor({ root, art, token, title, onSaved, onClose }: TokenEditorProps) {
+export function TokenEditor({
+  root,
+  art,
+  token,
+  adjust,
+  title,
+  onSaved,
+  onClose,
+}: TokenEditorProps) {
   const [loaded, setLoaded] = useState<Loaded>({ kind: "loading" });
-  const [crop, setCrop] = useState<TokenCrop>(token?.crop ?? DEFAULT_CROP);
-  const [size, setSize] = useState<TokenSize>(token?.size ?? DEFAULT_TOKEN_SIZE);
+  const [crop, setCrop] = useState<TokenCrop>(adjust?.crop ?? token?.crop ?? DEFAULT_CROP);
+  const [options, setOptions] = useState<TokenDefaults>(() => {
+    if (adjust) return adjust.options;
+    return token
+      ? { size: token.size, cells: token.cells, frame: token.frame }
+      : loadTokenDefaults();
+  });
+  const { frame } = options;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,8 +86,8 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (canvas && img) draw(canvas, img, crop);
-  }, [img, crop]);
+    if (canvas && img) draw(canvas, img, crop, frame);
+  }, [img, crop, frame]);
 
   // React registers wheel listeners as passive, so preventDefault needs a native one.
   useEffect(() => {
@@ -105,13 +123,20 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
 
   async function save() {
     if (!img) return;
+    if (adjust) {
+      adjust.onApply(crop);
+      onClose();
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
+      const params = { ...options, crop };
       const saved = token
-        ? await updateToken(root, token, img, crop, size)
-        : await createToken(root, art, img, crop, size);
-      onSaved(saved);
+        ? await updateToken(root, token, img, params)
+        : await createToken(root, art, img, params);
+      saveTokenDefaults(options);
+      onSaved?.(saved);
       onClose();
     } catch (e) {
       setError(String(e));
@@ -125,12 +150,12 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
       onClose={onClose}
       footer={
         <>
-          <button type="button" onClick={onClose} disabled={busy}>
+          <Button onClick={onClose} disabled={busy}>
             {ru.common.cancel}
-          </button>
-          <button type="button" className="primary" onClick={save} disabled={busy || !img}>
-            {busy ? ru.library.token.saving : ru.common.save}
-          </button>
+          </Button>
+          <Button variant="primary" onClick={save} disabled={busy || !img}>
+            {busy ? ru.library.token.saving : adjust ? ru.library.batch.apply : ru.common.save}
+          </Button>
         </>
       }
     >
@@ -165,30 +190,14 @@ export function TokenEditor({ root, art, token, title, onSaved, onClose }: Token
               }}
             />
           </label>
-          <label className="field">
-            <span>{ru.library.token.size}</span>
-            <select
-              value={size}
-              onChange={(e) => {
-                const value = Number(e.target.value);
-                if (isTokenSize(value)) setSize(value);
-              }}
-            >
-              {TOKEN_SIZES.map((px) => (
-                <option key={px} value={px}>
-                  {ru.library.token.sizeOption(px)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="button"
+          <Button
             onClick={() => img && setCrop(clampCrop(DEFAULT_CROP, imageSize(img)))}
             disabled={!img}
           >
             {ru.library.token.reset}
-          </button>
+          </Button>
         </div>
+        {adjust ? null : <TokenOptionsFields value={options} onChange={setOptions} />}
         {error && <p className="error">{error}</p>}
       </div>
     </Modal>
@@ -200,7 +209,12 @@ function imageSize(img: HTMLImageElement): ImageSize {
 }
 
 /** The art around the circle is dimmed so it is clear what ends up in the token. */
-function draw(canvas: HTMLCanvasElement, img: HTMLImageElement, crop: TokenCrop) {
+function draw(
+  canvas: HTMLCanvasElement,
+  img: HTMLImageElement,
+  crop: TokenCrop,
+  frame: TokenFrame,
+) {
   const dpr = window.devicePixelRatio || 1;
   const px = Math.round(VIEW * dpr);
   if (canvas.width !== px) {
@@ -222,6 +236,16 @@ function draw(canvas: HTMLCanvasElement, img: HTMLImageElement, crop: TokenCrop)
   ctx.arc(c, c, DIAMETER / 2, 0, Math.PI * 2, true);
   ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
   ctx.fill("evenodd");
+
+  const ring = frameRing(frame, DIAMETER);
+  if (ring) {
+    ctx.beginPath();
+    ctx.arc(c, c, ring.outer, 0, Math.PI * 2);
+    ctx.arc(c, c, ring.inner, 0, Math.PI * 2, true);
+    ctx.fillStyle = frame.color;
+    ctx.fill();
+    return;
+  }
 
   ctx.beginPath();
   ctx.arc(c, c, DIAMETER / 2, 0, Math.PI * 2);

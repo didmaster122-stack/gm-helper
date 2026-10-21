@@ -1,0 +1,554 @@
+/* Notes: list with filters on the left, the open note (rich text or PDF) on the right. */
+
+.notes {
+  position: relative;
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+/* ---- List ---- */
+
+.notes-sidebar {
+  flex: none;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+}
+
+.notes-sidebar-head {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.notes-create {
+  display: flex;
+  gap: 6px;
+}
+
+.notes-create > button:first-child {
+  flex: 1;
+}
+
+.notes-filters,
+.notes-selection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notes-dropdown {
+  position: relative;
+}
+
+.notes-dropdown > button > svg:last-child {
+  width: 14px;
+  height: 14px;
+  margin-right: -4px;
+  color: var(--text-subtle);
+}
+
+.note-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 6px;
+}
+
+.note-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+}
+
+.note-row:hover {
+  background: var(--surface-2);
+}
+
+.note-row.active {
+  background: var(--accent-soft);
+}
+
+.note-row > input {
+  margin-top: 3px;
+}
+
+.note-row-open {
+  flex: 1;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 400;
+  text-align: left;
+}
+
+.note-row-open:hover:not(:disabled) {
+  background: transparent;
+}
+
+.note-row-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.note-row-title > svg {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  color: var(--text-muted);
+}
+
+.note-row-title > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.note-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--text-xs);
+}
+
+.note-row-meta .tag {
+  height: 18px;
+  padding: 0 6px;
+  font-size: var(--text-xs);
+}
+
+.note-row-date {
+  font-variant-numeric: tabular-nums;
+}
+
+.notes-selection {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+}
+
+/* The bar is at the bottom of the window: its menu opens upwards. */
+.notes-selection .popover {
+  top: auto;
+  bottom: calc(100% + 6px);
+  min-width: 200px;
+}
+
+.notes-checked {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+/* ---- Open note ---- */
+
+.notes-main {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.notes-main > .notice {
+  margin: 12px 16px 0;
+}
+
+.notes-drop {
+  position: absolute;
+  inset: 12px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--accent-text);
+  background: var(--accent-softer);
+  border: 2px dashed var(--accent);
+  border-radius: var(--radius-lg);
+  pointer-events: none;
+}
+
+.note-view {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 16px 4px;
+}
+
+input.note-title {
+  flex: 1;
+  min-width: 0;
+  height: auto;
+  padding: 4px 8px;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+input.note-title:hover {
+  border-color: var(--border);
+}
+
+input.note-title:focus {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+.note-tags {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 0 16px 10px 24px;
+}
+
+.tag-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 280px;
+  padding: 8px;
+}
+
+.tag-picker .menu-list {
+  padding: 0;
+  max-height: 260px;
+}
+
+.tag-check {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--accent-text);
+}
+
+.tag-check.off {
+  visibility: hidden;
+}
+
+.tag-manage-list > li {
+  min-height: 36px;
+}
+
+/* ---- Text editor ---- */
+
+.note-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.note-editor-toolbar {
+  border-top: 1px solid var(--border);
+}
+
+.note-save-status {
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.note-editor-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 24px 32px 80px;
+  cursor: text;
+}
+
+.note-editor-content {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.note-editor-content .tiptap {
+  outline: none;
+  font-size: var(--text-base);
+  line-height: 1.6;
+  color: var(--text);
+  cursor: text;
+}
+
+.tiptap > :first-child {
+  margin-top: 0;
+}
+
+.tiptap p {
+  margin: 0 0 0.6em;
+}
+
+.tiptap h1,
+.tiptap h2,
+.tiptap h3 {
+  margin: 1.2em 0 0.5em;
+  line-height: 1.3;
+}
+
+.tiptap ul,
+.tiptap ol {
+  margin: 0 0 0.6em;
+  padding-left: 1.6em;
+}
+
+.tiptap li > p {
+  margin: 0;
+}
+
+.tiptap blockquote {
+  margin: 0.8em 0;
+  padding-left: 14px;
+  color: var(--text-muted);
+  border-left: 3px solid var(--accent);
+}
+
+.tiptap hr {
+  margin: 1.2em 0;
+  border: none;
+  border-top: 1px solid var(--border-strong);
+}
+
+.tiptap code {
+  padding: 0 4px;
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+}
+
+.tiptap pre {
+  padding: 10px 14px;
+  overflow-x: auto;
+  background: var(--surface-2);
+  border-radius: var(--radius);
+}
+
+.tiptap pre code {
+  padding: 0;
+  background: none;
+}
+
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+
+.tiptap .tableWrapper {
+  margin: 0.8em 0;
+  overflow-x: auto;
+}
+
+.tiptap table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.tiptap th,
+.tiptap td {
+  position: relative;
+  min-width: 48px;
+  padding: 4px 8px;
+  vertical-align: top;
+  border: 1px solid var(--border-strong);
+}
+
+.tiptap th {
+  font-weight: 600;
+  text-align: left;
+  background: var(--surface-2);
+}
+
+.tiptap th p,
+.tiptap td p {
+  margin: 0;
+}
+
+.tiptap .selectedCell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--accent-soft);
+  pointer-events: none;
+}
+
+.tiptap img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0.6em 0;
+  border-radius: var(--radius-sm);
+}
+
+.tiptap [data-resize-container] {
+  margin: 0.6em 0;
+}
+
+.tiptap [data-resize-container] img {
+  margin: 0;
+}
+
+.tiptap .ProseMirror-selectednode img,
+.tiptap img.ProseMirror-selectednode {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tiptap [data-resize-handle] {
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border: 2px solid var(--surface);
+  border-radius: var(--radius-full);
+  opacity: 0;
+  transition: opacity var(--duration) var(--ease);
+}
+
+.tiptap [data-resize-wrapper]:hover [data-resize-handle],
+.tiptap .ProseMirror-selectednode [data-resize-handle] {
+  opacity: 1;
+}
+
+.tiptap [data-resize-handle="bottom-right"] {
+  cursor: nwse-resize;
+  transform: translate(50%, 50%);
+}
+
+.tiptap [data-resize-handle="bottom-left"] {
+  cursor: nesw-resize;
+  transform: translate(-50%, 50%);
+}
+
+/* ---- PDF ---- */
+
+.pdf-viewer {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border);
+}
+
+.pdf-toolbar .search-input {
+  width: 220px;
+}
+
+.pdf-page-input {
+  width: 56px;
+  text-align: center;
+}
+
+.pdf-hits {
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.pdf-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+  background: var(--canvas);
+  outline: none;
+}
+
+.pdf-page {
+  --scale-round-x: 1px;
+  --scale-round-y: 1px;
+  position: relative;
+  margin: 0 auto;
+  box-shadow: var(--shadow-md);
+}
+
+.pdf-page canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* The text layer of pdf.js: invisible text over the page, for selection and search marks. */
+.pdf-page .textLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: clip;
+  line-height: 1;
+  text-align: initial;
+  text-size-adjust: none;
+  forced-color-adjust: none;
+  transform-origin: 0 0;
+  --min-font-size: 1;
+  --text-scale-factor: calc(var(--total-scale-factor) * var(--min-font-size));
+  --min-font-size-inv: calc(1 / var(--min-font-size));
+}
+
+.pdf-page .textLayer :is(span, br) {
+  position: absolute;
+  color: transparent;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.pdf-page .textLayer > :not(.markedContent),
+.pdf-page .textLayer .markedContent span:not(.markedContent) {
+  z-index: 1;
+  --font-height: 0;
+  font-size: calc(var(--text-scale-factor) * var(--font-height));
+  --scale-x: 1;
+  --rotate: 0deg;
+  transform: rotate(var(--rotate)) scaleX(var(--scale-x)) scale(var(--min-font-size-inv));
+}
+
+.pdf-page .textLayer .markedContent {
+  display: contents;
+}
+
+.pdf-page .textLayer ::selection {
+  background: var(--focus-ring);
+}
+
+.pdf-page .textLayer .pdf-hit {
+  background: var(--focus-ring);
+  border-radius: var(--radius-sm);
+}

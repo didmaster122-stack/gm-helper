@@ -36,6 +36,8 @@ function token(id: string, artId: string, relPath: string): Token {
     artId,
     relPath,
     size: 512,
+    cells: 2,
+    frame: { color: "#b3261e", width: 8 },
     crop: { centerX: 0.4, centerY: 0.3, zoom: 2 },
     createdAt: T,
     updatedAt: T,
@@ -86,6 +88,8 @@ describe("collectArtRefs", () => {
     );
     expect(refs.tokens[0]).toMatchObject({
       size: 512,
+      cells: 1,
+      frame: { width: 0 },
       crop: { centerX: 0.5, centerY: 0.5, zoom: 1 },
     });
   });

@@ -44,6 +44,11 @@ export async function pickFile(title: string, filters: FileFilter[]): Promise<st
   return typeof result === "string" ? result : null;
 }
 
+export async function pickFiles(title: string, filters: FileFilter[]): Promise<string[]> {
+  const result = await open({ multiple: true, directory: false, title, filters });
+  return result ?? [];
+}
+
 export function pathExists(path: string): Promise<boolean> {
   return exists(path);
 }
