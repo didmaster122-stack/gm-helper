@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, type ReactNode } from "react";
 import {
   AudioWaveform,
   CircleAlert,
@@ -19,10 +19,17 @@ import { MissingBar } from "../../shared/catalog/MissingBar";
 import { toAbsolute } from "../../shared/catalog/paths";
 import { fileUrl, pickDirectory } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
-import { Button, EmptyState, IconButton, SearchInput, Segmented } from "../../shared/ui";
+import {
+  Button,
+  EmptyState,
+  IconButton,
+  ScreenHeader,
+  SearchInput,
+  Segmented,
+} from "../../shared/ui";
 import { searchTracks } from "./domain/search";
 import { trackName } from "./domain/tracks";
-import type { Track } from "./domain/types";
+import type { MusicSelection, Track } from "./domain/types";
 import { MusicTree } from "./MusicTree";
 import { usePlayerStore, type QueueItem } from "./player";
 import { PlayerBar } from "./PlayerControls";
@@ -88,23 +95,41 @@ function MusicSection({ root }: { root: string }) {
   }, [open, root]);
 
   if (storeRoot !== root) return null;
+  const tabs = (
+    <Segmented<MusicTab>
+      label={ru.music.title}
+      value={tab}
+      onChange={setTab}
+      options={[
+        { value: "listen", label: ru.music.tabs.listen, icon: Headphones },
+        { value: "edit", label: ru.music.tabs.edit, icon: AudioWaveform },
+      ]}
+    />
+  );
   return (
     <div className="music">
-      <div className="music-tabs">
-        <Segmented<MusicTab>
-          label={ru.music.title}
-          size="sm"
-          value={tab}
-          onChange={setTab}
-          options={[
-            { value: "listen", label: ru.music.tabs.listen, icon: Headphones },
-            { value: "edit", label: ru.music.tabs.edit, icon: AudioWaveform },
-          ]}
-        />
-      </div>
-      {tab === "listen" ? <MusicCatalog root={root} /> : <EditorScreen root={root} />}
+      {tab === "listen" ? (
+        <MusicCatalog root={root} tabs={tabs} />
+      ) : (
+        <EditorScreen root={root} tabs={tabs} />
+      )}
     </div>
   );
+}
+
+function selectionPath(selection: MusicSelection): string[] {
+  switch (selection.kind) {
+    case "all":
+      return [ru.music.all];
+    case "category":
+      return [selection.category];
+    case "collection":
+      return [selection.category, selection.collection];
+    case "unsorted":
+      return [ru.music.unsorted];
+    case "missing":
+      return [ru.music.missingList];
+  }
 }
 
 function toQueue(root: string, tracks: readonly Track[]): QueueItem[] {
@@ -115,7 +140,7 @@ function toQueue(root: string, tracks: readonly Track[]): QueueItem[] {
   }));
 }
 
-function MusicCatalog({ root }: { root: string }) {
+function MusicCatalog({ root, tabs }: { root: string; tabs: ReactNode }) {
   const entries = useMusicStore((s) => s.entries);
   const selection = useMusicStore((s) => s.selection);
   const query = useMusicStore((s) => s.query);
@@ -166,44 +191,55 @@ function MusicCatalog({ root }: { root: string }) {
 
   return (
     <>
+      <div className="screen-head">
+        <ScreenHeader
+          title={ru.music.title}
+          path={selectionPath(selection)}
+          summary={
+            <>
+              {ru.music.count(results.length)}
+              {status && <span className="music-status"> · {status}</span>}
+              {syncErrors.length > 0 && (
+                <span className="badge warning" title={syncErrors.slice(0, 20).join("\n")}>
+                  {ru.music.syncErrors(syncErrors.length)}
+                </span>
+              )}
+            </>
+          }
+          actions={
+            <>
+              {tabs}
+              <SearchInput
+                wrapperClassName="music-search"
+                screenSearch
+                placeholder={ru.music.searchPlaceholder}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                autoFocus
+              />
+              <IconButton
+                icon={RefreshCw}
+                label={ru.music.refresh}
+                className={syncing ? "spinning" : undefined}
+                onClick={() => void sync()}
+                disabled={syncing}
+              />
+              <Button
+                icon={Play}
+                variant="primary"
+                onClick={() => play(0)}
+                disabled={!results.some((t) => !t.missing)}
+              >
+                {ru.music.playAll}
+              </Button>
+            </>
+          }
+        />
+      </div>
       <div className="music-body">
         <MusicTree />
 
         <section className="music-main">
-          <div className="toolbar music-toolbar">
-            <SearchInput
-              wrapperClassName="music-search"
-              screenSearch
-              placeholder={ru.music.searchPlaceholder}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              autoFocus
-            />
-            <span className="toolbar-count">{ru.music.count(results.length)}</span>
-            <Button
-              icon={Play}
-              variant="ghost"
-              onClick={() => play(0)}
-              disabled={!results.some((t) => !t.missing)}
-            >
-              {ru.music.playAll}
-            </Button>
-            <span className="spacer" />
-            {status && <span className="toolbar-status">{status}</span>}
-            {syncErrors.length > 0 && (
-              <span className="badge warning" title={syncErrors.slice(0, 20).join("\n")}>
-                {ru.music.syncErrors(syncErrors.length)}
-              </span>
-            )}
-            <IconButton
-              icon={RefreshCw}
-              label={ru.music.refresh}
-              className={syncing ? "spinning" : undefined}
-              onClick={() => void sync()}
-              disabled={syncing}
-            />
-          </div>
-
           {drop.notice && (
             <div className="notice">
               <Info aria-hidden />

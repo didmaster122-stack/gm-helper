@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   AudioWaveform,
   CircleAlert,
@@ -20,7 +20,7 @@ import {
   ZoomOut,
 } from "lucide-react";
 import { ru } from "../../../shared/i18n/ru";
-import { Button, EmptyState, IconButton } from "../../../shared/ui";
+import { Button, EmptyState, IconButton, ScreenHeader } from "../../../shared/ui";
 import {
   addClip,
   clipsAt,
@@ -112,7 +112,13 @@ function fitAll(project: Project) {
   if (el) el.scrollLeft = 0;
 }
 
-export function EditorScreen({ root }: { root: string }) {
+interface EditorScreenProps {
+  root: string;
+  /** The switch between the catalog and the editor, shown in the header. */
+  tabs: ReactNode;
+}
+
+export function EditorScreen({ root, tabs }: EditorScreenProps) {
   const project = useProject();
   const loading = useEditorStore((s) => s.loading.length);
   const error = useEditorStore((s) => s.error);
@@ -161,14 +167,31 @@ export function EditorScreen({ root }: { root: string }) {
   }, []);
 
   const empty = project.sources.length === 0 && loading === 0;
+  const duration = projectDuration(project);
 
   return (
     <section className="music-editor">
-      <EditorToolbar
-        onSave={() => setSaving(true)}
-        onFit={() => fitAll(project)}
-        disabled={empty}
-      />
+      <div className="screen-head">
+        <ScreenHeader
+          title={ru.music.title}
+          path={[ru.music.tabs.edit]}
+          summary={t.summary(project.sources.length, project.clips.length, formatTime(duration))}
+          actions={
+            <>
+              {tabs}
+              <Button
+                variant="primary"
+                icon={Save}
+                onClick={() => setSaving(true)}
+                disabled={duration <= 0}
+              >
+                {t.save}
+              </Button>
+            </>
+          }
+        />
+        <EditorToolbar onFit={() => fitAll(project)} disabled={empty} />
+      </div>
       {error && (
         <div className="notice error">
           <CircleAlert aria-hidden />
@@ -208,15 +231,7 @@ export function EditorScreen({ root }: { root: string }) {
   );
 }
 
-function EditorToolbar({
-  onSave,
-  onFit,
-  disabled,
-}: {
-  onSave: () => void;
-  onFit: () => void;
-  disabled: boolean;
-}) {
+function EditorToolbar({ onFit, disabled }: { onFit: () => void; disabled: boolean }) {
   const playing = useEditorStore((s) => s.playback?.kind === "mix");
   const time = useEditorStore((s) => (s.playback?.kind === "mix" ? s.position : s.cursor));
   const canUndo = useEditorStore((s) => s.history.past.length > 0);
@@ -230,7 +245,7 @@ function EditorToolbar({
   const duration = projectDuration(useProject());
 
   return (
-    <div className="toolbar editor-toolbar">
+    <div className="screen-tools graph-tools">
       <div className="toolbar-group">
         <IconButton
           icon={playing ? Pause : Play}
@@ -316,15 +331,6 @@ function EditorToolbar({
         <IconButton icon={ZoomIn} label={t.zoomIn} shortcut="+" onClick={() => zoomBy(ZOOM_STEP)} />
         <IconButton icon={Scan} label={t.zoomFit} onClick={onFit} disabled={duration <= 0} />
       </div>
-      <Button
-        className="editor-save"
-        variant="primary"
-        icon={Save}
-        onClick={onSave}
-        disabled={duration <= 0}
-      >
-        {t.save}
-      </Button>
     </div>
   );
 }

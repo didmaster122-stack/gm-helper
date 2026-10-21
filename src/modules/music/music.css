@@ -24,13 +24,21 @@
   background: var(--bg);
 }
 
-.music-toolbar {
-  flex-wrap: nowrap;
+/* The catalog header has no tools row: the rule under it comes from here. */
+.music > .screen-head {
+  border-bottom: 1px solid var(--border);
 }
 
 .music-search {
-  flex: 0 1 320px;
-  min-width: 160px;
+  width: 260px;
+}
+
+.music-status {
+  color: var(--text-muted);
+}
+
+.screen-header-summary .badge {
+  margin-left: 8px;
 }
 
 /* ---- Track list ---- */
@@ -436,17 +444,6 @@ button.play-button {
   width: 56px;
 }
 
-/* ---- Tabs: listen / edit ---- */
-
-.music-tabs {
-  display: flex;
-  align-items: center;
-  flex: none;
-  padding: 8px 12px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-}
-
 .track-main-actions {
   display: flex;
   flex-wrap: wrap;
@@ -463,15 +460,6 @@ button.play-button {
   background: var(--bg);
 }
 
-.editor-toolbar {
-  flex: none;
-}
-
-/* Stays at the right edge, also when the toolbar wraps in a narrow window. */
-.editor-save {
-  margin-left: auto;
-}
-
 .editor-time {
   min-width: 96px;
   padding: 0 4px;
@@ -485,7 +473,7 @@ button.play-button {
   flex-direction: column;
   gap: 12px;
   min-height: 0;
-  padding: 12px;
+  padding: 16px 32px;
   overflow-y: auto;
 }
 
