@@ -2,7 +2,7 @@
 // per text note with its images next to it, PDFs as they are).
 import { safeFileName } from "../../../shared/fs/names";
 import { baseNameOf, extensionOf } from "./attachments";
-import { docImagePaths, docToHtml, escapeHtml, parseDoc } from "./doc";
+import { docImagePaths, docToHtml, escapeHtml, parseDoc, type MentionNamer } from "./doc";
 import { sortNotes } from "./filter";
 import type { Note, NoteTag } from "./types";
 
@@ -100,6 +100,7 @@ export function planArchive(
   notes: readonly Note[],
   tags: readonly NoteTag[],
   labels: ArchiveLabels,
+  mentionName?: MentionNamer,
 ): ArchiveEntry[] {
   const allocate = nameAllocator();
   allocate("index", "html");
@@ -131,10 +132,14 @@ export function planArchive(
       images.set(src, path);
       entries.push({ path, kind: "file", source: src });
     }
-    const body = docToHtml(doc, (src) => {
-      const image = images.get(src);
-      return image ? href(image) : null;
-    });
+    const body = docToHtml(
+      doc,
+      (src) => {
+        const image = images.get(src);
+        return image ? href(image) : null;
+      },
+      mentionName,
+    );
     const tagLine =
       names.length > 0 ? `<p class="tags">${escapeHtml(labels.tags)}:${chips(names)}</p>` : "";
     const path = allocate(note.title, "html");

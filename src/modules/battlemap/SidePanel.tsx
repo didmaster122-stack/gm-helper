@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { MentionedIn } from "../../shared/mentions";
 import { Button } from "../../shared/ui";
 import { FLOOR, makeTypeLookup, type CellType } from "./domain/cellTypes";
 import {
@@ -30,6 +31,8 @@ import { useEditorStore } from "./store";
 import { TypeSwatch } from "./TypeSwatch";
 
 interface SidePanelProps {
+  /** `null` for a template: templates belong to no campaign and are not mentioned. */
+  mapId: string | null;
   model: BattlemapModel;
   types: CellType[];
   objectDefs: ObjectDef[];
@@ -43,7 +46,7 @@ function nextRegionName(regions: readonly Region[]): string {
   return ru.battlemap.regions.newName(n);
 }
 
-export function SidePanel({ model, types, objectDefs }: SidePanelProps) {
+export function SidePanel({ mapId, model, types, objectDefs }: SidePanelProps) {
   const selection = useEditorStore((s) => s.selection);
   const regionId = useEditorStore((s) => s.regionId);
   const typeId = useEditorStore((s) => s.typeId);
@@ -140,6 +143,11 @@ ${region.note}`}
           />
         )}
       </section>
+      {mapId && (
+        <section className="map-side-section">
+          <MentionedIn kind="battlemap" id={mapId} />
+        </section>
+      )}
     </aside>
   );
 }

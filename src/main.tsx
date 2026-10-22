@@ -7,12 +7,16 @@ import "./app/app.css";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./app/App";
-import { initTheme } from "./shared/ui";
+import { initErrorLog } from "./shared/log";
+import { ErrorBoundary, initTheme } from "./shared/ui";
 
+initErrorLog();
 initTheme();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <App />
+    <ErrorBoundary fullScreen>
+      <App />
+    </ErrorBoundary>
   </React.StrictMode>,
 );

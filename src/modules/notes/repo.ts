@@ -1,7 +1,9 @@
 import { runScript, sqlLiteral } from "../../shared/db/script";
 import { placeholders } from "../../shared/db/placeholders";
 import type { Db } from "../../shared/db/types";
+import type { MentionTarget } from "../../shared/mentions/domain";
 import type { SearchRecord } from "../../shared/search/global";
+import { docMentions, parseDoc } from "./domain/doc";
 import { NOTE_KINDS, type Note, type NoteKind, type NoteTag } from "./domain/types";
 
 export interface RepoClock {
@@ -246,7 +248,8 @@ export async function noteSearchRecords(
     campaign_id: string;
     title: string;
     plain_text: string;
-  }>(`SELECT id, campaign_id, title, plain_text FROM notes WHERE ${where}`, campaignIds);
+    content: string;
+  }>(`SELECT id, campaign_id, title, plain_text, content FROM notes WHERE ${where}`, campaignIds);
   const tags = await db.select<{ note_id: string; name: string }>(
     `SELECT l.note_id, t.name FROM note_tag_links l JOIN note_tags t ON t.id = l.tag_id
      WHERE t.${where}`,
@@ -260,5 +263,28 @@ export async function noteSearchRecords(
     campaignId: r.campaign_id,
     title: r.title,
     body: [r.plain_text, ...(tagsByNote.get(r.id) ?? [])],
+    // A note is found by the current names of what it mentions.
+    refs: mentionIds(r.content),
   }));
+}
+
+function mentionIds(content: string): string[] {
+  if (!content.includes('"mention"')) return [];
+  return [...new Set(docMentions(parseDoc(content)).map((m) => m.id))];
+}
+
+/** Text notes of the campaign that mention the object. */
+export async function notesMentioning(
+  db: Db,
+  campaignId: string,
+  id: string,
+): Promise<MentionTarget[]> {
+  // The id is unique, so the text filter finds the candidates; the document confirms them.
+  const rows = await db.select<{ id: string; title: string; content: string }>(
+    "SELECT id, title, content FROM notes WHERE campaign_id = ? AND id <> ? AND instr(content, ?) > 0",
+    [campaignId, id, id],
+  );
+  return rows
+    .filter((r) => mentionIds(r.content).includes(id))
+    .map((r) => ({ kind: "note", id: r.id, title: r.title }));
 }

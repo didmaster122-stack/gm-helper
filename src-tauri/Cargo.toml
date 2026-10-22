@@ -1,6 +1,6 @@
 [package]
 name = "gm-helper"
-version = "0.3.0"
+version = "0.4.0"
 description = "Game master helper: art library, battlemaps, relations, timeline"
 authors = []
 edition = "2024"

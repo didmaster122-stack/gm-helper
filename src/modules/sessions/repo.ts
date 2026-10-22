@@ -1,5 +1,6 @@
 import { runScript, sqlLiteral } from "../../shared/db/script";
 import type { Db } from "../../shared/db/types";
+import { mentionsInText } from "../../shared/mentions/domain";
 import type { SessionChange } from "./domain/sessions";
 import type { PrepItem, Session } from "./domain/types";
 
@@ -10,6 +11,8 @@ interface SessionRow {
   date: string | null;
   played: number;
   plan_note_id: string | null;
+  recap: string;
+  recap_event_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,10 +59,27 @@ function toSession(r: SessionRow, items: PrepItem[]): Session {
     date: r.date,
     played: r.played !== 0,
     planNoteId: r.plan_note_id,
+    recap: r.recap,
+    recapEventId: r.recap_event_id,
     items,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
+}
+
+/** Sessions of the campaign whose recap mentions the object. */
+export async function sessionsMentioning(
+  db: Db,
+  campaignId: string,
+  id: string,
+): Promise<{ id: string; number: number; recapEventId: string | null }[]> {
+  const rows = await db.select<SessionRow>(
+    "SELECT * FROM sessions WHERE campaign_id = ? AND instr(recap, ?) > 0 ORDER BY number",
+    [campaignId, id],
+  );
+  return rows
+    .filter((r) => mentionsInText(r.recap).some((m) => m.id === id))
+    .map((r) => ({ id: r.id, number: r.number, recapEventId: r.recap_event_id }));
 }
 
 /** Writes the session with its checklist, replacing what was stored. */
@@ -72,12 +92,15 @@ export function sessionStatements(session: Session): string[] {
     session.date,
     session.played,
     session.planNoteId,
+    session.recap,
+    session.recapEventId,
     session.createdAt,
     session.updatedAt,
   ].map(sqlLiteral);
   return [
     `INSERT OR REPLACE INTO sessions
-      (id, campaign_id, number, date, played, plan_note_id, created_at, updated_at)
+      (id, campaign_id, number, date, played, plan_note_id, recap, recap_event_id,
+       created_at, updated_at)
       VALUES (${values.join(", ")})`,
     `DELETE FROM session_prep_items WHERE session_id = ${id}`,
     ...session.items.map((item, position) => {

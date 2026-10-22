@@ -1,6 +1,7 @@
 import { runScript, sqlLiteral } from "../../shared/db/script";
 import { placeholders } from "../../shared/db/placeholders";
 import type { Db } from "../../shared/db/types";
+import { mentionPlainText, mentionsInText, type MentionTarget } from "../../shared/mentions/domain";
 import type { SearchRecord } from "../../shared/search/global";
 import {
   CHARACTER_KINDS,
@@ -384,14 +385,49 @@ export async function relationSearchRecords(
       campaignId: r.campaign_id,
       title: r.name,
       detail: r.role,
-      body: [r.player, r.role, r.description, r.motivation, r.secrets, ...parseStrings(r.tags)],
+      body: [
+        r.player,
+        r.role,
+        mentionPlainText(r.description),
+        r.motivation,
+        r.secrets,
+        ...parseStrings(r.tags),
+      ],
+      refs: mentionIds(r.description),
     })),
     ...factions.map((r): SearchRecord => ({
       kind: "faction",
       id: r.id,
       campaignId: r.campaign_id,
       title: r.name,
-      body: [r.description],
+      body: [mentionPlainText(r.description)],
+      refs: mentionIds(r.description),
     })),
+  ];
+}
+
+const mentionIds = (text: string) => [...new Set(mentionsInText(text).map((m) => m.id))];
+
+/** Characters and factions of the campaign whose descriptions mention the object. */
+export async function relationsMentioning(
+  db: Db,
+  campaignId: string,
+  id: string,
+): Promise<MentionTarget[]> {
+  const query = (table: string) =>
+    db.select<{ id: string; name: string; description: string }>(
+      `SELECT id, name, description FROM ${table}
+       WHERE campaign_id = ? AND id <> ? AND instr(description, ?) > 0`,
+      [campaignId, id, id],
+    );
+  const [characters, factions] = await Promise.all([query("characters"), query("factions")]);
+  const mentioning = (r: { description: string }) => mentionIds(r.description).includes(id);
+  return [
+    ...characters
+      .filter(mentioning)
+      .map((r): MentionTarget => ({ kind: "character", id: r.id, title: r.name })),
+    ...factions
+      .filter(mentioning)
+      .map((r): MentionTarget => ({ kind: "faction", id: r.id, title: r.name })),
   ];
 }

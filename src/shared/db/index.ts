@@ -1,5 +1,5 @@
 export type { Db, SqlParams } from "./types";
-export { getDb } from "./client";
+export { backupsDir, getDb, listDbBackups, restoreDbBackup, type DbBackup } from "./client";
 export { getSetting, setSetting, type SettingKey } from "./settingsRepo";
 export { runScript, sqlLiteral } from "./script";
 export {

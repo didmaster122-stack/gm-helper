@@ -1,6 +1,7 @@
 export { Modal } from "./Modal";
 export { ConfirmDialog } from "./ConfirmDialog";
 export { EmptyState } from "./EmptyState";
+export { ErrorBoundary } from "./ErrorBoundary";
 export { PromptDialog } from "./PromptDialog";
 export { TagEditor } from "./TagEditor";
 export { ColorInput } from "./ColorInput";

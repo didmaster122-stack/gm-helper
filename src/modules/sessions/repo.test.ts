@@ -4,7 +4,7 @@ import { migrations } from "../../shared/db/migrations";
 import { createMemoryDb } from "../../shared/db/testing";
 import type { Db } from "../../shared/db/types";
 import { markPlayed, newSession } from "./domain/sessions";
-import { applyChange, listSessions } from "./repo";
+import { applyChange, listSessions, sessionsMentioning } from "./repo";
 
 describe("session repo", () => {
   let db: Db;
@@ -21,6 +21,8 @@ describe("session repo", () => {
     const first = {
       ...newSession("c1", 1, src, "2026-10-24"),
       planNoteId: "note-1",
+      recap: "Встреча с @[character:ch1|Страд]",
+      recapEventId: "ev-1",
       items: [
         { id: "a", text: "Карта склепа", done: true },
         { id: "b", text: "Музыка", done: false },
@@ -33,6 +35,16 @@ describe("session repo", () => {
     const moved = { ...first, items: [first.items[1]!, first.items[0]!] };
     await applyChange(db, { put: [moved], remove: [] });
     expect((await listSessions(db, "c1"))[0]?.items.map((i) => i.id)).toEqual(["b", "a"]);
+  });
+
+  it("finds sessions whose recap mentions an object", async () => {
+    const s = { ...newSession("c1", 3, src), recap: "Встреча с @[character:ch1|Страд]" };
+    const other = { ...newSession("c1", 4, src), recap: "Слово ch1 без упоминания" };
+    await applyChange(db, { put: [s, other], remove: [] });
+    expect(await sessionsMentioning(db, "c1", "ch1")).toEqual([
+      { id: s.id, number: 3, recapEventId: null },
+    ]);
+    expect(await sessionsMentioning(db, "c2", "ch1")).toEqual([]);
   });
 
   it("applies a change with new and removed sessions", async () => {

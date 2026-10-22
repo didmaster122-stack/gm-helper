@@ -1,13 +1,14 @@
-import { useState } from "react";
-import { CalendarPlus, Trash } from "lucide-react";
+import { Fragment, useState } from "react";
+import { CalendarPlus, ScrollText, Trash } from "lucide-react";
 import { isDay } from "../../shared/dates";
 import { ru } from "../../shared/i18n/ru";
+import { mentionName, mentionPlainText, useMentionStore } from "../../shared/mentions";
 import { Button, ConfirmDialog, IconButton, Modal } from "../../shared/ui";
 import { nextNumber, numberError } from "./domain/sessions";
 import type { Session } from "./domain/types";
 import { useSessionsStore } from "./store";
 
-/** Every session of the campaign: number, date, "played", delete. */
+/** Every session of the campaign: number, date, "played", recap, delete. */
 export function SessionsDialog({ onClose }: { onClose: () => void }) {
   const sessions = useSessionsStore((s) => s.sessions);
   const schedule = useSessionsStore((s) => s.schedule);
@@ -46,6 +47,7 @@ export function SessionsDialog({ onClose }: { onClose: () => void }) {
               <th>{t.number}</th>
               <th>{t.date}</th>
               <th>{t.playedLabel}</th>
+              <th>{t.recap.column}</th>
               <th aria-hidden />
             </tr>
           </thead>
@@ -89,6 +91,9 @@ function SessionRow({ session, sessions, run, onDelete }: SessionRowProps) {
   const setDate = useSessionsStore((s) => s.setDate);
   const markPlayed = useSessionsStore((s) => s.markPlayed);
   const unmarkPlayed = useSessionsStore((s) => s.unmarkPlayed);
+  const openRecap = useSessionsStore((s) => s.openRecap);
+  // Mentions show the current names.
+  useMentionStore((s) => s.revision);
   const [draft, setDraft] = useState(String(session.number));
   const [seen, setSeen] = useState(session.number);
   if (session.number !== seen) {
@@ -100,62 +105,83 @@ function SessionRow({ session, sessions, run, onDelete }: SessionRowProps) {
   const problem =
     draft === String(session.number) ? null : numberError(sessions, session.id, number);
 
+  const recap = mentionPlainText(session.recap, mentionName);
+
   return (
-    <tr className={session.played ? "played" : undefined}>
-      <td>
-        <input
-          className="sessions-number"
-          type="number"
-          min={1}
-          step={1}
-          value={draft}
-          aria-label={t.number}
-          aria-invalid={problem !== null}
-          title={problem === "taken" ? t.numberTaken : problem ? t.numberInvalid : undefined}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={() => {
-            if (problem || number === session.number) setDraft(String(session.number));
-            else run(() => setNumber(session.id, number));
-          }}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur();
-          }}
-        />
-        {problem && (
-          <small className="error">{problem === "taken" ? t.numberTaken : t.numberInvalid}</small>
-        )}
-      </td>
-      <td>
-        <input
-          type="date"
-          value={session.date ?? ""}
-          aria-label={t.date}
-          onChange={(e) => {
-            const value = e.target.value;
-            if (value === "") run(() => setDate(session.id, null));
-            else if (isDay(value) && value >= "1900") run(() => setDate(session.id, value));
-          }}
-        />
-      </td>
-      <td>
-        <input
-          type="checkbox"
-          checked={session.played}
-          aria-label={t.playedLabel}
-          onChange={() =>
-            run(() => (session.played ? unmarkPlayed(session.id) : markPlayed(session.id)))
-          }
-        />
-      </td>
-      <td>
-        <IconButton
-          icon={Trash}
-          size="sm"
-          className="danger"
-          label={ru.common.delete}
-          onClick={onDelete}
-        />
-      </td>
-    </tr>
+    <Fragment>
+      <tr className={session.played ? "played" : undefined}>
+        <td>
+          <input
+            className="sessions-number"
+            type="number"
+            min={1}
+            step={1}
+            value={draft}
+            aria-label={t.number}
+            aria-invalid={problem !== null}
+            title={problem === "taken" ? t.numberTaken : problem ? t.numberInvalid : undefined}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={() => {
+              if (problem || number === session.number) setDraft(String(session.number));
+              else run(() => setNumber(session.id, number));
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+          />
+          {problem && (
+            <small className="error">{problem === "taken" ? t.numberTaken : t.numberInvalid}</small>
+          )}
+        </td>
+        <td>
+          <input
+            type="date"
+            value={session.date ?? ""}
+            aria-label={t.date}
+            onChange={(e) => {
+              const value = e.target.value;
+              if (value === "") run(() => setDate(session.id, null));
+              else if (isDay(value) && value >= "1900") run(() => setDate(session.id, value));
+            }}
+          />
+        </td>
+        <td>
+          <input
+            type="checkbox"
+            checked={session.played}
+            aria-label={t.playedLabel}
+            onChange={() =>
+              run(() => (session.played ? unmarkPlayed(session.id) : markPlayed(session.id)))
+            }
+          />
+        </td>
+        <td>
+          <IconButton
+            icon={ScrollText}
+            size="sm"
+            label={session.recap === "" ? t.recap.write : t.recap.edit}
+            onClick={() => openRecap(session.id)}
+          />
+        </td>
+        <td>
+          <IconButton
+            icon={Trash}
+            size="sm"
+            className="danger"
+            label={ru.common.delete}
+            onClick={onDelete}
+          />
+        </td>
+      </tr>
+      {recap !== "" && (
+        <tr className="sessions-recap">
+          <td colSpan={5}>
+            <button type="button" onClick={() => openRecap(session.id)}>
+              {recap}
+            </button>
+          </td>
+        </tr>
+      )}
+    </Fragment>
   );
 }

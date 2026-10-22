@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trash } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { MentionedIn, MentionField } from "../../shared/mentions";
 import { Button, ColorInput, CommitField, ConfirmDialog } from "../../shared/ui";
 import { PortraitField, RelationList } from "./cardParts";
 import { removeFaction, updateFaction, type FactionPatch } from "./domain/graph";
@@ -36,10 +37,10 @@ export function FactionCard({ faction: f, graph, libraryRoot, preferredSystem }:
         <span>{t.color}</span>
         <ColorInput key={f.color} value={f.color} onCommit={(color) => patch({ color })} />
       </label>
-      <CommitField
+      <MentionField
+        key={f.id}
         label={t.description}
         value={f.description}
-        multiline
         onCommit={(description) => patch({ description })}
       />
 
@@ -82,6 +83,7 @@ export function FactionCard({ faction: f, graph, libraryRoot, preferredSystem }:
       </section>
 
       <RelationList graph={graph} nodeId={f.id} />
+      <MentionedIn kind="faction" id={f.id} />
 
       <div className="panel-actions">
         <Button variant="danger" icon={Trash} onClick={() => setDeleting(true)}>

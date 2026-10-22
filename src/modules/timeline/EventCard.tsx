@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Trash, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { MentionedIn, MentionField } from "../../shared/mentions";
 import {
   Button,
   CommitField,
@@ -191,10 +192,10 @@ export function EventCard({
 
       <TagEditor label={t.tags} tags={e.tags} onChange={(tags) => patch({ tags })} />
 
-      <CommitField
+      <MentionField
+        key={e.id}
         label={t.description}
         value={e.description}
-        multiline
         onCommit={(description) => patch({ description })}
       />
 
@@ -212,6 +213,7 @@ export function EventCard({
         otherEnd={(l) => l.toId}
         timeline={timeline}
       />
+      <MentionedIn kind="event" id={e.id} />
 
       <div className="panel-actions">
         <Button variant="danger" icon={Trash} onClick={() => setDeleting(true)}>

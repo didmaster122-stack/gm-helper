@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } fro
 import { EditorContent, useEditor, type Editor, type JSONContent } from "@tiptap/react";
 import { pickFiles } from "../../shared/fs";
 import { ru } from "../../shared/i18n/ru";
+import { MentionedIn, mentionName } from "../../shared/mentions";
 import { ArtPicker, artName } from "../library";
 import { IMAGE_EXTENSIONS } from "./domain/attachments";
 import { docPlainText, parseDoc, serializeDoc, toDoc, type DocNode } from "./domain/doc";
@@ -49,7 +50,7 @@ export function TextNoteEditor({
     const doc = pending.current;
     if (!doc) return;
     pending.current = null;
-    saveContent(noteId, serializeDoc(doc), docPlainText(doc))
+    saveContent(noteId, serializeDoc(doc), docPlainText(doc, mentionName))
       .then(() => {
         if (!pending.current) setSaveState("saved");
       })
@@ -176,6 +177,9 @@ export function TextNoteEditor({
         }}
       >
         <EditorContent editor={editor} className="note-editor-content" />
+        <div className="note-mentioned">
+          <MentionedIn kind="note" id={noteId} />
+        </div>
       </div>
       {picking && (
         <ArtPicker

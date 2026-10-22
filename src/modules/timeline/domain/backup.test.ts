@@ -53,7 +53,7 @@ describe("timeline backup", () => {
 
   it("gives new ids and fixes lanes, characters and links", () => {
     const ids = idSource();
-    const out = remapTimeline(
+    const { timeline: out, eventIds } = remapTimeline(
       parseTimelineBackup(JSON.parse(JSON.stringify(source)), NOW),
       "camp2",
       ids.newId,
@@ -74,10 +74,11 @@ describe("timeline backup", () => {
     expect(out.links[0]).toMatchObject({ fromId: e1?.id, toId: e2?.id, campaignId: "camp2" });
     expect(out.markers[0]).toMatchObject({ label: "1492", level: 2, campaignId: "camp2" });
     expect(out.markers[0]?.id).not.toBe("m1");
+    expect(eventIds.get(source.events[0]?.id ?? "")).toBe(e1?.id);
   });
 
   it("clears the character of a personal lane when the character is not imported", () => {
-    const out = remapTimeline(source, "c", idSource().newId, new Map());
+    const { timeline: out } = remapTimeline(source, "c", idSource().newId, new Map());
     expect(out.lanes.find((l) => l.kind === "personal")?.characterId).toBeNull();
   });
 });

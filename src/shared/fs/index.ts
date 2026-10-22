@@ -11,6 +11,7 @@ import {
   readFile,
   remove,
   rename,
+  stat,
   watch,
   writeFile,
   type UnwatchFn,
@@ -60,6 +61,24 @@ export async function listSubfolders(path: string): Promise<string[]> {
     .filter((e) => e.isDirectory && !isServiceName(e.name))
     .map((e) => e.name)
     .sort((a, b) => a.localeCompare(b, "ru"));
+}
+
+export interface FolderFile {
+  name: string;
+  path: string;
+  size: number;
+}
+
+/** Files directly inside a folder with their sizes; an absent folder has none. */
+export async function listFiles(path: string): Promise<FolderFile[]> {
+  if (!(await exists(path))) return [];
+  const files = (await readDir(path)).filter((e) => e.isFile);
+  return Promise.all(
+    files.map(async (e) => {
+      const full = await join(path, e.name);
+      return { name: e.name, path: full, size: (await stat(full)).size };
+    }),
+  );
 }
 
 /** Names of all entries (files and folders) directly inside a folder. */
@@ -138,6 +157,35 @@ export async function cacheDir(...parts: string[]): Promise<string> {
   const dir = await join(await appCacheDir(), ...parts);
   await mkdir(dir, { recursive: true });
   return dir;
+}
+
+/** Size of a file in bytes, or 0 if it does not exist. */
+export async function fileSize(path: string): Promise<number> {
+  return (await exists(path)) ? (await stat(path)).size : 0;
+}
+
+/** Appends to a file in the app cache (the error log), creating it if needed. */
+export async function appendCacheFile(path: string, data: Uint8Array): Promise<void> {
+  await writeFile(path, data, { append: true });
+}
+
+/** Renames an app file (log rotation), replacing the target if present. */
+export async function replaceAppFile(from: string, to: string): Promise<void> {
+  if (await exists(to)) await remove(to);
+  await rename(from, to);
+}
+
+/**
+ * Removes a file the app owns (an old database copy, a stale journal). Never pass a file of
+ * the user's library here: those go to the trash.
+ */
+export async function removeAppFile(path: string): Promise<void> {
+  if (await exists(path)) await remove(path);
+}
+
+/** Copies an app file over another one (restoring the database from a copy). */
+export async function overwriteAppFile(from: string, to: string): Promise<void> {
+  await copyFile(from, to);
 }
 
 export async function writeCacheFile(path: string, data: Uint8Array): Promise<void> {

@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Star, Trash, X } from "lucide-react";
 import { ru } from "../../shared/i18n/ru";
+import { MentionedIn, MentionField } from "../../shared/mentions";
 import {
   Button,
   CommitField,
@@ -165,10 +166,10 @@ export function CharacterCard({
         )}
       </section>
 
-      <CommitField
+      <MentionField
+        key={c.id}
         label={t.description}
         value={c.description}
-        multiline
         onCommit={(description) => patch({ description })}
       />
       <CommitField
@@ -187,6 +188,7 @@ export function CharacterCard({
 
       <RelationList graph={graph} nodeId={c.id} />
       {extras}
+      <MentionedIn kind="character" id={c.id} />
 
       <div className="panel-actions">
         <Button variant="danger" icon={Trash} onClick={() => setDeleting(true)}>

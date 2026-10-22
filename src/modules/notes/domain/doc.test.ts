@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   docImagePaths,
+  docMentions,
   docPlainText,
   docToHtml,
   emptyDoc,
   isLibraryPath,
   parseDoc,
+  remapDocMentions,
   serializeDoc,
   type DocNode,
 } from "./doc";
@@ -85,5 +87,45 @@ describe("note document", () => {
     expect(html).toContain("<th><p>Блюдо</p></th>");
     expect(html).toContain("<ul><li><p>пункт</p></li></ul>");
     expect(docToHtml(p(text("<b>&")), () => null)).toBe("<p>&lt;b&gt;&amp;</p>");
+  });
+});
+
+describe("mentions", () => {
+  const strahd = { type: "mention", attrs: { id: "c-1", kind: "character", label: "Страд" } };
+  const doc: DocNode = {
+    type: "doc",
+    content: [
+      { type: "paragraph", content: [{ type: "text", text: "Бал у " }, strahd] },
+      {
+        type: "table",
+        content: [{ type: "tableRow", content: [{ type: "tableCell", content: [strahd] }] }],
+      },
+      { type: "paragraph", content: [{ type: "mention", attrs: { id: "x", kind: "?" } }] },
+    ],
+  };
+
+  it("lists well-formed mentions", () => {
+    expect(docMentions(doc)).toEqual([
+      { id: "c-1", kind: "character", label: "Страд" },
+      { id: "c-1", kind: "character", label: "Страд" },
+    ]);
+  });
+
+  it("reads as the saved or the current name", () => {
+    expect(docPlainText(doc)).toBe("Бал у Страд\nСтрад");
+    expect(docPlainText(doc, () => "Граф")).toBe("Бал у Граф\nГраф");
+    expect(
+      docToHtml(
+        doc,
+        () => null,
+        () => "<Граф>",
+      ),
+    ).toContain('<span class="mention">&lt;Граф&gt;</span>');
+  });
+
+  it("points mentions to new ids", () => {
+    const remapped = remapDocMentions(doc, new Map([["c-1", "c-2"]]));
+    expect(docMentions(remapped).map((m) => m.id)).toEqual(["c-2", "c-2"]);
+    expect(docMentions(doc).map((m) => m.id)).toEqual(["c-1", "c-1"]);
   });
 });

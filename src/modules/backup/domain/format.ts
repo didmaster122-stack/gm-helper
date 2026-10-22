@@ -12,7 +12,8 @@ export const BACKUP_FORMAT = "gm-helper.campaign";
  * 2: token records got `cells` and `frame` (read with defaults from version 1 files).
  * 3: the `notes` section (files of versions 1 and 2 are read with no notes).
  * 4: the `sessions` section and the campaign cover (`campaign.coverArtId`); older files are
- *    converted with no sessions and no cover.
+ *    converted with no sessions and no cover. Sessions later got `recap` and `recapEventId`,
+ *    read as empty when a file has none.
  */
 export const BACKUP_VERSION = 4;
 

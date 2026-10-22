@@ -22,6 +22,7 @@ import {
   type RelationGraph,
   type RelationType,
 } from "./types";
+import { remapMentionText } from "../../../shared/mentions/domain";
 
 /** Relation graph section of a campaign backup. */
 export interface GraphBackup {
@@ -152,6 +153,7 @@ export interface RemappedGraph {
   graph: RelationGraph;
   /** Old character id → new id, for the timeline. */
   characterIds: ReadonlyMap<string, string>;
+  factionIds: ReadonlyMap<string, string>;
 }
 
 /**
@@ -191,5 +193,23 @@ export function remapGraph(
     const typeId = knownTypeIds.has(r.typeId) ? r.typeId : UNKNOWN_TYPE;
     return [{ ...r, id: newId(), campaignId, fromId, toId, typeId }];
   });
-  return { graph: { characters, factions, relations }, characterIds };
+  return { graph: { characters, factions, relations }, characterIds, factionIds };
+}
+
+/** Points the mentions in the descriptions to the new ids of a restored campaign. */
+export function remapGraphMentions(
+  graph: RelationGraph,
+  ids: ReadonlyMap<string, string>,
+): RelationGraph {
+  return {
+    ...graph,
+    characters: graph.characters.map((c) => ({
+      ...c,
+      description: remapMentionText(c.description, ids),
+    })),
+    factions: graph.factions.map((f) => ({
+      ...f,
+      description: remapMentionText(f.description, ids),
+    })),
+  };
 }

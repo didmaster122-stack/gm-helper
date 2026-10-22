@@ -415,4 +415,14 @@ export const migrations: Migration[] = [
       CREATE INDEX recent_items_opened ON recent_items (campaign_id, opened_at);
     `,
   },
+  {
+    version: 15,
+    name: "session recaps",
+    sql: `
+      -- recap: what happened at the table, text with mention tokens; recap_event_id: the timeline
+      -- event that repeats it, may point to a deleted event.
+      ALTER TABLE sessions ADD COLUMN recap TEXT NOT NULL DEFAULT '';
+      ALTER TABLE sessions ADD COLUMN recap_event_id TEXT;
+    `,
+  },
 ];

@@ -1,6 +1,7 @@
 import { runScript, sqlLiteral } from "../../shared/db/script";
 import { placeholders } from "../../shared/db/placeholders";
 import type { Db } from "../../shared/db/types";
+import { mentionPlainText, mentionsInText, type MentionTarget } from "../../shared/mentions/domain";
 import type { SearchRecord } from "../../shared/search/global";
 import {
   EVENT_IMPORTANCES,
@@ -313,7 +314,23 @@ export async function eventSearchRecords(
     campaignId: r.campaign_id,
     title: r.title,
     detail: r.game_date,
-    body: [r.description, r.game_date, ...parseStrings(r.tags)],
-    refs: parseStrings(r.characters),
+    body: [mentionPlainText(r.description), r.game_date, ...parseStrings(r.tags)],
+    refs: [...parseStrings(r.characters), ...mentionsInText(r.description).map((m) => m.id)],
   }));
+}
+
+/** Events of the campaign whose descriptions mention the object. */
+export async function eventsMentioning(
+  db: Db,
+  campaignId: string,
+  id: string,
+): Promise<MentionTarget[]> {
+  const rows = await db.select<{ id: string; title: string; description: string }>(
+    `SELECT id, title, description FROM timeline_events
+     WHERE campaign_id = ? AND id <> ? AND instr(description, ?) > 0`,
+    [campaignId, id, id],
+  );
+  return rows
+    .filter((r) => mentionsInText(r.description).some((m) => m.id === id))
+    .map((r) => ({ kind: "event", id: r.id, title: r.title }));
 }

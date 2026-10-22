@@ -14,6 +14,8 @@ function session(number: number, date: string | null, played: boolean): Session 
     date,
     played,
     planNoteId: null,
+    recap: "",
+    recapEventId: null,
     items: [],
     createdAt: "",
     updatedAt: "",

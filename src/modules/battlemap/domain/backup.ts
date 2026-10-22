@@ -14,6 +14,8 @@ import type { ObjectDef } from "./objects";
 
 /** A map of the campaign with everything shown in its gallery card. */
 export interface MapEntry {
+  /** Id of the map in a backup, so mentions of it can follow it to the restored copy. */
+  id?: string;
   name: string;
   description: string;
   tags: string[];
@@ -74,6 +76,7 @@ export function parseMapsBackup(raw: unknown, now: string): ParsedMaps {
   for (const entry of readRecords(section.maps)) {
     try {
       maps.push({
+        ...(typeof entry.id === "string" && entry.id !== "" ? { id: entry.id } : {}),
         name: readString(entry.name).trim(),
         description: readString(entry.description),
         tags: readStrings(entry.tags),

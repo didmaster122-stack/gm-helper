@@ -26,6 +26,7 @@ import {
   lanesInOrder,
   moveEvent,
   moveLane,
+  putRecapEvent,
   removeEvent,
   removeLane,
   removeLastSession,
@@ -346,5 +347,47 @@ describe("layout", () => {
     expect(anchorY(near, anchor)).toBe(box.y + box.height / 2);
     const future = anchorAt(layout, layout.height - 1);
     expect(future?.id).toBe("session:future");
+  });
+});
+
+describe("session recaps", () => {
+  const input = { eventId: null, session: 2, title: "Итоги сессии 2", description: "Победа" };
+
+  it("adds a happened event to the main lane at the end of the session", () => {
+    const t = timeline({ events: [event("a", { session: 2, sort: 0 })] });
+    const { timeline: next, id } = putRecapEvent(t, input, idSource());
+    expect(id).toBe("id1");
+    expect(order(next, 2)).toEqual(["a", "id1"]);
+    const added = next.events.find((e) => e.id === id);
+    expect(added).toMatchObject({ laneId: "main", status: "happened", description: "Победа" });
+  });
+
+  it("adds the missing sessions to the timeline", () => {
+    const t = timeline({ sessionCount: 1 });
+    const { timeline: next } = putRecapEvent(t, { ...input, session: 4 }, idSource());
+    expect(next.sessionCount).toBe(4);
+    expect(
+      putRecapEvent(timeline({ sessionCount: 6 }), input, idSource()).timeline.sessionCount,
+    ).toBe(6);
+  });
+
+  it("updates the text of the existing event where it is now", () => {
+    const t = timeline({ events: [event("r", { session: 1, laneId: "side", description: "x" })] });
+    const { timeline: next, id } = putRecapEvent(t, { ...input, eventId: "r" }, idSource());
+    expect(id).toBe("r");
+    expect(next.events).toEqual([
+      expect.objectContaining({ id: "r", session: 1, laneId: "side", description: "Победа" }),
+    ]);
+    expect(putRecapEvent(next, { ...input, eventId: "r" }, idSource()).timeline).toBe(next);
+  });
+
+  it("adds a new event when the old one was deleted", () => {
+    const { timeline: next, id } = putRecapEvent(
+      timeline(),
+      { ...input, eventId: "gone" },
+      idSource(),
+    );
+    expect(id).toBe("id1");
+    expect(next.events).toHaveLength(1);
   });
 });

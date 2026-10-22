@@ -10,7 +10,7 @@ export async function collectMapsBackup(db: Db, campaignId: string): Promise<Map
   const entries: MapEntry[] = [];
   for (const summary of await repo.listMaps(db, campaignId)) {
     const map = await repo.getMap(db, summary.id);
-    if (map) entries.push(map);
+    if (map) entries.push({ ...map, id: summary.id });
   }
   const [types, objectDefs] = await Promise.all([repo.listCellTypes(db), repo.listObjectDefs(db)]);
   return toMapsBackup(entries, types, objectDefs);
